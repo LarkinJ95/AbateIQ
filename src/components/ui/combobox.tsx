@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, PlusCircle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -19,21 +19,35 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-type ComboboxOption = {
+export type ComboboxOption = {
     value: string;
     label: string;
 }
 
 interface ComboboxProps {
     options: ComboboxOption[];
+    setOptions: React.Dispatch<React.SetStateAction<ComboboxOption[]>>;
     placeholder: string;
     searchPlaceholder: string;
     emptyPlaceholder: string;
 }
 
-export function Combobox({ options, placeholder, searchPlaceholder, emptyPlaceholder }: ComboboxProps) {
+export function Combobox({ options, setOptions, placeholder, searchPlaceholder, emptyPlaceholder }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState("")
+  const [inputValue, setInputValue] = React.useState('');
+
+  const handleCreateNew = () => {
+    if (inputValue && !options.some(option => option.label.toLowerCase() === inputValue.toLowerCase())) {
+        const newOption = {
+            value: `new-${inputValue.toLowerCase().replace(/\s+/g, '-')}`,
+            label: inputValue
+        };
+        setOptions(prev => [...prev, newOption]);
+        setValue(newOption.value);
+        setOpen(false);
+    }
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -52,16 +66,33 @@ export function Combobox({ options, placeholder, searchPlaceholder, emptyPlaceho
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput 
+            placeholder={searchPlaceholder}
+            onValueChange={setInputValue}
+           />
           <CommandList>
-            <CommandEmpty>{emptyPlaceholder}</CommandEmpty>
+            <CommandEmpty>
+                <div>
+                    <p className="p-2">{emptyPlaceholder}</p>
+                    <Button
+                        variant="ghost"
+                        className="w-full justify-start"
+                        onClick={handleCreateNew}
+                    >
+                       <PlusCircle className="mr-2 h-4 w-4" /> Create "{inputValue}"
+                    </Button>
+                </div>
+            </CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
-                  value={option.value}
-                  onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue)
+                  value={option.label}
+                  onSelect={(currentLabel) => {
+                    const selectedOption = options.find(o => o.label.toLowerCase() === currentLabel.toLowerCase())
+                    if (selectedOption) {
+                      setValue(selectedOption.value === value ? "" : selectedOption.value)
+                    }
                     setOpen(false)
                   }}
                 >

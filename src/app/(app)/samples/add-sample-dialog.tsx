@@ -13,13 +13,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle } from 'lucide-react';
-import { Combobox } from '@/components/ui/combobox';
+import { Combobox, ComboboxOption } from '@/components/ui/combobox';
 import { projects, tasks, personnel } from '@/lib/data';
+import { useState } from 'react';
 
 export function AddSampleDialog() {
-  const projectOptions = projects.map(p => ({ value: p.id, label: p.name }));
-  const taskOptions = tasks.map(t => ({ value: t.id, label: t.name }));
-  const personnelOptions = personnel.map(p => ({ value: p.id, label: p.name }));
+  const [projectOptions, setProjectOptions] = useState<ComboboxOption[]>(projects.map(p => ({ value: p.id, label: p.name })));
+  const [taskOptions, setTaskOptions] = useState<ComboboxOption[]>(tasks.map(t => ({ value: t.id, label: t.name })));
+  const [personnelOptions, setPersonnelOptions] = useState<ComboboxOption[]>(personnel.map(p => ({ value: p.id, label: p.name })));
 
   return (
     <Dialog>
@@ -41,6 +42,7 @@ export function AddSampleDialog() {
             <Label htmlFor="project">Project</Label>
             <Combobox 
               options={projectOptions}
+              setOptions={setProjectOptions}
               placeholder="Select a project"
               searchPlaceholder="Search projects..."
               emptyPlaceholder="No project found."
@@ -50,6 +52,7 @@ export function AddSampleDialog() {
             <Label htmlFor="task">Task</Label>
             <Combobox 
               options={taskOptions}
+              setOptions={setTaskOptions}
               placeholder="Select a task"
               searchPlaceholder="Search tasks..."
               emptyPlaceholder="No task found."
@@ -59,6 +62,7 @@ export function AddSampleDialog() {
             <Label htmlFor="personnel">Personnel</Label>
             <Combobox 
               options={personnelOptions}
+              setOptions={setPersonnelOptions}
               placeholder="Select personnel"
               searchPlaceholder="Search personnel..."
               emptyPlaceholder="No personnel found."

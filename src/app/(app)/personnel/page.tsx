@@ -1,9 +1,8 @@
 import { Header } from '@/components/header';
 import { personnel } from '@/lib/data';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
 import { PersonnelList } from '@/app/(app)/personnel/personnel-list';
 import { Card, CardContent } from '@/components/ui/card';
+import { AddPersonnelDialog } from './add-personnel-dialog';
 
 export default function PersonnelPage() {
   return (
@@ -14,10 +13,7 @@ export default function PersonnelPage() {
             <h2 className="text-2xl font-headline font-bold tracking-tight">
                 Manage Personnel
             </h2>
-            <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Personnel
-            </Button>
+            <AddPersonnelDialog />
         </div>
         <Card>
             <CardContent className="p-0">

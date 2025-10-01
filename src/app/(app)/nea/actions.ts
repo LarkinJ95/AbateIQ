@@ -1,6 +1,7 @@
+
 'use server';
 
-import { generateNegativeExposureAssessment } from '@/ai/flows/generate-negative-exposure-assessment';
+import { generateNegativeExposureAssessment, GenerateNegativeExposureAssessmentInput } from '@/ai/flows/generate-negative-exposure-assessment';
 import { z } from 'zod';
 
 const NeaSchema = z.object({
@@ -13,6 +14,7 @@ export type NeaFormState = {
   message: string;
   assessment: string;
   isError: boolean;
+  inputs: GenerateNegativeExposureAssessmentInput | null;
 };
 
 export async function generateNeaAction(
@@ -30,6 +32,7 @@ export async function generateNeaAction(
       message: 'Validation failed. Please check your inputs.',
       assessment: '',
       isError: true,
+      inputs: null,
     };
   }
 
@@ -39,6 +42,7 @@ export async function generateNeaAction(
       message: 'Assessment generated successfully.',
       assessment: result.draftAssessment,
       isError: false,
+      inputs: validatedFields.data,
     };
   } catch (error) {
     console.error(error);
@@ -46,6 +50,7 @@ export async function generateNeaAction(
       message: 'An error occurred while generating the assessment.',
       assessment: '',
       isError: true,
+      inputs: null,
     };
   }
 }

@@ -1,14 +1,24 @@
 
+'use client';
+
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { existingNeas } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+import { FileText, FileUp, CheckCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useRef, useState } from 'react';
 
 export default function NeaDetailsPage({ params }: { params: { id: string } }) {
   const nea = existingNeas.find(e => e.id === params.id);
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [documentUploaded, setDocumentUploaded] = useState(false);
+
 
   if (!nea) {
     notFound();
@@ -17,6 +27,23 @@ export default function NeaDetailsPage({ params }: { params: { id: string } }) {
   const getStatusVariant = (status: "Active" | "Expired") => {
     return status === "Active" ? "default" : "outline";
   };
+  
+  const handleUploadClick = () => {
+    if (fileInputRef.current?.files && fileInputRef.current.files.length > 0) {
+      toast({
+        title: 'Upload Successful',
+        description: `${fileInputRef.current.files[0].name} has been uploaded for NEA ${nea.id}.`,
+      });
+      setDocumentUploaded(true);
+    } else {
+      toast({
+        title: 'No File Selected',
+        description: 'Please select a file to upload.',
+        variant: 'destructive',
+      });
+    }
+  };
+
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -63,10 +90,29 @@ export default function NeaDetailsPage({ params }: { params: { id: string } }) {
             <CardHeader>
                 <CardTitle className="font-headline">Assessment Document</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center text-center gap-4 p-8 bg-muted/50 rounded-lg">
-                <FileText className="w-16 h-16 text-muted-foreground" />
-                <p className="text-muted-foreground">No assessment document has been generated or uploaded yet.</p>
-                 <Button disabled>View Document</Button>
+            <CardContent>
+                {documentUploaded ? (
+                    <div className="flex flex-col items-center justify-center text-center gap-4 p-8 bg-muted/50 rounded-lg">
+                        <CheckCircle className="w-16 h-16 text-green-500" />
+                        <p className="text-muted-foreground">Document uploaded successfully.</p>
+                        <Button>View Document</Button>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                         <p className="text-sm text-muted-foreground">
+                            No assessment document has been uploaded for this NEA.
+                         </p>
+                         <div className="grid w-full max-w-sm items-center gap-1.5">
+                            <Label htmlFor="document">Select File</Label>
+                            <div className="flex gap-2">
+                                <Input id="document" type="file" ref={fileInputRef} />
+                                <Button onClick={handleUploadClick}>
+                                <FileUp className="mr-2 h-4 w-4" /> Upload
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
 

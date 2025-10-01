@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useFormState, useFormStatus } from 'react-dom';
@@ -14,9 +15,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { AlertCircle, Bot, Sparkles, Terminal } from 'lucide-react';
-import { useEffect } from 'react';
+import { Bot, Save, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 function SubmitButton() {
@@ -29,11 +29,12 @@ function SubmitButton() {
   );
 }
 
-export function NeaGenerator() {
+export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: any) => void }) {
   const initialState: NeaFormState = {
     message: '',
     assessment: '',
     isError: false,
+    inputs: null,
   };
   const [state, formAction] = useFormState(generateNeaAction, initialState);
   const { toast } = useToast();
@@ -46,7 +47,27 @@ export function NeaGenerator() {
         variant: state.isError ? 'destructive' : 'default',
       });
     }
-  }, [state, toast]);
+  }, [state.message, state.isError, toast]);
+
+  const handleSaveNea = () => {
+    if (state.inputs) {
+      const newNea = {
+          id: `nea-${Math.floor(Math.random() * 1000)}`,
+          project: state.inputs.projectDescription.substring(0,30) + '...', // Simple truncate
+          task: state.inputs.taskDescription.substring(0,30) + '...',
+          analyte: state.inputs.analyte,
+          effectiveDate: new Date().toLocaleDateString('en-CA'),
+          reviewDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString('en-CA'),
+          status: 'Active' as 'Active' | 'Expired',
+      };
+      onNeaSaved(newNea);
+      toast({
+        title: 'NEA Saved',
+        description: 'The new Negative Exposure Assessment has been added to the list.',
+      });
+    }
+  };
+
 
   return (
     <form action={formAction}>
@@ -104,6 +125,12 @@ export function NeaGenerator() {
             <CardContent>
                 <Textarea readOnly value={state.assessment} rows={15} className="font-mono bg-secondary"/>
             </CardContent>
+            <CardFooter className="flex justify-end">
+                <Button onClick={handleSaveNea}>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save NEA
+                </Button>
+            </CardFooter>
         </Card>
       )}
     </form>

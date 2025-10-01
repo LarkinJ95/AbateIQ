@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   ShieldAlert,
   Users,
+  TestTube
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -35,6 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/projects', label: 'Projects', icon: Briefcase },
     { href: '/personnel', label: 'Personnel', icon: Users },
+    { href: '/samples', label: 'Samples', icon: TestTube },
     { href: '/nea', label: 'NEA Tool', icon: FileText },
     { href: '/documents', label: 'Documents', icon: Folder },
   ];

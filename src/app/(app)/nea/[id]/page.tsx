@@ -1,9 +1,10 @@
 
+
 'use client';
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { existingNeas, samples as allSamples, personnel as allPersonnel } from '@/lib/data';
+import { existingNeas, samples as allSamples, personnel as allPersonnel, projects as allProjects } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,9 @@ export default function NeaDetailsPage({ params }: { params: { id: string } }) {
   if (!nea) {
     notFound();
   }
+  
+  const project = allProjects.find(p => p.name === nea.project);
+  const projectSamples = project ? allSamples.filter(s => s.projectId === project.id) : [];
 
   const effectiveDate = new Date(nea.effectiveDate);
   const reviewDate = new Date(effectiveDate.setFullYear(effectiveDate.getFullYear() + 1));
@@ -142,7 +146,7 @@ export default function NeaDetailsPage({ params }: { params: { id: string } }) {
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="font-headline">Supporting Samples</CardTitle>
                 <LinkSamplesDialog 
-                    allSamples={allSamples} 
+                    allSamples={projectSamples} 
                     linkedSampleIds={linkedSampleIds}
                     onSamplesLinked={handleSamplesLinked}
                 />

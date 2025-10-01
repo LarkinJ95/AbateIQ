@@ -1,3 +1,58 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "user-avatar-1",
+      "description": "Avatar for Sarah Johnson",
+      "imageUrl": "https://images.unsplash.com/photo-1616002411355-49593fd89721?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx3b21hbiUyMGZhY2V8ZW58MHx8fHwxNzU5MjI3NjcxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman face"
+    },
+    {
+      "id": "user-avatar-2",
+      "description": "Avatar for Mike Williams",
+      "imageUrl": "https://images.unsplash.com/photo-1650630729397-810915b32ac9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYW4lMjBmYWNlfGVufDB8fHx8MTc1OTIyMjkwMXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man face"
+    },
+    {
+      "id": "client-logo-1",
+      "description": "Logo for Apex Construction",
+      "imageUrl": "https://images.unsplash.com/photo-1549924231-f129b911e442?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjb21wYW55JTIwbG9nb3xlbnwwfHx8fDE3NTkzMDQwNzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "company logo"
+    },
+    {
+      "id": "client-logo-2",
+      "description": "Logo for Innovate Builders",
+      "imageUrl": "https://images.unsplash.com/photo-1562783912-21ad31ee2a83?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb21wYW55JTIwbG9nb3xlbnwwfHx8fDE3NTkzMDQwNzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "company logo"
+    },
+    {
+      "id": "client-logo-3",
+      "description": "Logo for Terra Firma",
+      "imageUrl": "https://images.unsplash.com/photo-1627843563095-f6e94676cfe0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Y29tcGFueSUyMGxvZ298ZW58MHx8fHwxNzU5MzA0MDczfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "company logo"
+    },
+    {
+      "id": "doc-thumb-1",
+      "description": "Thumbnail for Lab Report",
+      "imageUrl": "https://images.unsplash.com/photo-1533230019569-ea3cb2b98b1f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxkb2N1bWVudCUyMHBhcGVyfGVufDB8fHx8MTc1OTI3NjI0OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "document paper"
+    },
+    {
+      "id": "doc-thumb-2",
+      "description": "Thumbnail for Project Site Photo",
+      "imageUrl": "https://images.unsplash.com/photo-1694521787673-28cbd8830ea5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjb25zdHJ1Y3Rpb24lMjBzaXRlfGVufDB8fHx8MTc1OTI1NDEyMXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "construction site"
+    },
+    {
+      "id": "doc-thumb-3",
+      "description": "Thumbnail for Chain of Custody Form",
+      "imageUrl": "https://images.unsplash.com/photo-1724662150980-0cdd8e359522?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmb3JtJTIwZG9jdW1lbnR8ZW58MHx8fHwxNzU5MjI0NjgwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "form document"
+    },
+    {
+      "id": "doc-thumb-4",
+      "description": "Thumbnail for Lab Report",
+      "imageUrl": "https://images.unsplash.com/photo-1691935152210-35ae500d91d7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsYWIlMjByZXN1bHRzfGVufDB8fHx8MTc1OTMyOTg1NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "lab results"
+    }
+  ]
 }

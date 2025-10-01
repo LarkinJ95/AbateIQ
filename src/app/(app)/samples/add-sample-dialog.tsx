@@ -13,16 +13,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { projects, tasks, personnel, equipment } from '@/lib/data';
 
 export function AddSampleDialog() {
+  const projectOptions = projects.map(p => ({ value: p.id, label: p.name }));
+  const taskOptions = tasks.map(t => ({ value: t.id, label: t.name }));
+  const personnelOptions = personnel.map(p => ({ value: p.id, label: p.name }));
+  const equipmentOptions = equipment.filter(e => e.type === 'Pump').map(p => ({ value: p.id, label: p.name }));
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -41,63 +40,39 @@ export function AddSampleDialog() {
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="project">Project</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a project" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox 
+              options={projectOptions}
+              placeholder="Select a project"
+              searchPlaceholder="Search projects..."
+              emptyPlaceholder="No project found."
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="task">Task</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a task" />
-              </SelectTrigger>
-              <SelectContent>
-                {tasks.map((task) => (
-                  <SelectItem key={task.id} value={task.id}>
-                    {task.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox 
+              options={taskOptions}
+              placeholder="Select a task"
+              searchPlaceholder="Search tasks..."
+              emptyPlaceholder="No task found."
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="personnel">Personnel</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Select personnel" />
-              </SelectTrigger>
-              <SelectContent>
-                {personnel.map((person) => (
-                  <SelectItem key={person.id} value={person.id}>
-                    {person.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox 
+              options={personnelOptions}
+              placeholder="Select personnel"
+              searchPlaceholder="Search personnel..."
+              emptyPlaceholder="No personnel found."
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="equipment">Equipment (Pump)</Label>
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a pump" />
-              </SelectTrigger>
-              <SelectContent>
-                {equipment.filter(e => e.type === 'Pump').map((pump) => (
-                  <SelectItem key={pump.id} value={pump.id}>
-                    {pump.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox 
+              options={equipmentOptions}
+              placeholder="Select a pump"
+              searchPlaceholder="Search pumps..."
+              emptyPlaceholder="No pump found."
+            />
           </div>
            <div className="grid grid-cols-2 gap-4">
              <div className="space-y-2">

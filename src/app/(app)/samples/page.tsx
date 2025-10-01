@@ -1,9 +1,8 @@
 import { Header } from '@/components/header';
 import { samples, projects, tasks, personnel } from '@/lib/data';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
 import { SamplesList } from '@/app/(app)/samples/samples-list';
 import { Card, CardContent } from '@/components/ui/card';
+import { AddSampleDialog } from './add-sample-dialog';
 
 export default function SamplesPage() {
     const samplesWithDetails = samples.map(sample => {
@@ -32,10 +31,7 @@ export default function SamplesPage() {
             <h2 className="text-2xl font-headline font-bold tracking-tight">
                 Manage Samples
             </h2>
-            <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Sample
-            </Button>
+            <AddSampleDialog />
         </div>
         <Card>
             <CardContent className="p-0">

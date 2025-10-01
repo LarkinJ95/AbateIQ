@@ -1,14 +1,41 @@
+'use client';
+
 import { Header } from '@/components/header';
 import { documents } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileUp, MoreVertical } from 'lucide-react';
+import { FileUp, MoreVertical, Trash2, Download, Eye } from 'lucide-react';
 import Image from 'next/image';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import React, { useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DocumentsPage() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handleUploadClick = () => {
+    if (fileInputRef.current?.files && fileInputRef.current.files.length > 0) {
+      toast({
+        title: 'Upload Successful',
+        description: `${fileInputRef.current.files[0].name} has been uploaded.`,
+      });
+    } else {
+      toast({
+        title: 'No File Selected',
+        description: 'Please select a file to upload.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <Header title="Documents" />
@@ -21,8 +48,8 @@ export default function DocumentsPage() {
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Label htmlFor="document">Select File</Label>
               <div className="flex gap-2">
-                <Input id="document" type="file" />
-                <Button>
+                <Input id="document" type="file" ref={fileInputRef} />
+                <Button onClick={handleUploadClick}>
                   <FileUp className="mr-2 h-4 w-4" /> Upload
                 </Button>
               </div>
@@ -62,9 +89,18 @@ export default function DocumentsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>View</DropdownMenuItem>
-                      <DropdownMenuItem>Download</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </CardFooter>

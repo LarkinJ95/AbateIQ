@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Card } from '@/components/ui/card';
+import { AddProjectDialog } from './add-project-dialog';
 
 export default function ProjectsPage() {
   const getStatusVariant = (status: 'Active' | 'Completed' | 'On Hold') => {
@@ -49,10 +50,7 @@ export default function ProjectsPage() {
           <h2 className="text-2xl font-headline font-bold tracking-tight">
             Manage Projects
           </h2>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            New Project
-          </Button>
+          <AddProjectDialog />
         </div>
         <Card>
           <Accordion type="single" collapsible className="w-full">

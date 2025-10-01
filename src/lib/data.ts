@@ -1,4 +1,4 @@
-import { Client, Project, NeaReview, PersonnelExposure, PendingResult, Exceedance, Document, ExistingNea } from './types';
+import { Client, Project, NeaReview, PersonnelExposure, PendingResult, Exceedance, Document, ExistingNea, Nea, Sample, Result, Location, Task, Personnel, Equipment, Calibration, ExposureLimit } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
@@ -10,11 +10,63 @@ export const clients: Client[] = [
 ];
 
 export const projects: Project[] = [
-  { id: 'p1', name: 'Downtown Tower Renovation', location: '123 Main St, Metro City', status: 'Active', clientId: '1' },
-  { id: 'p2', name: 'Suburban Office Park', location: '456 Oak Ave, Suburbia', status: 'Active', clientId: '1' },
-  { id: 'p3', name: 'Coastal Bridge Repair', location: '789 Ocean Blvd, Seaside', status: 'On Hold', clientId: '2' },
-  { id: 'p4', name: 'Genesis Labs HQ', location: '101 Innovation Dr, Tech Park', status: 'Completed', clientId: '2' },
-  { id: 'p5', name: 'Historic Courthouse Restoration', location: '210 Justice Sq, Old Town', status: 'Active', clientId: '3' },
+  { id: 'p1', name: 'Downtown Tower Renovation', location: '123 Main St, Metro City', status: 'Active', clientId: '1', startDate: '2024-05-01', endDate: '2024-12-31' },
+  { id: 'p2', name: 'Suburban Office Park', location: '456 Oak Ave, Suburbia', status: 'Active', clientId: '1', startDate: '2024-06-15', endDate: '2025-01-31' },
+  { id: 'p3', name: 'Coastal Bridge Repair', location: '789 Ocean Blvd, Seaside', status: 'On Hold', clientId: '2', startDate: '2024-07-01', endDate: '2024-11-30' },
+  { id: 'p4', name: 'Genesis Labs HQ', location: '101 Innovation Dr, Tech Park', status: 'Completed', clientId: '2', startDate: '2023-01-10', endDate: '2024-04-20' },
+  { id: 'p5', name: 'Historic Courthouse Restoration', location: '210 Justice Sq, Old Town', status: 'Active', clientId: '3', startDate: '2024-08-01', endDate: '2025-05-01' },
+];
+
+export const locations: Location[] = [
+  { id: 'loc-1', name: 'Downtown Tower - 10th Floor', projectId: 'p1' },
+  { id: 'loc-2', name: 'Downtown Tower - Lobby', projectId: 'p1' },
+  { id: 'loc-3', name: 'Suburban Office Park - Building 3', projectId: 'p2' },
+];
+
+export const tasks: Task[] = [
+  { id: 'task-1', name: 'Drywall Sanding', description: 'Sanding interior drywall before painting.', projectId: 'p1', locationId: 'loc-1' },
+  { id: 'task-2', name: 'Insulation Abatement', description: 'Removal of old asbestos insulation.', projectId: 'p2', locationId: 'loc-3' },
+  { id: 'task-3', name: 'Weld-Coating Removal', description: 'Grinding lead-based paint off bridge girders.', projectId: 'p3' },
+];
+
+export const personnel: Personnel[] = [
+  { id: 'per-1', name: 'John Doe', fitTestDueDate: '2025-01-15', medicalClearanceDueDate: '2025-06-01' },
+  { id: 'per-2', name: 'Laura Smith', fitTestDueDate: '2024-11-20', medicalClearanceDueDate: '2025-04-10' },
+  { id: 'per-3', name: 'Ming Chen', fitTestDueDate: '2025-03-01', medicalClearanceDueDate: '2025-08-15' },
+];
+
+export const equipment: Equipment[] = [
+    { id: 'eq-1', name: 'Pump-001', type: 'Pump', status: 'Available', calibrationDueDate: '2025-01-01' },
+    { id: 'eq-2', name: 'Calibrator-A', type: 'Calibrator', status: 'Available', calibrationDueDate: '2024-12-01' },
+    { id: 'eq-3', name: 'Asbestos Cassette', type: 'Media', status: 'Available', calibrationDueDate: 'N/A' },
+];
+
+export const calibrations: Calibration[] = [
+    { id: 'cal-1', equipmentId: 'eq-1', personnelId: 'per-1', preFlow: 2.5, postFlow: 2.4, averageFlow: 2.45, date: '2024-07-20' },
+];
+
+export const samples: Sample[] = [
+    { id: 'samp-1', projectId: 'p1', taskId: 'task-1', personnelId: 'per-1', equipmentId: 'eq-1', startTime: '2024-07-21 08:00', stopTime: '2024-07-21 12:00', flowRate: 2.45, duration: 240, volume: 588 },
+];
+
+export const results: Result[] = [
+    { id: 'res-1', sampleId: 'samp-1', analyte: 'Silica', method: 'NIOSH 7500', units: 'mg/m³', concentration: 0.03, reportingLimit: 0.005, lab: 'AccuLabs', status: 'OK' }
+];
+
+export const exposureLimits: ExposureLimit[] = [
+    { id: 'lim-1', analyte: 'Asbestos', units: 'f/cc', al: 0.1, pel: 0.1, stel: 1.0, el: 1.0 },
+    { id: 'lim-2', analyte: 'Silica', units: 'mg/m³', al: 0.025, pel: 0.05, stel: 0, el: 0 },
+    { id: 'lim-3', analyte: 'Lead', units: 'µg/m³', al: 30, pel: 50, stel: 0, el: 0 },
+];
+
+export const neas: Nea[] = [
+    { id: 'nea-01', project: 'Downtown Tower Renovation', task: 'Insulation Removal', analyte: 'Asbestos', effectiveDate: '2024-06-01', reviewDate: '2024-07-01', status: 'Active' },
+    { id: 'nea-02', project: 'Suburban Office Park', task: 'Concrete Grinding', analyte: 'Silica', effectiveDate: '2024-06-15', reviewDate: '2024-07-15', status: 'Active' },
+    { id: 'nea-03', project: 'Genesis Labs HQ', task: 'Paint Stripping', analyte: 'Lead', effectiveDate: '2024-05-20', reviewDate: '2024-06-20', status: 'Expired' },
+];
+
+export const exceedances: Exceedance[] = [
+  { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limt: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.', evidence: 'path/to/photo.jpg' },
 ];
 
 export const neaReviews: NeaReview[] = [
@@ -39,7 +91,7 @@ export const pendingResults: PendingResult[] = [
 ];
 
 export const activeExceedances: Exceedance[] = [
-  { id: 'e1', analyte: 'Lead', concentration: '65 µg/m³', limit: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B' },
+  { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limt: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.' },
 ];
 
 export const documents: Document[] = [

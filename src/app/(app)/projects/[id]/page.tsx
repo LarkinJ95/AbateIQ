@@ -1,22 +1,36 @@
+
+'use client';
+
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { projects, clients, samples, tasks, personnel } from '@/lib/data';
+import { projects, clients, samples as initialSamples, tasks, personnel } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
+import { useState } from 'react';
+import type { Sample } from '@/lib/types';
+import { AddSampleDialog } from '@/app/(app)/samples/add-sample-dialog';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Eye, Pencil, Trash2, PlusCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const project = projects.find(p => p.id === params.id);
-
+  
   if (!project) {
     notFound();
   }
 
+  const { toast } = useToast();
+  const [samples, setSamples] = useState(initialSamples.filter(s => s.projectId === project.id));
+
   const client = clients.find(c => c.id === project.clientId);
   const projectTasks = tasks.filter(t => t.projectId === project.id);
+  
   const projectSamples = samples
-    .filter(s => s.projectId === project.id)
     .map(sample => {
         const task = tasks.find(t => t.id === sample.taskId);
         const person = personnel.find(p => p.id === sample.personnelId);
@@ -53,6 +67,32 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
       default:
         return 'outline';
     }
+  };
+  
+  const handleSaveSample = (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string }) => {
+      if (newSampleData.id) {
+          // Edit existing sample
+          setSamples(prevSamples => prevSamples.map(s => s.id === newSampleData.id ? { ...s, ...newSampleData, duration: 0, volume: 0 } as Sample : s));
+      } else {
+          // Add new sample
+          const newSample: Sample = {
+              ...newSampleData,
+              projectId: project.id, // Ensure it's for the current project
+              id: `samp-${Math.floor(Math.random() * 1000)}`,
+              duration: 0, // Should be calculated
+              volume: 0, // Should be calculated
+          };
+          setSamples(prevSamples => [newSample, ...prevSamples]);
+      }
+  };
+
+  const handleDeleteSample = (sampleId: string) => {
+      setSamples(prevSamples => prevSamples.filter(s => s.id !== sampleId));
+       toast({
+        title: 'Sample Deleted',
+        description: `Sample ${sampleId} has been deleted.`,
+        variant: 'destructive'
+    });
   };
 
 
@@ -126,8 +166,17 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
         </Card>
         
         <Card>
-            <CardHeader>
-                <CardTitle className="font-headline">Project Samples</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div className="space-y-1.5">
+                    <CardTitle className="font-headline">Project Samples</CardTitle>
+                    <CardDescription>All samples logged for this project.</CardDescription>
+                </div>
+                <AddSampleDialog onSave={handleSaveSample} sample={null}>
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        New Sample
+                    </Button>
+                </AddSampleDialog>
             </CardHeader>
             <CardContent>
                {projectSamples.length > 0 ? (
@@ -140,6 +189,9 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                             <TableHead>Analyte</TableHead>
                             <TableHead>Result</TableHead>
                             <TableHead>Status</TableHead>
+                             <TableHead>
+                                <span className="sr-only">Actions</span>
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -163,12 +215,41 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                                     {sample.status}
                                     </Badge>
                                 </TableCell>
+                                <TableCell>
+                                    <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem asChild>
+                                        <Link href={`/samples/${sample.id}`}>
+                                            <Eye className="mr-2 h-4 w-4" />
+                                            View Details
+                                        </Link>
+                                        </DropdownMenuItem>
+                                        <AddSampleDialog onSave={handleSaveSample} sample={sample}>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                <Pencil className="mr-2 h-4 w-4"/>
+                                                Edit
+                                            </DropdownMenuItem>
+                                        </AddSampleDialog>
+                                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteSample(sample.id)}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                  </Table>
                ) : (
-                <p className="text-sm text-muted-foreground">No samples have been logged for this project yet.</p>
+                <div className="text-center p-8 border-2 border-dashed rounded-lg">
+                    <p className="text-sm text-muted-foreground">No samples have been logged for this project yet.</p>
+                </div>
                )}
             </CardContent>
         </Card>
@@ -177,3 +258,5 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     </div>
   );
 }
+
+    

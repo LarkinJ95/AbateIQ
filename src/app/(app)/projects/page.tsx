@@ -1,3 +1,6 @@
+
+'use client';
+
 import { Header } from '@/components/header';
 import { clients, projects } from '@/lib/data';
 import Image from 'next/image';

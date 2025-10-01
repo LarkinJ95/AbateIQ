@@ -9,34 +9,64 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Pencil } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { Personnel } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
-export function AddPersonnelDialog() {
+interface AddPersonnelDialogProps {
+  person?: Personnel | null;
+  children: React.ReactNode;
+}
+
+export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps) {
   const [fitTestDate, setFitTestDate] = useState<Date>();
   const [medClearanceDate, setMedClearanceDate] = useState<Date>();
+  const [name, setName] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
+
+  const isEditMode = person !== null && person !== undefined;
+
+  useEffect(() => {
+    if (isEditMode && person) {
+      setName(person.name);
+      setFitTestDate(new Date(person.fitTestDueDate));
+      setMedClearanceDate(new Date(person.medicalClearanceDueDate));
+    } else {
+      setName('');
+      setFitTestDate(undefined);
+      setMedClearanceDate(undefined);
+    }
+  }, [person, isEditMode, isOpen]);
+  
+  const handleSave = () => {
+    toast({
+        title: isEditMode ? "Personnel Updated" : "Personnel Added",
+        description: `${name} has been ${isEditMode ? 'updated' : 'saved'}.`,
+      });
+    setIsOpen(false);
+  }
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Personnel
-        </Button>
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Personnel</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Personnel' : 'Add New Personnel'}</DialogTitle>
           <DialogDescription>
-            Enter the details for the new team member. Click save when you're done.
+            {isEditMode ? 'Update the details for this team member.' : 'Enter the details for the new team member. Click save when you\'re done.'}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -44,7 +74,7 @@ export function AddPersonnelDialog() {
             <Label htmlFor="name" className="text-right">
               Name
             </Label>
-            <Input id="name" placeholder="e.g. John Doe" className="col-span-3" />
+            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="fit-test" className="text-right">
@@ -102,7 +132,10 @@ export function AddPersonnelDialog() {
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit">Save Personnel</Button>
+          <DialogClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DialogClose>
+          <Button onClick={handleSave}>Save Personnel</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

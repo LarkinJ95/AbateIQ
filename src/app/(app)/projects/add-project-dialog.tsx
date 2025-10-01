@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,21 +22,55 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { clients } from '@/lib/data';
+import { useState, useEffect } from 'react';
+import type { Project } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
-export function AddProjectDialog() {
+interface AddProjectDialogProps {
+  project?: Project | null;
+  children: React.ReactNode;
+}
+
+export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
+    const [name, setName] = useState('');
+    const [location, setLocation] = useState('');
+    const [client, setClient] = useState('');
+    const [isOpen, setIsOpen] = useState(false);
+    const { toast } = useToast();
+
+    const isEditMode = project !== null && project !== undefined;
+
+    useEffect(() => {
+        if(isEditMode && project) {
+            setName(project.name);
+            setLocation(project.location);
+            setClient(project.clientId);
+        } else {
+            setName('');
+            setLocation('');
+            setClient('');
+        }
+    }, [project, isEditMode, isOpen]);
+
+
+    const handleSave = () => {
+        toast({
+            title: isEditMode ? 'Project Updated' : 'Project Added',
+            description: `${name} has been ${isEditMode ? 'updated' : 'saved'}.`,
+        });
+        setIsOpen(false);
+    }
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New Project
-        </Button>
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Project</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Project' : 'Add New Project'}</DialogTitle>
           <DialogDescription>
-            Enter the details for the new project. Click save when you're done.
+            {isEditMode ? 'Update the details for this project.' : 'Enter the details for the new project. Click save when you\'re done.'}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -45,7 +80,8 @@ export function AddProjectDialog() {
             </Label>
             <Input
               id="name"
-              placeholder="e.g. Downtown Tower Renovation"
+              value={name}
+              onChange={e => setName(e.target.value)}
               className="col-span-3"
             />
           </div>
@@ -55,7 +91,8 @@ export function AddProjectDialog() {
             </Label>
             <Input
               id="location"
-              placeholder="e.g. 123 Main St, Metro City"
+              value={location}
+              onChange={e => setLocation(e.target.value)}
               className="col-span-3"
             />
           </div>
@@ -63,7 +100,7 @@ export function AddProjectDialog() {
             <Label htmlFor="client" className="text-right">
               Client
             </Label>
-            <Select>
+            <Select value={client} onValueChange={setClient}>
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Select a client" />
               </SelectTrigger>
@@ -78,7 +115,10 @@ export function AddProjectDialog() {
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit">Save Project</Button>
+          <DialogClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DialogClose>
+          <Button onClick={handleSave}>Save Project</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

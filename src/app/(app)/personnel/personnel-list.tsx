@@ -17,14 +17,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Trash2, Pencil } from 'lucide-react';
 import { format, isPast, differenceInDays } from 'date-fns';
+import { AddPersonnelDialog } from './add-personnel-dialog';
+import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 interface PersonnelListProps {
   personnel: Personnel[];
 }
 
 export function PersonnelList({ personnel }: PersonnelListProps) {
+  const { toast } = useToast();
+
   const getStatus = (dateString: string) => {
     const date = new Date(dateString);
     if (isPast(date)) {
@@ -35,6 +40,13 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
       return { text: `Due in ${daysUntil} days`, variant: 'secondary' as const };
     }
     return { text: 'Current', variant: 'default' as const };
+  };
+
+  const handleDelete = (personName: string) => {
+    toast({
+        title: 'Personnel Deleted',
+        description: `${personName} has been deleted.`,
+    });
   };
 
   return (
@@ -80,8 +92,19 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                    <DropdownMenuItem>View History</DropdownMenuItem>
+                    <AddPersonnelDialog person={person}>
+                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Pencil className="mr-2 h-4 w-4"/>
+                            Edit
+                        </DropdownMenuItem>
+                    </AddPersonnelDialog>
+                    <DropdownMenuItem asChild>
+                        <Link href={`/personnel/${person.id}`}>View History</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(person.name)}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>

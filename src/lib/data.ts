@@ -1,4 +1,4 @@
-import { Client, Project, NeaReview, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit } from './types';
+import { Client, Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
@@ -61,12 +61,6 @@ export const existingNeas: ExistingNea[] = [
 
 export const exceedances: Exceedance[] = [
   { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limit: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.', evidence: 'path/to/photo.jpg' },
-];
-
-export const neaReviews: NeaReview[] = [
-  { id: 'n1', projectName: 'Downtown Tower', task: 'Drywall Sanding', analyte: 'Silica', dueDate: '3 days' },
-  { id: 'n2', projectName: 'Coastal Bridge', task: 'Weld-Coating Removal', analyte: 'Lead', dueDate: '1 week' },
-  { id: 'n3', projectName: 'Office Park', task: 'Insulation Abatement', analyte: 'Asbestos', dueDate: '2 weeks' },
 ];
 
 export const personnelExposureData: PersonnelExposure[] = [

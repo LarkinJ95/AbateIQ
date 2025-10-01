@@ -99,14 +99,6 @@ export type Exceedance = {
 
 
 // Old types - will be reviewed and updated/removed
-export type NeaReview = {
-  id: string;
-  projectName: string;
-  task: string;
-  analyte: string;
-  dueDate: string;
-};
-
 export type PersonnelExposure = {
   name: string;
   asbestos: number;

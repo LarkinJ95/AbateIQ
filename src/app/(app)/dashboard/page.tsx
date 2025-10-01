@@ -1,7 +1,6 @@
 import { Header } from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { neaReviews, activeExceedances, samples } from '@/lib/data';
-import { NeaReviewList } from '@/components/dashboard/nea-review-list';
+import { activeExceedances, samples } from '@/lib/data';
 import { ActiveExceedances } from '@/components/dashboard/active-exceedances';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
 
@@ -32,13 +31,13 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                NEAs for Review
+                Team Members
               </CardTitle>
-               <span className="text-sm font-bold text-primary">{neaReviews.length}</span>
+               <span className="text-sm font-bold text-primary">4</span>
             </CardHeader>
             <CardContent>
                <div className="text-xs text-muted-foreground">
-                Assessments due for 30-day review.
+                Active personnel on projects.
               </div>
             </CardContent>
           </Card>
@@ -79,7 +78,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           <div className="space-y-4 md:space-y-8">
-            <NeaReviewList reviews={neaReviews} />
             <ActiveExceedances exceedances={activeExceedances} />
           </div>
         </div>

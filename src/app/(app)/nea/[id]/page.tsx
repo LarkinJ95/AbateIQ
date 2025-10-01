@@ -13,12 +13,14 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRef, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { LinkSamplesDialog } from '@/app/(app)/nea/link-samples-dialog';
 
 export default function NeaDetailsPage({ params }: { params: { id: string } }) {
   const nea = existingNeas.find(e => e.id === params.id);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [documentUploaded, setDocumentUploaded] = useState(false);
+  const [linkedSampleIds, setLinkedSampleIds] = useState(nea?.supportingSampleIds || []);
 
 
   if (!nea) {
@@ -34,7 +36,7 @@ export default function NeaDetailsPage({ params }: { params: { id: string } }) {
     return status === "Active" ? "default" : "outline";
   };
 
-  const supportingSamples = nea.supportingSampleIds?.map(id => {
+  const supportingSamples = linkedSampleIds.map(id => {
       const sample = allSamples.find(s => s.id === id);
       if (!sample) return null;
       const personnel = allPersonnel.find(p => p.id === sample.personnelId);
@@ -59,6 +61,10 @@ export default function NeaDetailsPage({ params }: { params: { id: string } }) {
       });
     }
   };
+
+  const handleSamplesLinked = (sampleIds: string[]) => {
+    setLinkedSampleIds(sampleIds);
+  }
 
 
   return (
@@ -132,33 +138,40 @@ export default function NeaDetailsPage({ params }: { params: { id: string } }) {
             </CardContent>
         </Card>
 
-        {supportingSamples && supportingSamples.length > 0 && (
-             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Supporting Samples</CardTitle>
-                </CardHeader>
-                <CardContent>
-                   <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Sample ID</TableHead>
-                            <TableHead>Personnel</TableHead>
-                            <TableHead>Result</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {supportingSamples.map((sample) => (
-                            <TableRow key={sample.id}>
-                                <TableCell>{sample.id}</TableCell>
-                                <TableCell>{sample.personnelName}</TableCell>
-                                <TableCell>{sample.result?.concentration ?? 'N/A'} {sample.result?.units}</TableCell>
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="font-headline">Supporting Samples</CardTitle>
+                <LinkSamplesDialog 
+                    allSamples={allSamples} 
+                    linkedSampleIds={linkedSampleIds}
+                    onSamplesLinked={handleSamplesLinked}
+                />
+            </CardHeader>
+            <CardContent>
+                {supportingSamples && supportingSamples.length > 0 ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Sample ID</TableHead>
+                                <TableHead>Personnel</TableHead>
+                                <TableHead>Result</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                   </Table>
-                </CardContent>
-            </Card>
-        )}
+                        </TableHeader>
+                        <TableBody>
+                            {supportingSamples.map((sample) => (
+                                <TableRow key={sample.id}>
+                                    <TableCell>{sample.id}</TableCell>
+                                    <TableCell>{sample.personnelName}</TableCell>
+                                    <TableCell>{sample.result?.concentration ?? 'N/A'} {sample.result?.units}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <p className="text-sm text-muted-foreground">No samples have been linked to this NEA.</p>
+                )}
+            </CardContent>
+        </Card>
       </main>
     </div>
   );

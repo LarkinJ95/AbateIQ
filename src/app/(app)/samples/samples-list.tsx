@@ -16,8 +16,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Trash2 } from 'lucide-react';
 import { Sample } from '@/lib/types';
+import Link from 'next/link';
 
 interface SamplesListProps {
   samples: (Sample & {
@@ -71,7 +72,7 @@ export function SamplesList({ samples }: SamplesListProps) {
               <TableCell>{sample.personnelName}</TableCell>
               <TableCell>{sample.analyte || 'N/A'}</TableCell>
               <TableCell>
-                {sample.concentration !== undefined
+                {sample.concentration !== undefined && sample.concentration > 0
                   ? `${sample.concentration} ${sample.units}`
                   : 'Pending'}
               </TableCell>
@@ -88,9 +89,15 @@ export function SamplesList({ samples }: SamplesListProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>View Details</DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/samples/${sample.id}`}>View Details</Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem>Edit</DropdownMenuItem>
                     <DropdownMenuItem>Link to NEA</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>

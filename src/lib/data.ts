@@ -1,4 +1,4 @@
-import { Client, Project, NeaReview, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, Equipment, Calibration, ExposureLimit } from './types';
+import { Client, Project, NeaReview, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
@@ -37,24 +37,14 @@ export const personnel: Personnel[] = [
 
 ];
 
-export const equipment: Equipment[] = [
-    { id: 'eq-1', name: 'Pump-001', type: 'Pump', status: 'Available', calibrationDueDate: '2025-01-01' },
-    { id: 'eq-2', name: 'Calibrator-A', type: 'Calibrator', status: 'Available', calibrationDueDate: '2024-12-01' },
-    { id: 'eq-3', name: 'Asbestos Cassette', type: 'Media', status: 'Available', calibrationDueDate: 'N/A' },
-];
-
-export const calibrations: Calibration[] = [
-    { id: 'cal-1', equipmentId: 'eq-1', personnelId: 'per-1', preFlow: 2.5, postFlow: 2.4, averageFlow: 2.45, date: '2024-07-20' },
-];
-
 export const results: Result[] = [
     { id: 'res-1', sampleId: 'samp-1', analyte: 'Silica', method: 'NIOSH 7500', units: 'mg/m³', concentration: 0.03, reportingLimit: 0.005, lab: 'AccuLabs', status: 'OK' }
 ];
 
 export const samples: Sample[] = [
-    { id: 'samp-1', projectId: 'p1', taskId: 'task-1', personnelId: 'per-1', equipmentId: 'eq-1', startTime: '2024-07-21 08:00', stopTime: '2024-07-21 12:00', flowRate: 2.45, duration: 240, volume: 588, result: results.find(r => r.sampleId === 'samp-1')},
-    { id: 'samp-2', projectId: 'p2', taskId: 'task-2', personnelId: 'per-2', equipmentId: 'eq-1', startTime: '2024-07-22 09:00', stopTime: '2024-07-22 13:00', flowRate: 2.5, duration: 240, volume: 600, result: { id: 'res-2', sampleId: 'samp-2', status: 'Pending', analyte: 'Asbestos', method: 'NIOSH 7400', units: 'f/cc', concentration: 0, reportingLimit: 0.01, lab: 'FutureLabs' }},
-    { id: 'samp-3', projectId: 'p1', taskId: 'task-1', personnelId: 'per-3', equipmentId: 'eq-1', startTime: '2024-07-23 08:30', stopTime: '2024-07-23 12:30', flowRate: 2.4, duration: 240, volume: 576, result: { id: 'res-3', sampleId: 'samp-3', status: 'Pending', analyte: 'Silica', method: 'NIOSH 7500', units: 'mg/m³', concentration: 0, reportingLimit: 0.005, lab: 'AccuLabs' }},
+    { id: 'samp-1', projectId: 'p1', taskId: 'task-1', personnelId: 'per-1', startTime: '2024-07-21 08:00', stopTime: '2024-07-21 12:00', flowRate: 2.45, duration: 240, volume: 588, result: results.find(r => r.sampleId === 'samp-1')},
+    { id: 'samp-2', projectId: 'p2', taskId: 'task-2', personnelId: 'per-2', startTime: '2024-07-22 09:00', stopTime: '2024-07-22 13:00', flowRate: 2.5, duration: 240, volume: 600, result: { id: 'res-2', sampleId: 'samp-2', status: 'Pending', analyte: 'Asbestos', method: 'NIOSH 7400', units: 'f/cc', concentration: 0, reportingLimit: 0.01, lab: 'FutureLabs' }},
+    { id: 'samp-3', projectId: 'p1', taskId: 'task-1', personnelId: 'per-3', startTime: '2024-07-23 08:30', stopTime: '2024-07-23 12:30', flowRate: 2.4, duration: 240, volume: 576, result: { id: 'res-3', sampleId: 'samp-3', status: 'Pending', analyte: 'Silica', method: 'NIOSH 7500', units: 'mg/m³', concentration: 0, reportingLimit: 0.005, lab: 'AccuLabs' }},
 ];
 
 export const exposureLimits: ExposureLimit[] = [

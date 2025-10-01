@@ -14,13 +14,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PlusCircle } from 'lucide-react';
 import { Combobox } from '@/components/ui/combobox';
-import { projects, tasks, personnel, equipment } from '@/lib/data';
+import { projects, tasks, personnel } from '@/lib/data';
 
 export function AddSampleDialog() {
   const projectOptions = projects.map(p => ({ value: p.id, label: p.name }));
   const taskOptions = tasks.map(t => ({ value: t.id, label: t.name }));
   const personnelOptions = personnel.map(p => ({ value: p.id, label: p.name }));
-  const equipmentOptions = equipment.filter(e => e.type === 'Pump').map(p => ({ value: p.id, label: p.name }));
 
   return (
     <Dialog>
@@ -63,15 +62,6 @@ export function AddSampleDialog() {
               placeholder="Select personnel"
               searchPlaceholder="Search personnel..."
               emptyPlaceholder="No personnel found."
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="equipment">Equipment (Pump)</Label>
-            <Combobox 
-              options={equipmentOptions}
-              placeholder="Select a pump"
-              searchPlaceholder="Search pumps..."
-              emptyPlaceholder="No pump found."
             />
           </div>
            <div className="grid grid-cols-2 gap-4">

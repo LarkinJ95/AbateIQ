@@ -38,30 +38,11 @@ export type Personnel = {
   medicalClearanceDueDate: string;
 };
 
-export type Equipment = {
-    id: string;
-    name: string;
-    type: "Pump" | "Calibrator" | "Media";
-    status: "Available" | "In Use" | "Out of Service";
-    calibrationDueDate: string;
-}
-
-export type Calibration = {
-    id: string;
-    equipmentId: string;
-    personnelId: string;
-    preFlow: number;
-    postFlow: number;
-    averageFlow: number;
-    date: string;
-}
-
 export type Sample = {
     id: string;
     projectId: string;
     taskId: string;
     personnelId: string;
-    equipmentId: string;
     startTime: string;
     stopTime: string;
     flowRate: number; 

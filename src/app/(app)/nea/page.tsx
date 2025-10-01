@@ -1,14 +1,23 @@
+
+'use client';
+
 import { Header } from '@/components/header';
 import { NeaGenerator } from '@/components/nea-generator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { existingNeas } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
 
 export default function NeaPage() {
+    const router = useRouter();
     const getStatusVariant = (status: "Active" | "Expired") => {
         return status === "Active" ? "default" : "outline";
     };
+
+    const handleRowClick = (neaId: string) => {
+        router.push(`/nea/${neaId}`);
+    }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -35,7 +44,7 @@ export default function NeaPage() {
                     </TableHeader>
                     <TableBody>
                         {existingNeas.map((nea) => (
-                            <TableRow key={nea.id}>
+                            <TableRow key={nea.id} onClick={() => handleRowClick(nea.id)} className="cursor-pointer">
                                 <TableCell className="font-medium">{nea.project}</TableCell>
                                 <TableCell>{nea.task}</TableCell>
                                 <TableCell>{nea.analyte}</TableCell>

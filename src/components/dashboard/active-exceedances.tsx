@@ -2,6 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Exceedance } from '@/lib/types';
 import { AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 
 interface ActiveExceedancesProps {
   exceedances: Exceedance[];
@@ -26,7 +27,9 @@ export function ActiveExceedances({ exceedances }: ActiveExceedancesProps) {
                     {exceedance.personnel} at {exceedance.location}
                 </p>
             </div>
-            <Button variant="destructive" size="sm">Details</Button>
+            <Button variant="destructive" size="sm" asChild>
+              <Link href={`/exceedances/${exceedance.id}`}>Details</Link>
+            </Button>
       </AlertDescription>
       ))}
     </Alert>

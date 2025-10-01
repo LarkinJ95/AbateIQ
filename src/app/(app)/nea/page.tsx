@@ -15,6 +15,19 @@ export default function NeaPage() {
     const router = useRouter();
     const [existingNeas, setExistingNeas] = useState<ExistingNea[]>(initialNeas);
 
+    const getStatus = (effectiveDate: string) => {
+        const effDate = new Date(effectiveDate);
+        const reviewDate = new Date(effDate.setFullYear(effDate.getFullYear() + 1));
+        const isExpired = new Date() > reviewDate;
+        return isExpired ? 'Expired' : 'Active';
+    };
+
+    const getReviewDate = (effectiveDate: string) => {
+        const effDate = new Date(effectiveDate);
+        const reviewDate = new Date(effDate.setFullYear(effDate.getFullYear() + 1));
+        return reviewDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
     const getStatusVariant = (status: "Active" | "Expired") => {
         return status === "Active" ? "default" : "outline";
     };
@@ -47,23 +60,26 @@ export default function NeaPage() {
                             <TableHead>Task</TableHead>
                             <TableHead>Analyte</TableHead>
                             <TableHead>Effective Date</TableHead>
-                            <TableHead>Next Review</TableHead>
+                            <TableHead>Expiration Date</TableHead>
                             <TableHead>Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {existingNeas.map((nea) => (
-                            <TableRow key={nea.id} onClick={() => handleRowClick(nea.id)} className="cursor-pointer">
-                                <TableCell className="font-medium">{nea.project}</TableCell>
-                                <TableCell>{nea.task}</TableCell>
-                                <TableCell>{nea.analyte}</TableCell>
-                                <TableCell>{nea.effectiveDate}</TableCell>
-                                <TableCell>{nea.reviewDate}</TableCell>
-                                <TableCell>
-                                    <Badge variant={getStatusVariant(nea.status)}>{nea.status}</Badge>
-                                </TableCell>
-                            </TableRow>
-                        ))}
+                        {existingNeas.map((nea) => {
+                            const status = getStatus(nea.effectiveDate);
+                            return (
+                                <TableRow key={nea.id} onClick={() => handleRowClick(nea.id)} className="cursor-pointer">
+                                    <TableCell className="font-medium">{nea.project}</TableCell>
+                                    <TableCell>{nea.task}</TableCell>
+                                    <TableCell>{nea.analyte}</TableCell>
+                                    <TableCell>{new Date(nea.effectiveDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
+                                    <TableCell>{getReviewDate(nea.effectiveDate)}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={getStatusVariant(status)}>{status}</Badge>
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
                     </TableBody>
                 </Table>
             </CardContent>

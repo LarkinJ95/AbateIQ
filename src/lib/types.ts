@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from "lucide-react";
 
 export type Client = {
@@ -80,8 +81,6 @@ export type ExistingNea = {
   task: string;
   analyte: string;
   effectiveDate: string;
-  reviewDate: string;
-  status: "Active" | "Expired";
   supportingSampleIds?: string[];
 }
 

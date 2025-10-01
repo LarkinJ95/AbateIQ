@@ -3,15 +3,16 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { existingNeas } from '@/lib/data';
+import { existingNeas, samples as allSamples, personnel as allPersonnel } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, FileUp, CheckCircle } from 'lucide-react';
+import { CheckCircle, FileUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRef, useState } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function NeaDetailsPage({ params }: { params: { id: string } }) {
   const nea = existingNeas.find(e => e.id === params.id);
@@ -24,9 +25,24 @@ export default function NeaDetailsPage({ params }: { params: { id: string } }) {
     notFound();
   }
 
+  const effectiveDate = new Date(nea.effectiveDate);
+  const reviewDate = new Date(effectiveDate.setFullYear(effectiveDate.getFullYear() + 1));
+  const isExpired = new Date() > reviewDate;
+  const status = isExpired ? 'Expired' : 'Active';
+
   const getStatusVariant = (status: "Active" | "Expired") => {
     return status === "Active" ? "default" : "outline";
   };
+
+  const supportingSamples = nea.supportingSampleIds?.map(id => {
+      const sample = allSamples.find(s => s.id === id);
+      if (!sample) return null;
+      const personnel = allPersonnel.find(p => p.id === sample.personnelId);
+      return {
+          ...sample,
+          personnelName: personnel?.name || 'Unknown',
+      };
+  }).filter(Boolean);
   
   const handleUploadClick = () => {
     if (fileInputRef.current?.files && fileInputRef.current.files.length > 0) {
@@ -72,15 +88,15 @@ export default function NeaDetailsPage({ params }: { params: { id: string } }) {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Status</p>
-                 <Badge variant={getStatusVariant(nea.status)}>{nea.status}</Badge>
+                 <Badge variant={getStatusVariant(status)}>{status}</Badge>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Effective Date</p>
-                <p className="text-lg font-semibold">{nea.effectiveDate}</p>
+                <p className="text-lg font-semibold">{new Date(nea.effectiveDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
                <div>
-                <p className="text-sm font-medium text-muted-foreground">Next Review Date</p>
-                <p className="text-lg font-semibold">{nea.reviewDate}</p>
+                <p className="text-sm font-medium text-muted-foreground">Expiration Date</p>
+                <p className="text-lg font-semibold">{reviewDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
               </div>
             </div>
           </CardContent>
@@ -116,14 +132,30 @@ export default function NeaDetailsPage({ params }: { params: { id: string } }) {
             </CardContent>
         </Card>
 
-        {nea.supportingSampleIds && nea.supportingSampleIds.length > 0 && (
+        {supportingSamples && supportingSamples.length > 0 && (
              <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Supporting Samples</CardTitle>
                 </CardHeader>
                 <CardContent>
-                   <p>This NEA is supported by {nea.supportingSampleIds.length} sample(s).</p>
-                   {/* We can list sample details here later */}
+                   <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Sample ID</TableHead>
+                            <TableHead>Personnel</TableHead>
+                            <TableHead>Result</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {supportingSamples.map((sample) => (
+                            <TableRow key={sample.id}>
+                                <TableCell>{sample.id}</TableCell>
+                                <TableCell>{sample.personnelName}</TableCell>
+                                <TableCell>{sample.result?.concentration ?? 'N/A'} {sample.result?.units}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                   </Table>
                 </CardContent>
             </Card>
         )}

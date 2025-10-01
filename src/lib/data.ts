@@ -1,3 +1,4 @@
+
 import { Client, Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
@@ -54,9 +55,9 @@ export const exposureLimits: ExposureLimit[] = [
 ];
 
 export const existingNeas: ExistingNea[] = [
-    { id: 'nea-01', project: 'Downtown Tower Renovation', task: 'Insulation Removal', analyte: 'Asbestos', effectiveDate: '2024-06-01', reviewDate: '2024-07-01', status: 'Active' },
-    { id: 'nea-02', project: 'Suburban Office Park', task: 'Concrete Grinding', analyte: 'Silica', effectiveDate: '2024-06-15', reviewDate: '2024-07-15', status: 'Active' },
-    { id: 'nea-03', project: 'Genesis Labs HQ', task: 'Paint Stripping', analyte: 'Lead', effectiveDate: '2024-05-20', reviewDate: '2024-06-20', status: 'Expired' },
+    { id: 'nea-01', project: 'Downtown Tower Renovation', task: 'Insulation Removal', analyte: 'Asbestos', effectiveDate: '2024-06-01', supportingSampleIds: ['samp-2'] },
+    { id: 'nea-02', project: 'Suburban Office Park', task: 'Concrete Grinding', analyte: 'Silica', effectiveDate: '2024-06-15', supportingSampleIds: ['samp-1', 'samp-3'] },
+    { id: 'nea-03', project: 'Genesis Labs HQ', task: 'Paint Stripping', analyte: 'Lead', effectiveDate: '2023-05-20' },
 ];
 
 export const exceedances: Exceedance[] = [

@@ -16,8 +16,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, Save, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import type { ExistingNea } from '@/lib/types';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -29,7 +30,7 @@ function SubmitButton() {
   );
 }
 
-export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: any) => void }) {
+export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: ExistingNea) => void }) {
   const initialState: NeaFormState = {
     message: '',
     assessment: '',
@@ -51,14 +52,12 @@ export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: any) => void
 
   const handleSaveNea = () => {
     if (state.inputs) {
-      const newNea = {
+      const newNea: ExistingNea = {
           id: `nea-${Math.floor(Math.random() * 1000)}`,
           project: state.inputs.projectDescription.substring(0,30) + '...', // Simple truncate
           task: state.inputs.taskDescription.substring(0,30) + '...',
           analyte: state.inputs.analyte,
-          effectiveDate: new Date().toLocaleDateString('en-CA'),
-          reviewDate: new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString('en-CA'),
-          status: 'Active' as 'Active' | 'Expired',
+          effectiveDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD
       };
       onNeaSaved(newNea);
       toast({

@@ -32,6 +32,7 @@ interface AddProjectDialogProps {
 
 export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
     const [name, setName] = useState('');
+    const [jobNumber, setJobNumber] = useState('');
     const [location, setLocation] = useState('');
     const [client, setClient] = useState('');
     const [isOpen, setIsOpen] = useState(false);
@@ -42,10 +43,12 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
     useEffect(() => {
         if(isEditMode && project) {
             setName(project.name);
+            setJobNumber(project.jobNumber || '');
             setLocation(project.location);
             setClient(project.clientId);
         } else {
             setName('');
+            setJobNumber('');
             setLocation('');
             setClient('');
         }
@@ -81,6 +84,17 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
               id="name"
               value={name}
               onChange={e => setName(e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="jobNumber" className="text-right">
+              Job Number
+            </Label>
+            <Input
+              id="jobNumber"
+              value={jobNumber}
+              onChange={e => setJobNumber(e.target.value)}
               className="col-span-3"
             />
           </div>

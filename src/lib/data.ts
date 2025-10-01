@@ -1,4 +1,4 @@
-import { Client, Project, NeaReview, PersonnelExposure, PendingResult, Exceedance, Document, ExistingNea, Nea, Sample, Result, Location, Task, Personnel, Equipment, Calibration, ExposureLimit } from './types';
+import { Client, Project, NeaReview, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, Equipment, Calibration, ExposureLimit } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
@@ -47,12 +47,14 @@ export const calibrations: Calibration[] = [
     { id: 'cal-1', equipmentId: 'eq-1', personnelId: 'per-1', preFlow: 2.5, postFlow: 2.4, averageFlow: 2.45, date: '2024-07-20' },
 ];
 
-export const samples: Sample[] = [
-    { id: 'samp-1', projectId: 'p1', taskId: 'task-1', personnelId: 'per-1', equipmentId: 'eq-1', startTime: '2024-07-21 08:00', stopTime: '2024-07-21 12:00', flowRate: 2.45, duration: 240, volume: 588 },
-];
-
 export const results: Result[] = [
     { id: 'res-1', sampleId: 'samp-1', analyte: 'Silica', method: 'NIOSH 7500', units: 'mg/m³', concentration: 0.03, reportingLimit: 0.005, lab: 'AccuLabs', status: 'OK' }
+];
+
+export const samples: Sample[] = [
+    { id: 'samp-1', projectId: 'p1', taskId: 'task-1', personnelId: 'per-1', equipmentId: 'eq-1', startTime: '2024-07-21 08:00', stopTime: '2024-07-21 12:00', flowRate: 2.45, duration: 240, volume: 588, result: results.find(r => r.sampleId === 'samp-1')},
+    { id: 'samp-2', projectId: 'p2', taskId: 'task-2', personnelId: 'per-2', equipmentId: 'eq-1', startTime: '2024-07-22 09:00', stopTime: '2024-07-22 13:00', flowRate: 2.5, duration: 240, volume: 600, result: { id: 'res-2', sampleId: 'samp-2', status: 'Pending', analyte: 'Asbestos', method: 'NIOSH 7400', units: 'f/cc', concentration: 0, reportingLimit: 0.01, lab: 'FutureLabs' }},
+    { id: 'samp-3', projectId: 'p1', taskId: 'task-1', personnelId: 'per-3', equipmentId: 'eq-1', startTime: '2024-07-23 08:30', stopTime: '2024-07-23 12:30', flowRate: 2.4, duration: 240, volume: 576, result: { id: 'res-3', sampleId: 'samp-3', status: 'Pending', analyte: 'Silica', method: 'NIOSH 7500', units: 'mg/m³', concentration: 0, reportingLimit: 0.005, lab: 'AccuLabs' }},
 ];
 
 export const exposureLimits: ExposureLimit[] = [
@@ -61,7 +63,7 @@ export const exposureLimits: ExposureLimit[] = [
     { id: 'lim-3', analyte: 'Lead', units: 'µg/m³', al: 30, pel: 50, stel: 0, el: 0 },
 ];
 
-export const neas: Nea[] = [
+export const existingNeas: ExistingNea[] = [
     { id: 'nea-01', project: 'Downtown Tower Renovation', task: 'Insulation Removal', analyte: 'Asbestos', effectiveDate: '2024-06-01', reviewDate: '2024-07-01', status: 'Active' },
     { id: 'nea-02', project: 'Suburban Office Park', task: 'Concrete Grinding', analyte: 'Silica', effectiveDate: '2024-06-15', reviewDate: '2024-07-15', status: 'Active' },
     { id: 'nea-03', project: 'Genesis Labs HQ', task: 'Paint Stripping', analyte: 'Lead', effectiveDate: '2024-05-20', reviewDate: '2024-06-20', status: 'Expired' },
@@ -85,13 +87,6 @@ export const personnelExposureData: PersonnelExposure[] = [
     { name: 'S. Garcia', asbestos: 70, silica: 55, 'heavy metals': 60 },
 ];
 
-export const pendingResults: PendingResult[] = [
-  { id: 's1', sampleId: 'DT-S-001', project: 'Downtown Tower', date: '2024-07-18', status: 'Pending' },
-  { id: 's2', sampleId: 'DT-S-002', project: 'Downtown Tower', date: '2024-07-18', status: 'Pending' },
-  { id: 's3', sampleId: 'OP-S-005', project: 'Office Park', date: '2024-07-19', status: 'Pending' },
-  { id: 's4', sampleId: 'HC-S-010', project: 'Historic Courthouse', date: '2024-07-20', status: 'Pending' },
-];
-
 export const activeExceedances: Exceedance[] = [
   { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limit: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.' },
 ];
@@ -101,10 +96,4 @@ export const documents: Document[] = [
   { id: 'd2', name: 'Site Photo - Area C', type: 'Photo', uploadDate: '2024-07-14', thumbnailUrl: findImage('doc-thumb-2')?.imageUrl ?? '', thumbnailHint: findImage('doc-thumb-2')?.imageHint ?? '' },
   { id: 'd3', name: 'Chain of Custody - Batch 4', type: 'Chain of Custody', uploadDate: '2024-07-12', thumbnailUrl: findImage('doc-thumb-3')?.imageUrl ?? '', thumbnailHint: findImage('doc-thumb-3')?.imageHint ?? '' },
   { id: 'd4', name: 'Lab Report - OP-S-004', type: 'Lab Report', uploadDate: '2024-07-11', thumbnailUrl: findImage('doc-thumb-4')?.imageUrl ?? '', thumbnailHint: findImage('doc-thumb-4')?.imageHint ?? '' },
-];
-
-export const existingNeas: ExistingNea[] = [
-    { id: 'nea-01', project: 'Downtown Tower Renovation', task: 'Insulation Removal', analyte: 'Asbestos', effectiveDate: '2024-06-01', reviewDate: '2024-07-01', status: 'Active' },
-    { id: 'nea-02', project: 'Suburban Office Park', task: 'Concrete Grinding', analyte: 'Silica', effectiveDate: '2024-06-15', reviewDate: '2024-07-15', status: 'Active' },
-    { id: 'nea-03', project: 'Genesis Labs HQ', task: 'Paint Stripping', analyte: 'Lead', effectiveDate: '2024-05-20', reviewDate: '2024-06-20', status: 'Expired' },
 ];

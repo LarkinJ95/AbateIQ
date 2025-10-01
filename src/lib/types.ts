@@ -66,7 +66,8 @@ export type Sample = {
     stopTime: string;
     flowRate: number; 
     duration: number; 
-    volume: number; 
+    volume: number;
+    result?: Result;
 };
 
 export type Result = {
@@ -91,7 +92,7 @@ export type ExposureLimit = {
     el: number; 
 }
 
-export type Nea = {
+export type ExistingNea = {
   id: string;
   project: string;
   task: string;
@@ -131,14 +132,6 @@ export type PersonnelExposure = {
   "heavy metals": number;
 };
 
-export type PendingResult = {
-  id:string;
-  sampleId: string;
-  project: string;
-  date: string;
-  status: "Pending" | "Received";
-};
-
 export type Document = {
   id: string;
   name: string;
@@ -154,13 +147,3 @@ export type NavItem = {
   icon: LucideIcon;
   active?: boolean;
 };
-
-export type ExistingNea = {
-  id: string;
-  project: string;
-  task: string;
-  analyte: string;
-  effectiveDate: string;
-  reviewDate: string;
-  status: "Active" | "Expired";
-}

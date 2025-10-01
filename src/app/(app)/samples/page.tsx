@@ -1,5 +1,5 @@
 import { Header } from '@/components/header';
-import { samples, projects, tasks, personnel, results } from '@/lib/data';
+import { samples, projects, tasks, personnel } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { SamplesList } from '@/app/(app)/samples/samples-list';
@@ -10,7 +10,7 @@ export default function SamplesPage() {
         const project = projects.find(p => p.id === sample.projectId);
         const task = tasks.find(t => t.id === sample.taskId);
         const person = personnel.find(p => p.id === sample.personnelId);
-        const result = results.find(r => r.sampleId === sample.id);
+        const result = sample.result;
 
         return {
             ...sample,

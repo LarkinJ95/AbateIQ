@@ -1,12 +1,16 @@
 import { Header } from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { neaReviews, pendingResults, activeExceedances } from '@/lib/data';
+import { neaReviews, activeExceedances, samples } from '@/lib/data';
 import { NeaReviewList } from '@/components/dashboard/nea-review-list';
-import { PendingResults } from '@/components/dashboard/pending-results';
 import { ActiveExceedances } from '@/components/dashboard/active-exceedances';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
 
 export default function DashboardPage() {
+  const pendingSampleCount = samples.filter(s => {
+      const result = s.result;
+      return !result || result.status === 'Pending';
+  }).length;
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <Header title="Dashboard" />
@@ -15,9 +19,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Pending Results
+                Pending Samples
               </CardTitle>
-              <span className="text-sm font-bold text-primary">{pendingResults.length}</span>
+              <span className="text-sm font-bold text-primary">{pendingSampleCount}</span>
             </CardHeader>
             <CardContent>
               <div className="text-xs text-muted-foreground">
@@ -76,7 +80,6 @@ export default function DashboardPage() {
           </Card>
           <div className="space-y-4 md:space-y-8">
             <NeaReviewList reviews={neaReviews} />
-            <PendingResults results={pendingResults} />
             <ActiveExceedances exceedances={activeExceedances} />
           </div>
         </div>

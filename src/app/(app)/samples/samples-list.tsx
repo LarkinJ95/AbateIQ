@@ -20,10 +20,10 @@ import { MoreHorizontal, Trash2, Pencil, Eye, Link as LinkIcon } from 'lucide-re
 import { Sample } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { AddSampleDialog } from './add-sample-dialog';
 
 
-interface SamplesListProps {
-  samples: (Sample & {
+type SampleWithDetails = Sample & {
       projectName?: string;
       taskName?: string;
       personnelName?: string;
@@ -31,10 +31,15 @@ interface SamplesListProps {
       analyte?: string;
       concentration?: number;
       units?: string;
-  })[];
+  };
+
+interface SamplesListProps {
+  samples: SampleWithDetails[];
+  onSave: (sampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string }) => void;
+  onDelete: (sampleId: string) => void;
 }
 
-export function SamplesList({ samples }: SamplesListProps) {
+export function SamplesList({ samples, onSave, onDelete }: SamplesListProps) {
   const { toast } = useToast();
 
   const getStatusVariant = (status: string) => {
@@ -51,10 +56,11 @@ export function SamplesList({ samples }: SamplesListProps) {
     }
   };
   
-  const handleDelete = (sampleId: string) => {
+  const handleDelete = (sample: SampleWithDetails) => {
+    onDelete(sample.id);
     toast({
         title: 'Sample Deleted',
-        description: `Sample ${sampleId} has been deleted.`,
+        description: `Sample ${sample.id} has been deleted.`,
         variant: 'destructive'
     });
   };
@@ -109,15 +115,17 @@ export function SamplesList({ samples }: SamplesListProps) {
                         View Details
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
+                     <AddSampleDialog onSave={onSave} sample={sample}>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Pencil className="mr-2 h-4 w-4"/>
+                            Edit
+                        </DropdownMenuItem>
+                    </AddSampleDialog>
                     <DropdownMenuItem>
                       <LinkIcon className="mr-2 h-4 w-4" />
                       Link to NEA
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(sample.id)}>
+                    <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(sample)}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete
                     </DropdownMenuItem>

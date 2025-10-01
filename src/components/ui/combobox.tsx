@@ -27,14 +27,15 @@ export type ComboboxOption = {
 interface ComboboxProps {
     options: ComboboxOption[];
     setOptions: React.Dispatch<React.SetStateAction<ComboboxOption[]>>;
+    value: string;
+    onValueChange: (value: string) => void;
     placeholder: string;
     searchPlaceholder: string;
     emptyPlaceholder: string;
 }
 
-export function Combobox({ options, setOptions, placeholder, searchPlaceholder, emptyPlaceholder }: ComboboxProps) {
+export function Combobox({ options, setOptions, value, onValueChange, placeholder, searchPlaceholder, emptyPlaceholder }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState("")
   const [inputValue, setInputValue] = React.useState('');
 
   const handleCreateNew = () => {
@@ -44,7 +45,7 @@ export function Combobox({ options, setOptions, placeholder, searchPlaceholder, 
             label: inputValue
         };
         setOptions(prev => [...prev, newOption]);
-        setValue(newOption.value);
+        onValueChange(newOption.value);
         setOpen(false);
     }
   }
@@ -91,7 +92,7 @@ export function Combobox({ options, setOptions, placeholder, searchPlaceholder, 
                   onSelect={(currentLabel) => {
                     const selectedOption = options.find(o => o.label.toLowerCase() === currentLabel.toLowerCase())
                     if (selectedOption) {
-                      setValue(selectedOption.value === value ? "" : selectedOption.value)
+                      onValueChange(selectedOption.value === value ? "" : selectedOption.value)
                     }
                     setOpen(false)
                   }}

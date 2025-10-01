@@ -8,6 +8,7 @@ import {
 import { NeaReview } from '@/lib/types';
 import { FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface NeaReviewListProps {
   reviews: NeaReview[];
@@ -34,8 +35,8 @@ export function NeaReviewList({ reviews }: NeaReviewListProps) {
                 <p className="text-sm text-muted-foreground">{review.analyte}</p>
               </div>
               <div className="ml-auto font-medium text-sm">Due in {review.dueDate}</div>
-              <Button variant="outline" size="sm" className="ml-4">
-                Review
+              <Button asChild variant="outline" size="sm" className="ml-4">
+                <Link href="/nea">Review</Link>
               </Button>
             </div>
           ))}

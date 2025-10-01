@@ -3,7 +3,7 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { projects, clients, samples as initialSamples, tasks, personnel } from '@/lib/data';
+import { projects, samples as initialSamples, tasks, personnel } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -27,7 +27,6 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   const { toast } = useToast();
   const [samples, setSamples] = useState(initialSamples.filter(s => s.projectId === project.id));
 
-  const client = clients.find(c => c.id === project.clientId);
   const projectTasks = tasks.filter(t => t.projectId === project.id);
   
   const projectSamples = samples
@@ -116,10 +115,6 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                <div>
                 <p className="text-sm font-medium text-muted-foreground">Job Number</p>
                 <p className="text-lg font-semibold">{project.jobNumber}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Client</p>
-                <p className="text-lg font-semibold">{client?.name}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Status</p>

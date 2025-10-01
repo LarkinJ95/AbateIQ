@@ -2,14 +2,7 @@
 'use client';
 
 import { Header } from '@/components/header';
-import { clients, projects } from '@/lib/data';
-import Image from 'next/image';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { projects as initialProjects } from '@/lib/data';
 import {
   Table,
   TableBody,
@@ -27,13 +20,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { AddProjectDialog } from './add-project-dialog';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import type { Project } from '@/lib/types';
 
 export default function ProjectsPage() {
   const { toast } = useToast();
+  const [projects, setProjects] = useState<Project[]>(initialProjects.sort((a, b) => (a.jobNumber || '').localeCompare(b.jobNumber || '')));
+
+
   const getStatusVariant = (status: 'Active' | 'Completed' | 'On Hold') => {
     switch (status) {
       case 'Active':
@@ -57,7 +55,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <Header title="Clients & Projects" />
+      <Header title="Projects" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-headline font-bold tracking-tight">
@@ -71,90 +69,71 @@ export default function ProjectsPage() {
           </AddProjectDialog>
         </div>
         <Card>
-          <Accordion type="single" collapsible className="w-full" defaultValue='client-1'>
-            {clients.map((client) => (
-              <AccordionItem value={`client-${client.id}`} key={client.id}>
-                <AccordionTrigger className="px-6 hover:no-underline">
-                  <div className="flex items-center gap-4">
-                    <Image
-                      src={client.logoUrl}
-                      alt={`${client.name} logo`}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                      data-ai-hint={client.logoHint}
-                    />
-                    <span className="text-lg font-medium">{client.name}</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Project Name</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>
-                          <span className="sr-only">Actions</span>
-                        </TableHead>
+          <CardContent className="p-0">
+             <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Project Name</TableHead>
+                    <TableHead>Job Number</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {projects.map((project) => (
+                      <TableRow key={project.id}>
+                        <TableCell className="font-medium">
+                           <Link href={`/projects/${project.id}`} className="hover:underline">
+                            {project.name}
+                           </Link>
+                        </TableCell>
+                        <TableCell>{project.jobNumber}</TableCell>
+                        <TableCell>{project.location}</TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusVariant(project.status)}>
+                            {project.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/projects/${project.id}`}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View Details
+                                </Link>
+                              </DropdownMenuItem>
+                              <AddProjectDialog project={project}>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit
+                                </DropdownMenuItem>
+                              </AddProjectDialog>
+                              <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(project.name)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {projects
-                        .filter((p) => p.clientId === client.id)
-                        .map((project) => (
-                          <TableRow key={project.id}>
-                            <TableCell className="font-medium">
-                               <Link href={`/projects/${project.id}`} className="hover:underline">
-                                {project.name}
-                               </Link>
-                            </TableCell>
-                            <TableCell>{project.location}</TableCell>
-                            <TableCell>
-                              <Badge variant={getStatusVariant(project.status)}>
-                                {project.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    aria-haspopup="true"
-                                    size="icon"
-                                    variant="ghost"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                    <span className="sr-only">Toggle menu</span>
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem asChild>
-                                    <Link href={`/projects/${project.id}`}>
-                                      <Eye className="mr-2 h-4 w-4" />
-                                      View Details
-                                    </Link>
-                                  </DropdownMenuItem>
-                                  <AddProjectDialog project={project}>
-                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                        <Pencil className="mr-2 h-4 w-4" />
-                                        Edit
-                                    </DropdownMenuItem>
-                                  </AddProjectDialog>
-                                  <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(project.name)}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+                    ))}
+                </TableBody>
+              </Table>
+          </CardContent>
         </Card>
       </main>
     </div>

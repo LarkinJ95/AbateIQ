@@ -1,21 +1,14 @@
 
 import type { LucideIcon } from "lucide-react";
 
-export type Client = {
-  id: string;
-  name: string;
-  logoUrl: string;
-  logoHint: string;
-};
-
 export type Project = {
   id: string;
   name: string;
+  jobNumber?: string;
   location: string;
   status: "Active" | "Completed" | "On Hold";
   startDate: string;
   endDate: string;
-  clientId: string;
 };
 
 export type Location = {

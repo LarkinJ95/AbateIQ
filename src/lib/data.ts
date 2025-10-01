@@ -1,21 +1,15 @@
 
-import { Client, Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit } from './types';
+import { Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
 
-export const clients: Client[] = [
-  { id: '1', name: 'Apex Construction', logoUrl: findImage('client-logo-1')?.imageUrl ?? '', logoHint: findImage('client-logo-1')?.imageHint ?? '' },
-  { id: '2', name: 'Innovate Builders', logoUrl: findImage('client-logo-2')?.imageUrl ?? '', logoHint: findImage('client-logo-2')?.imageHint ?? '' },
-  { id: '3', name: 'Terra Firma', logoUrl: findImage('client-logo-3')?.imageUrl ?? '', logoHint: findImage('client-logo-3')?.imageHint ?? '' },
-];
-
 export const projects: Project[] = [
-  { id: 'p1', name: 'Downtown Tower Renovation', location: '123 Main St, Metro City', status: 'Active', clientId: '1', startDate: '2024-05-01', endDate: '2024-12-31' },
-  { id: 'p2', name: 'Suburban Office Park', location: '456 Oak Ave, Suburbia', status: 'Active', clientId: '1', startDate: '2024-06-15', endDate: '2025-01-31' },
-  { id: 'p3', name: 'Coastal Bridge Repair', location: '789 Ocean Blvd, Seaside', status: 'On Hold', clientId: '2', startDate: '2024-07-01', endDate: '2024-11-30' },
-  { id: 'p4', name: 'Genesis Labs HQ', location: '101 Innovation Dr, Tech Park', status: 'Completed', clientId: '2', startDate: '2023-01-10', endDate: '2024-04-20' },
-  { id: 'p5', name: 'Historic Courthouse Restoration', location: '210 Justice Sq, Old Town', status: 'Active', clientId: '3', startDate: '2024-08-01', endDate: '2025-05-01' },
+  { id: 'p1', name: 'Downtown Tower Renovation', jobNumber: '24-1001', location: '123 Main St, Metro City', status: 'Active', startDate: '2024-05-01', endDate: '2024-12-31' },
+  { id: 'p2', name: 'Suburban Office Park', jobNumber: '24-1002', location: '456 Oak Ave, Suburbia', status: 'Active', startDate: '2024-06-15', endDate: '2025-01-31' },
+  { id: 'p3', name: 'Coastal Bridge Repair', jobNumber: '24-2001', location: '789 Ocean Blvd, Seaside', status: 'On Hold', startDate: '2024-07-01', endDate: '2024-11-30' },
+  { id: 'p4', name: 'Genesis Labs HQ', jobNumber: '23-5005', location: '101 Innovation Dr, Tech Park', status: 'Completed', startDate: '2023-01-10', endDate: '2024-04-20' },
+  { id: 'p5', name: 'Historic Courthouse Restoration', jobNumber: '24-3001', location: '210 Justice Sq, Old Town', status: 'Active', startDate: '2024-08-01', endDate: '2025-05-01' },
 ];
 
 export const locations: Location[] = [

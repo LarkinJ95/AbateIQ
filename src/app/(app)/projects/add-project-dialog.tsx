@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -13,14 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { clients } from '@/lib/data';
 import { useState, useEffect } from 'react';
 import type { Project } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +27,6 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
     const [name, setName] = useState('');
     const [jobNumber, setJobNumber] = useState('');
     const [location, setLocation] = useState('');
-    const [client, setClient] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
 
@@ -45,12 +37,10 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
             setName(project.name);
             setJobNumber(project.jobNumber || '');
             setLocation(project.location);
-            setClient(project.clientId);
         } else {
             setName('');
             setJobNumber('');
             setLocation('');
-            setClient('');
         }
     }, [project, isEditMode, isOpen]);
 
@@ -108,23 +98,6 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
               onChange={e => setLocation(e.target.value)}
               className="col-span-3"
             />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="client" className="text-right">
-              Client
-            </Label>
-            <Select value={client} onValueChange={setClient}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select a client" />
-              </SelectTrigger>
-              <SelectContent>
-                {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
         <DialogFooter>

@@ -27,8 +27,10 @@ import {
 import { Card } from '@/components/ui/card';
 import { AddProjectDialog } from './add-project-dialog';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProjectsPage() {
+  const { toast } = useToast();
   const getStatusVariant = (status: 'Active' | 'Completed' | 'On Hold') => {
     switch (status) {
       case 'Active':
@@ -40,6 +42,14 @@ export default function ProjectsPage() {
       default:
         return 'default';
     }
+  };
+
+  const handleDelete = (projectName: string) => {
+    toast({
+      title: 'Project Deleted',
+      description: `${projectName} has been deleted.`,
+      variant: 'destructive',
+    });
   };
 
   return (
@@ -127,7 +137,7 @@ export default function ProjectsPage() {
                                         Edit
                                     </DropdownMenuItem>
                                   </AddProjectDialog>
-                                  <DropdownMenuItem className="text-destructive">
+                                  <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(project.name)}>
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete
                                   </DropdownMenuItem>

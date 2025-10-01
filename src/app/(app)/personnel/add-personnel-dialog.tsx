@@ -32,6 +32,7 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
   const [fitTestDate, setFitTestDate] = useState<Date>();
   const [medClearanceDate, setMedClearanceDate] = useState<Date>();
   const [name, setName] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
@@ -40,10 +41,12 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
   useEffect(() => {
     if (isEditMode && person) {
       setName(person.name);
+      setEmployeeId(person.employeeId);
       setFitTestDate(new Date(person.fitTestDueDate));
       setMedClearanceDate(new Date(person.medicalClearanceDueDate));
     } else {
       setName('');
+      setEmployeeId('');
       setFitTestDate(undefined);
       setMedClearanceDate(undefined);
     }
@@ -75,6 +78,12 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
               Name
             </Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="employeeId" className="text-right">
+              Employee ID
+            </Label>
+            <Input id="employeeId" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="fit-test" className="text-right">

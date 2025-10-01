@@ -34,6 +34,7 @@ export type Task = {
 export type Personnel = {
   id: string;
   name: string;
+  employeeId: string;
   fitTestDueDate: string;
   medicalClearanceDueDate: string;
 };

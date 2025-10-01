@@ -42,6 +42,11 @@ export default function PersonnelDetailsPage({ params }: { params: { id: string 
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <p className="text-sm font-medium text-muted-foreground">Employee ID</p>
+                <p className="text-lg font-semibold">{person.employeeId}</p>
+              </div>
+              <div></div>
+              <div>
                 <p className="text-sm font-medium text-muted-foreground">Fit Test Due Date</p>
                 <p className="text-lg font-semibold">{format(new Date(person.fitTestDueDate), 'PPP')}</p>
               </div>

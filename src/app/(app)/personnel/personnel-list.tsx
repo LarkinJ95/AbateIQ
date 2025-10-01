@@ -54,6 +54,7 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>
+          <TableHead>Employee ID</TableHead>
           <TableHead>Fit Test Status</TableHead>
           <TableHead>Fit Test Due Date</TableHead>
           <TableHead>Medical Clearance Status</TableHead>
@@ -72,6 +73,7 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
           return (
             <TableRow key={person.id}>
               <TableCell className="font-medium">{person.name}</TableCell>
+              <TableCell>{person.employeeId}</TableCell>
               <TableCell>
                 <Badge variant={fitTestStatus.variant}>
                   {fitTestStatus.text}

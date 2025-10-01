@@ -16,9 +16,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Trash2, Pencil, Eye, Link as LinkIcon } from 'lucide-react';
 import { Sample } from '@/lib/types';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface SamplesListProps {
   samples: (Sample & {
@@ -33,6 +35,8 @@ interface SamplesListProps {
 }
 
 export function SamplesList({ samples }: SamplesListProps) {
+  const { toast } = useToast();
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case '>PEL':
@@ -45,6 +49,14 @@ export function SamplesList({ samples }: SamplesListProps) {
       default:
         return 'outline';
     }
+  };
+  
+  const handleDelete = (sampleId: string) => {
+    toast({
+        title: 'Sample Deleted',
+        description: `Sample ${sampleId} has been deleted.`,
+        variant: 'destructive'
+    });
   };
 
   return (
@@ -66,13 +78,15 @@ export function SamplesList({ samples }: SamplesListProps) {
       <TableBody>
         {samples.map((sample) => (
             <TableRow key={sample.id}>
-              <TableCell className="font-medium">{sample.id}</TableCell>
+              <TableCell className="font-medium">
+                <Link href={`/samples/${sample.id}`} className="hover:underline">{sample.id}</Link>
+              </TableCell>
               <TableCell>{sample.projectName}</TableCell>
               <TableCell>{sample.taskName}</TableCell>
               <TableCell>{sample.personnelName}</TableCell>
               <TableCell>{sample.analyte || 'N/A'}</TableCell>
               <TableCell>
-                {sample.concentration !== undefined && sample.concentration > 0
+                {sample.concentration !== undefined && sample.concentration >= 0 && sample.result?.status !== 'Pending'
                   ? `${sample.concentration} ${sample.units}`
                   : 'Pending'}
               </TableCell>
@@ -90,11 +104,20 @@ export function SamplesList({ samples }: SamplesListProps) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                      <Link href={`/samples/${sample.id}`}>View Details</Link>
+                      <Link href={`/samples/${sample.id}`}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                    <DropdownMenuItem>Link to NEA</DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
+                    <DropdownMenuItem>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <LinkIcon className="mr-2 h-4 w-4" />
+                      Link to NEA
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(sample.id)}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete
                     </DropdownMenuItem>

@@ -17,17 +17,15 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, PlusCircle, Eye } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Card } from '@/components/ui/card';
 import { AddProjectDialog } from './add-project-dialog';
-import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProjectsPage() {
@@ -60,7 +58,7 @@ export default function ProjectsPage() {
           </AddProjectDialog>
         </div>
         <Card>
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full" defaultValue='client-1'>
             {clients.map((client) => (
               <AccordionItem value={`client-${client.id}`} key={client.id}>
                 <AccordionTrigger className="px-6 hover:no-underline">
@@ -94,7 +92,9 @@ export default function ProjectsPage() {
                         .map((project) => (
                           <TableRow key={project.id}>
                             <TableCell className="font-medium">
-                              {project.name}
+                               <Link href={`/projects/${project.id}`} className="hover:underline">
+                                {project.name}
+                               </Link>
                             </TableCell>
                             <TableCell>{project.location}</TableCell>
                             <TableCell>
@@ -115,18 +115,18 @@ export default function ProjectsPage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem asChild>
+                                    <Link href={`/projects/${project.id}`}>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </Link>
+                                  </DropdownMenuItem>
                                   <AddProjectDialog project={project}>
                                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                         <Pencil className="mr-2 h-4 w-4" />
                                         Edit
                                     </DropdownMenuItem>
                                   </AddProjectDialog>
-                                  <DropdownMenuItem asChild>
-                                    <Link href={`/projects/${project.id}`}>
-                                      View Details
-                                    </Link>
-                                  </DropdownMenuItem>
                                   <DropdownMenuItem className="text-destructive">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete

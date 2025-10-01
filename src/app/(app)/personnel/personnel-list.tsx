@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Trash2, Pencil } from 'lucide-react';
+import { MoreHorizontal, Trash2, Pencil, Eye } from 'lucide-react';
 import { format, isPast, differenceInDays } from 'date-fns';
 import { AddPersonnelDialog } from './add-personnel-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -46,6 +46,7 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
     toast({
         title: 'Personnel Deleted',
         description: `${personName} has been deleted.`,
+        variant: 'destructive',
     });
   };
 
@@ -72,20 +73,22 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
           );
           return (
             <TableRow key={person.id}>
-              <TableCell className="font-medium">{person.name}</TableCell>
+              <TableCell className="font-medium">
+                <Link href={`/personnel/${person.id}`} className="hover:underline">{person.name}</Link>
+              </TableCell>
               <TableCell>{person.employeeId}</TableCell>
               <TableCell>
                 <Badge variant={fitTestStatus.variant}>
                   {fitTestStatus.text}
                 </Badge>
               </TableCell>
-              <TableCell>{format(new Date(person.fitTestDueDate), 'MM/dd/yyyy')}</TableCell>
+              <TableCell>{format(new Date(person.fitTestDueDate), 'PPP')}</TableCell>
               <TableCell>
                 <Badge variant={medicalClearanceStatus.variant}>
                   {medicalClearanceStatus.text}
                 </Badge>
               </TableCell>
-              <TableCell>{format(new Date(person.medicalClearanceDueDate), 'MM/dd/yyyy')}</TableCell>
+              <TableCell>{format(new Date(person.medicalClearanceDueDate), 'PPP')}</TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -94,15 +97,18 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                        <Link href={`/personnel/${person.id}`}>
+                            <Eye className="mr-2 h-4 w-4"/>
+                            View History
+                        </Link>
+                    </DropdownMenuItem>
                     <AddPersonnelDialog person={person}>
                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                             <Pencil className="mr-2 h-4 w-4"/>
                             Edit
                         </DropdownMenuItem>
                     </AddPersonnelDialog>
-                    <DropdownMenuItem asChild>
-                        <Link href={`/personnel/${person.id}`}>View History</Link>
-                    </DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(person.name)}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete

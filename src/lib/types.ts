@@ -10,7 +10,7 @@ export type Client = {
 export type Project = {
   id: string;
   name: string;
-  location: string; // This might be better as a reference to a Location type
+  location: string;
   status: "Active" | "Completed" | "On Hold";
   startDate: string;
   endDate: string;
@@ -19,16 +19,16 @@ export type Project = {
 
 export type Location = {
   id: string;
-  name: string; // e.g., "Building A, 3rd Floor"
+  name: string; 
   projectId: string;
 };
 
 export type Task = {
   id: string;
-  name: string; // e.g., "Drywall Sanding"
+  name: string; 
   description: string;
   projectId: string;
-  locationId?: string; // Optional if task is project-wide
+  locationId?: string;
 };
 
 export type Personnel = {
@@ -64,16 +64,16 @@ export type Sample = {
     equipmentId: string;
     startTime: string;
     stopTime: string;
-    flowRate: number; // L/min
-    duration: number; // minutes
-    volume: number; // Liters
+    flowRate: number; 
+    duration: number; 
+    volume: number; 
 };
 
 export type Result = {
     id: string;
     sampleId: string;
-    analyte: "Asbestos" | "Silica" | "Lead" | "Heavy Metals";
-    method: string; // NIOSH/EPA method
+    analyte: string;
+    method: string;
     units: string;
     concentration: number;
     reportingLimit: number;
@@ -85,10 +85,10 @@ export type ExposureLimit = {
     id: string;
     analyte: string;
     units: string;
-    al: number; // Action Level
-    pel: number; // Permissible Exposure Limit
-    stel: number; // Short-Term Exposure Limit
-    el: number; // Excursion Limit
+    al: number; 
+    pel: number; 
+    stel: number; 
+    el: number; 
 }
 
 export type Nea = {
@@ -107,11 +107,11 @@ export type Exceedance = {
   resultId: string;
   analyte: string;
   concentration: string;
-limt: string;
+  limit: string;
   personnel: string;
   location: string;
   correctiveAction: string;
-  evidence?: string; // path to evidence file
+  evidence?: string;
 };
 
 

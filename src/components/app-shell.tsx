@@ -11,6 +11,7 @@ import {
   Folder,
   LayoutDashboard,
   ShieldAlert,
+  Users,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navItems: NavItem[] = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/projects', label: 'Projects', icon: Briefcase },
+    { href: '/personnel', label: 'Personnel', icon: Users },
     { href: '/nea', label: 'NEA Tool', icon: FileText },
     { href: '/documents', label: 'Documents', icon: Folder },
   ];

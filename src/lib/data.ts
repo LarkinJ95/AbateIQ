@@ -31,8 +31,10 @@ export const tasks: Task[] = [
 
 export const personnel: Personnel[] = [
   { id: 'per-1', name: 'John Doe', fitTestDueDate: '2025-01-15', medicalClearanceDueDate: '2025-06-01' },
-  { id: 'per-2', name: 'Laura Smith', fitTestDueDate: '2024-11-20', medicalClearanceDueDate: '2025-04-10' },
-  { id: 'per-3', name: 'Ming Chen', fitTestDueDate: '2025-03-01', medicalClearanceDueDate: '2025-08-15' },
+  { id: 'per-2', name: 'Laura Smith', fitTestDueDate: '2024-08-20', medicalClearanceDueDate: '2025-04-10' },
+  { id: 'per-3', name: 'Ming Chen', fitTestDueDate: '2024-07-30', medicalClearanceDueDate: '2025-08-15' },
+  { id: 'per-4', name: 'Robert Brown', fitTestDueDate: '2023-10-01', medicalClearanceDueDate: '2024-01-01' },
+
 ];
 
 export const equipment: Equipment[] = [
@@ -66,7 +68,7 @@ export const neas: Nea[] = [
 ];
 
 export const exceedances: Exceedance[] = [
-  { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limt: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.', evidence: 'path/to/photo.jpg' },
+  { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limit: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.', evidence: 'path/to/photo.jpg' },
 ];
 
 export const neaReviews: NeaReview[] = [
@@ -91,7 +93,7 @@ export const pendingResults: PendingResult[] = [
 ];
 
 export const activeExceedances: Exceedance[] = [
-  { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limt: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.' },
+  { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limit: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.' },
 ];
 
 export const documents: Document[] = [

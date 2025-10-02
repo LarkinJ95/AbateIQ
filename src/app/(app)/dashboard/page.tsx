@@ -12,7 +12,7 @@ import { differenceInDays } from 'date-fns';
 
 export default function DashboardPage() {
     const recentExceedances = exceedances.filter(e => {
-        const exceedanceDate = new Date(); // placeholder as `exceedance` type doesn't have a date
+        const exceedanceDate = new Date(e.exceedanceDate); // Correctly parse the date
         return differenceInDays(new Date(), exceedanceDate) <= 30;
     });
 

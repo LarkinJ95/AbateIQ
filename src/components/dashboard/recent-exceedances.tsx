@@ -1,5 +1,6 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Exceedance } from '@/lib/types';
 import { AlertCircle } from 'lucide-react';
 import Link from 'next/link';

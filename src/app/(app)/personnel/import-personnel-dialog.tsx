@@ -10,6 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
   DialogClose
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';

@@ -17,6 +17,7 @@ import { PersonnelList } from '../personnel/personnel-list';
 import { AddSampleDialog } from '../samples/add-sample-dialog';
 import { AddPersonnelDialog } from '../personnel/add-personnel-dialog';
 import { ImportPersonnelDialog } from '../personnel/import-personnel-dialog';
+import { ImportSamplesDialog } from './import-samples-dialog';
 import { differenceInMinutes, parse } from 'date-fns';
 
 export default function AirMonitoringPage() {
@@ -28,73 +29,94 @@ export default function AirMonitoringPage() {
   const [analyteFilter, setAnalyteFilter] = useState<string>("all");
   const [sampleTypeFilter, setSampleTypeFilter] = useState<string>("all");
 
+  const processNewSample = (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, resultData?: { analyte: string; concentration: number; }}) => {
+    const getMinutes = (start: string, stop: string) => {
+        if (start && stop) {
+            try {
+                const startDate = parse(start, 'yyyy-MM-dd HH:mm', new Date());
+                const stopDate = parse(stop, 'yyyy-MM-dd HH:mm', new Date());
+                if (stopDate > startDate) {
+                    return differenceInMinutes(stopDate, startDate);
+                }
+            } catch (e) { return 0; }
+        }
+        return 0;
+    }
+
+    const duration = getMinutes(newSampleData.startTime, newSampleData.stopTime);
+    const volume = duration * newSampleData.flowRate;
+    
+    let resultPayload: Result | undefined = undefined;
+    const resultData = (newSampleData as any).result || (newSampleData as any).resultData;
+    if(resultData?.analyte) {
+        const existingResult = newSampleData.id ? samples.find(s => s.id === newSampleData.id)?.result : undefined;
+        
+        let status: Result['status'] = 'Pending';
+        const concentration = resultData.concentration;
+        if(concentration !== undefined && concentration !== null) {
+            const limit = exposureLimits.find(l => l.analyte.toLowerCase() === resultData!.analyte!.toLowerCase());
+            if(limit) {
+              if (concentration > limit.pel) status = '>PEL';
+              else if (concentration >= limit.al) status = '≥AL';
+              else status = 'OK';
+            } else {
+              status = 'OK'; // Default if no limit is found
+            }
+        }
+
+        resultPayload = {
+            id: existingResult?.id || `res-${Math.random()}`,
+            sampleId: newSampleData.id || '',
+            analyte: resultData.analyte,
+            concentration: resultData.concentration ?? 0,
+            status: status,
+            method: existingResult?.method || '',
+            units: existingResult?.units || exposureLimits.find(l => l.analyte.toLowerCase() === resultData!.analyte!.toLowerCase())?.units || '',
+            reportingLimit: existingResult?.reportingLimit || 0,
+            lab: existingResult?.lab || '',
+        }
+    }
+
+    const finalSample = {
+      ...newSampleData,
+      duration,
+      volume,
+      result: resultPayload
+    };
+
+    // remove temporary property
+    delete (finalSample as any).resultData;
+
+    return finalSample;
+  }
+
   const handleSaveSample = (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
-      const getMinutes = (start: string, stop: string) => {
-          if (start && stop) {
-              try {
-                  const startDate = parse(start, 'yyyy-MM-dd HH:mm', new Date());
-                  const stopDate = parse(stop, 'yyyy-MM-dd HH:mm', new Date());
-                  if (stopDate > startDate) {
-                      return differenceInMinutes(stopDate, startDate);
-                  }
-              } catch (e) { return 0; }
-          }
-          return 0;
-      }
-
-      const duration = getMinutes(newSampleData.startTime, newSampleData.stopTime);
-      const volume = duration * newSampleData.flowRate;
-      
-      let resultPayload: Result | undefined = undefined;
-      if(newSampleData.result?.analyte) {
-          const existingResult = newSampleData.id ? samples.find(s => s.id === newSampleData.id)?.result : undefined;
-          
-          let status: Result['status'] = 'Pending';
-          const concentration = newSampleData.result.concentration;
-          if(concentration !== undefined && concentration !== null) {
-              const limit = exposureLimits.find(l => l.analyte.toLowerCase() === newSampleData.result!.analyte!.toLowerCase());
-              if(limit) {
-                if (concentration > limit.pel) status = '>PEL';
-                else if (concentration >= limit.al) status = '≥AL';
-                else status = 'OK';
-              } else {
-                status = 'OK'; // Default if no limit is found
-              }
-          }
-
-          resultPayload = {
-              id: existingResult?.id || `res-${Math.random()}`,
-              sampleId: newSampleData.id || '',
-              analyte: newSampleData.result.analyte,
-              concentration: newSampleData.result.concentration ?? 0,
-              status: status,
-              method: existingResult?.method || '',
-              units: existingResult?.units || exposureLimits.find(l => l.analyte.toLowerCase() === newSampleData.result!.analyte!.toLowerCase())?.units || '',
-              reportingLimit: existingResult?.reportingLimit || 0,
-              lab: existingResult?.lab || '',
-          }
-      }
+      const finalSample = processNewSample(newSampleData);
 
       if (newSampleData.id) {
-          setSamples(prevSamples => prevSamples.map(s => s.id === newSampleData.id ? { 
-              ...s, 
-              ...newSampleData, 
-              duration,
-              volume,
-              result: resultPayload ? {...s.result, ...resultPayload} as Result : s.result,
-          } as Sample : s));
+          setSamples(prevSamples => prevSamples.map(s => s.id === newSampleData.id ? { ...s, ...finalSample } as Sample : s));
       } else {
-          const newSample: Sample = {
-              ...newSampleData,
+          const newSampleWithId = {
+              ...finalSample,
               id: `samp-${Math.floor(Math.random() * 10000)}`,
-              duration,
-              volume,
-              result: resultPayload,
           };
-          if(resultPayload) resultPayload.sampleId = newSample.id;
-          setSamples(prevSamples => [newSample, ...prevSamples]);
+          if(newSampleWithId.result) newSampleWithId.result.sampleId = newSampleWithId.id;
+          setSamples(prevSamples => [newSampleWithId, ...prevSamples]);
       }
   };
+
+  const handleImportSamples = (importedSamples: (Omit<Sample, 'id'> & { resultData: any })[]) => {
+      const newSamples: Sample[] = importedSamples.map((sampleData, index) => {
+        const finalSample = processNewSample(sampleData);
+        const newSampleWithId = {
+            ...finalSample,
+            id: `samp-${Date.now()}-${index}`,
+        };
+        if(newSampleWithId.result) newSampleWithId.result.sampleId = newSampleWithId.id;
+        return newSampleWithId as Sample;
+      });
+      setSamples(prev => [...newSamples, ...prev]);
+  }
 
   const handleDeleteSample = (sampleId: string) => {
     setSamples(prevSamples => prevSamples.filter(s => s.id !== sampleId));
@@ -179,6 +201,7 @@ export default function AirMonitoringPage() {
                 Manage Samples & Personnel
             </h2>
             <div className="flex gap-2">
+                <ImportSamplesDialog onImport={handleImportSamples} />
                 <AddSampleDialog onSave={handleSaveSample} sample={null}>
                     <Button>
                         <PlusCircle className="mr-2 h-4 w-4" />

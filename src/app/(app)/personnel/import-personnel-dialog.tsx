@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,7 +39,18 @@ export function ImportPersonnelDialog({ onImport }: ImportPersonnelDialogProps) 
 
     try {
       const rows = pasteData.trim().split('\n');
-      const newPersonnel: Omit<Personnel, 'id'>[] = rows.map((row, i) => {
+      
+      // Check for header row and slice it off if it exists
+      const headerRow = rows[0].toLowerCase().split('\t');
+      const hasHeader = headerRow.includes('name') || headerRow.includes('employee id');
+      const dataRows = hasHeader ? rows.slice(1) : rows;
+
+      if (dataRows.length === 0) {
+        toast({ title: 'No Data Rows', description: 'Pasted data only contains a header or is empty.', variant: 'destructive' });
+        return;
+      }
+
+      const newPersonnel: Omit<Personnel, 'id'>[] = dataRows.map((row, i) => {
         const columns = row.split('\t');
         if (columns.length < 4) {
           throw new Error(`Row ${i + 1} has fewer than 4 columns. Expected: Name, Employee ID, Fit Test Due Date, Medical Clearance Due Date.`);
@@ -90,7 +100,7 @@ export function ImportPersonnelDialog({ onImport }: ImportPersonnelDialogProps) 
         <DialogHeader>
           <DialogTitle>Import Personnel</DialogTitle>
           <DialogDescription>
-            Copy columns from your spreadsheet (Name, Employee ID, Fit Test Due Date, Medical Clearance Due Date) and paste them below.
+            Copy columns from your spreadsheet (including the header is optional) and paste them below. Required columns: Name, Employee ID, Fit Test Due Date, Medical Clearance Due Date.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-2">

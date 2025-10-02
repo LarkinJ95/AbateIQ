@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +20,7 @@ import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 import type { Personnel } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface AddPersonnelDialogProps {
   person?: Personnel | null;
@@ -33,22 +33,25 @@ export function AddPersonnelDialog({ person, onSave, children }: AddPersonnelDia
   const [medClearanceDate, setMedClearanceDate] = useState<Date>();
   const [name, setName] = useState('');
   const [employeeId, setEmployeeId] = useState('');
+  const [isInspector, setIsInspector] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const isEditMode = person !== null && person !== undefined;
 
   useEffect(() => {
-    if (isEditMode && person) {
+    if (isEditMode && person && isOpen) {
       setName(person.name);
       setEmployeeId(person.employeeId);
       setFitTestDate(new Date(person.fitTestDueDate));
       setMedClearanceDate(new Date(person.medicalClearanceDueDate));
+      setIsInspector(person.isInspector ?? false);
     } else {
       setName('');
       setEmployeeId('');
       setFitTestDate(undefined);
       setMedClearanceDate(undefined);
+      setIsInspector(false);
     }
   }, [person, isEditMode, isOpen]);
   
@@ -66,7 +69,8 @@ export function AddPersonnelDialog({ person, onSave, children }: AddPersonnelDia
         name,
         employeeId,
         fitTestDueDate: format(fitTestDate, 'yyyy-MM-dd'),
-        medicalClearanceDueDate: format(medClearanceDate, 'yyyy-MM-dd')
+        medicalClearanceDueDate: format(medClearanceDate, 'yyyy-MM-dd'),
+        isInspector,
     };
 
     if (isEditMode && person) {
@@ -161,11 +165,22 @@ export function AddPersonnelDialog({ person, onSave, children }: AddPersonnelDia
               </PopoverContent>
             </Popover>
           </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="isInspector" className="text-right">
+              Inspector
+            </Label>
+            <div className="col-span-3 flex items-center">
+              <Checkbox
+                id="isInspector"
+                checked={isInspector}
+                onCheckedChange={(checked) => setIsInspector(!!checked)}
+              />
+              <span className="ml-2 text-sm text-muted-foreground">Is this person a qualified inspector?</span>
+            </div>
+          </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DialogClose>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button onClick={handleSave}>Save Personnel</Button>
         </DialogFooter>
       </DialogContent>

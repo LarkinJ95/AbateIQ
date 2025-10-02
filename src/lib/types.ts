@@ -32,6 +32,7 @@ export type Personnel = {
   employeeId: string;
   fitTestDueDate: string;
   medicalClearanceDueDate: string;
+  isInspector?: boolean;
 };
 
 export type Sample = {

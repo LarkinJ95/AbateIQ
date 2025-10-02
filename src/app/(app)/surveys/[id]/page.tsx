@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Header } from '@/components/header';
 import { notFound } from 'next/navigation';
 import { surveys as allSurveys } from '@/lib/data';
@@ -10,13 +10,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import type { Survey, AsbestosSample, PaintSample, FunctionalArea, HomogeneousArea } from '@/lib/types';
 import Image from 'next/image';
-import { MapPin, Calendar, User, FileText, CheckSquare } from 'lucide-react';
+import { MapPin, Calendar, User, FileText, CheckSquare, Camera, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SurveyChecklist } from '../survey-checklist';
 import { AsbestosTable } from '../asbestos-table';
 import { PaintTable } from '../paint-table';
 import { FunctionalAreasTable } from '../functional-areas-table';
 import { HomogeneousAreasTable } from '../homogeneous-areas-table';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SurveyDetailsPage({ params }: { params: { id: string } }) {
   const survey = allSurveys.find(s => s.id === params.id);
@@ -25,9 +28,66 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
   const [paintSamples, setPaintSamples] = useState<PaintSample[]>(survey?.paintSamples || []);
   const [functionalAreas, setFunctionalAreas] = useState<FunctionalArea[]>(survey?.functionalAreas || []);
 
+  const [mainPhoto, setMainPhoto] = useState<string | null>(survey?.sitePhotoUrl || null);
+  const mainPhotoRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+
   if (!survey) {
     notFound();
   }
+  
+  const handlePhotoUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setter: React.Dispatch<React.SetStateAction<any>>, // This could be more specific
+    category: string
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        // In a real app, you'd upload this to a server/storage
+        // For this prototype, we'll just store the data URL in state
+        if (setter) {
+            setter(result);
+        }
+        toast({
+          title: `Photo Uploaded`,
+          description: `${file.name} added to ${category}.`,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+    const PhotoUploader = ({
+    title,
+    currentPhoto,
+    onUpload
+    }: {
+    title: string;
+    currentPhoto?: string | null;
+    onUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    return (
+        <div className="space-y-4">
+        {currentPhoto && (
+            <div className="aspect-video relative rounded-md overflow-hidden">
+            <Image src={currentPhoto} alt={`${title} preview`} fill className="object-cover" />
+            </div>
+        )}
+        <Input type="file" accept="image/*" className="hidden" ref={inputRef} onChange={onUpload} />
+        <Button variant="outline" onClick={() => inputRef.current?.click()}>
+            <Upload className="mr-2 h-4 w-4" />
+            {currentPhoto ? 'Change' : 'Upload'} {title}
+        </Button>
+        </div>
+    );
+    };
+
+
 
   const getStatusVariant = (status: Survey['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
       switch (status) {
@@ -105,6 +165,48 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
                     </Tabs>
                 </CardContent>
             </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2">
+                        <Camera /> Photo Management
+                    </CardTitle>
+                </CardHeader>
+                 <CardContent>
+                    <Tabs defaultValue="main">
+                        <TabsList>
+                            <TabsTrigger value="main">Main Photo</TabsTrigger>
+                            <TabsTrigger value="exterior">Exterior</TabsTrigger>
+                            <TabsTrigger value="interior">Interior (FS)</TabsTrigger>
+                            <TabsTrigger value="samples">Samples</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="main" className="mt-4">
+                             <PhotoUploader 
+                                title="Main Photo"
+                                currentPhoto={mainPhoto}
+                                onUpload={(e) => handlePhotoUpload(e, setMainPhoto, 'Main Photo')}
+                            />
+                        </TabsContent>
+                        <TabsContent value="exterior" className="mt-4">
+                             <PhotoUploader 
+                                title="Exterior Photo"
+                                onUpload={(e) => handlePhotoUpload(e, ()=>{}, 'Exterior')}
+                            />
+                        </TabsContent>
+                        <TabsContent value="interior" className="mt-4">
+                             <PhotoUploader 
+                                title="Interior Photo"
+                                onUpload={(e) => handlePhotoUpload(e, ()=>{}, 'Interior')}
+                            />
+                        </TabsContent>
+                        <TabsContent value="samples" className="mt-4">
+                             <PhotoUploader 
+                                title="Sample Photo"
+                                onUpload={(e) => handlePhotoUpload(e, ()=>{}, 'Samples')}
+                            />
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
           </div>
           <div className="space-y-8">
             <Card>
@@ -115,10 +217,10 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                 {survey.sitePhotoUrl && (
+                 {mainPhoto && (
                   <div className="aspect-video relative rounded-md overflow-hidden mb-4">
                     <Image
-                        src={survey.sitePhotoUrl}
+                        src={mainPhoto}
                         alt={`Site photo for ${survey.siteName}`}
                         fill
                         className="object-cover"

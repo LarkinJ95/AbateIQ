@@ -26,10 +26,10 @@ export const tasks: Task[] = [
 ];
 
 export const personnel: Personnel[] = [
-  { id: 'per-1', name: 'John Doe', employeeId: '1234', fitTestDueDate: '2025-01-15', medicalClearanceDueDate: '2025-06-01' },
-  { id: 'per-2', name: 'Laura Smith', employeeId: '5678', fitTestDueDate: '2024-08-20', medicalClearanceDueDate: '2025-04-10' },
-  { id: 'per-3', name: 'Ming Chen', employeeId: '9012', fitTestDueDate: '2024-07-30', medicalClearanceDueDate: '2025-08-15' },
-  { id: 'per-4', name: 'Robert Brown', employeeId: '3456', fitTestDueDate: '2023-10-01', medicalClearanceDueDate: '2024-01-01' },
+  { id: 'per-1', name: 'John Doe', employeeId: '1234', fitTestDueDate: '2025-01-15', medicalClearanceDueDate: '2025-06-01', isInspector: true },
+  { id: 'per-2', name: 'Laura Smith', employeeId: '5678', fitTestDueDate: '2024-08-20', medicalClearanceDueDate: '2025-04-10', isInspector: true },
+  { id: 'per-3', name: 'Ming Chen', employeeId: '9012', fitTestDueDate: '2024-07-30', medicalClearanceDueDate: '2025-08-15', isInspector: false },
+  { id: 'per-4', name: 'Robert Brown', employeeId: '3456', fitTestDueDate: '2023-10-01', medicalClearanceDueDate: '2024-01-01', isInspector: false },
 
 ];
 

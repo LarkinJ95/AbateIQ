@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Personnel } from '@/lib/types';
@@ -17,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Trash2, Pencil, Eye } from 'lucide-react';
+import { MoreHorizontal, Trash2, Pencil, Eye, UserCheck } from 'lucide-react';
 import { format, isPast, differenceInDays } from 'date-fns';
 import { AddPersonnelDialog } from './add-personnel-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -58,11 +59,10 @@ export function PersonnelList({ personnel, onSave, onDelete }: PersonnelListProp
       <TableHeader>
         <TableRow>
           <TableHead>Name</TableHead>
+          <TableHead>Role</TableHead>
           <TableHead>Employee ID</TableHead>
           <TableHead>Fit Test Status</TableHead>
-          <TableHead>Fit Test Due Date</TableHead>
           <TableHead>Medical Clearance Status</TableHead>
-          <TableHead>Medical Clearance Due</TableHead>
           <TableHead>
             <span className="sr-only">Actions</span>
           </TableHead>
@@ -79,19 +79,20 @@ export function PersonnelList({ personnel, onSave, onDelete }: PersonnelListProp
               <TableCell className="font-medium">
                 <Link href={`/personnel/${person.id}`} className="hover:underline">{person.name}</Link>
               </TableCell>
+              <TableCell>
+                {person.isInspector && <Badge variant="outline"><UserCheck className="mr-1 h-3 w-3"/> Inspector</Badge>}
+              </TableCell>
               <TableCell>{person.employeeId}</TableCell>
               <TableCell>
                 <Badge variant={fitTestStatus.variant}>
                   {fitTestStatus.text}
                 </Badge>
               </TableCell>
-              <TableCell>{format(new Date(person.fitTestDueDate), 'PPP')}</TableCell>
               <TableCell>
                 <Badge variant={medicalClearanceStatus.variant}>
                   {medicalClearanceStatus.text}
                 </Badge>
               </TableCell>
-              <TableCell>{format(new Date(person.medicalClearanceDueDate), 'PPP')}</TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

@@ -9,8 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,6 +32,7 @@ interface AddEditSurveyDialogProps {
 }
 
 const surveyTypeOptions = ['Asbestos', 'Lead', 'Cadmium'];
+const inspectors = personnel.filter(p => p.isInspector);
 
 export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyDialogProps) {
     const [siteName, setSiteName] = useState('');
@@ -141,7 +140,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
                 <SelectValue placeholder="Select an inspector" />
               </SelectTrigger>
               <SelectContent>
-                {personnel.map(p => (
+                {inspectors.map(p => (
                     <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -206,9 +205,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DialogClose>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button onClick={handleSave}>Save Survey</Button>
         </DialogFooter>
       </DialogContent>

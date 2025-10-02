@@ -35,6 +35,30 @@
       "description": "Thumbnail for Lab Report",
       "imageUrl": "https://images.unsplash.com/photo-1691935152210-35ae500d91d7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsYWIlMjByZXN1bHRzfGVufDB8fHx8MTc1OTMyOTg1NXww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "lab results"
+    },
+    {
+      "id": "floor-plan-1",
+      "description": "Floor plan sketch for Metro High School",
+      "imageUrl": "https://plus.unsplash.com/premium_photo-1681995349583-9366e4a6d136?q=80&w=2070&auto=format&fit=crop",
+      "imageHint": "floor plan"
+    },
+    {
+      "id": "exterior-1",
+      "description": "Exterior shot of Metro High School",
+      "imageUrl": "https://images.unsplash.com/photo-1562564055-71e051d33c19?q=80&w=2070&auto=format&fit=crop",
+      "imageHint": "school building"
+    },
+    {
+      "id": "interior-1",
+      "description": "Interior shot of Metro High School gymnasium",
+      "imageUrl": "https://images.unsplash.com/photo-1575040652439-50949e215354?q=80&w=2070&auto=format&fit=crop",
+      "imageHint": "school gym"
+    },
+    {
+      "id": "sample-photo-1",
+      "description": "Close-up of a sample being taken",
+      "imageUrl": "https://images.unsplash.com/photo-1581092445862-DC3603nsb796?q=80&w=2070&auto=format&fit=crop",
+      "imageHint": "lab sample"
     }
   ]
 }

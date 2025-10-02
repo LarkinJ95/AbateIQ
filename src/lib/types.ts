@@ -117,6 +117,14 @@ export type Survey = {
   jobNumber?: string;
   sitePhotoUrl?: string;
   sitePhotoHint?: string;
+  floorPlanUrl?: string;
+  floorPlanHint?: string;
+  exteriorPhotoUrl?: string;
+  exteriorPhotoHint?: string;
+  interiorPhotoUrl?: string;
+  interiorPhotoHint?: string;
+  samplePhotoUrl?: string;
+  samplePhotoHint?: string;
   homogeneousAreas?: HomogeneousArea[];
   asbestosSamples?: AsbestosSample[];
   paintSamples?: PaintSample[];

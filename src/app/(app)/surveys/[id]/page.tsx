@@ -39,10 +39,10 @@ export default function SurveyDetailsPage() {
   const [functionalAreas, setFunctionalAreas] = useState<FunctionalArea[]>(survey?.functionalAreas || []);
 
   const [mainPhoto, setMainPhoto] = useState<string | null>(survey?.sitePhotoUrl || null);
-  const [floorPlan, setFloorPlan] = useState<string | null>(null);
-  const [exteriorPhoto, setExteriorPhoto] = useState<string | null>(null);
-  const [interiorPhoto, setInteriorPhoto] = useState<string | null>(null);
-  const [samplePhoto, setSamplePhoto] = useState<string | null>(null);
+  const [floorPlan, setFloorPlan] = useState<string | null>(survey?.floorPlanUrl || null);
+  const [exteriorPhoto, setExteriorPhoto] = useState<string | null>(survey?.exteriorPhotoUrl || null);
+  const [interiorPhoto, setInteriorPhoto] = useState<string | null>(survey?.interiorPhotoUrl || null);
+  const [samplePhoto, setSamplePhoto] = useState<string | null>(survey?.samplePhotoUrl || null);
 
 
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -54,13 +54,20 @@ export default function SurveyDetailsPage() {
 
   // Sync state if initial survey changes (e.g. on navigation)
   useEffect(() => {
-    setSurvey(initialSurvey);
-    setHomogeneousAreas(initialSurvey.homogeneousAreas || []);
-    setAsbestosSamples(initialSurvey.asbestosSamples || []);
-    setPaintSamples(initialSurvey.paintSamples || []);
-    setFunctionalAreas(initialSurvey.functionalAreas || []);
-    setMainPhoto(initialSurvey.sitePhotoUrl || null);
-  }, [id, initialSurvey]);
+    const currentSurvey = allSurveys.find(s => s.id === id);
+    if (currentSurvey) {
+      setSurvey(currentSurvey);
+      setHomogeneousAreas(currentSurvey.homogeneousAreas || []);
+      setAsbestosSamples(currentSurvey.asbestosSamples || []);
+      setPaintSamples(currentSurvey.paintSamples || []);
+      setFunctionalAreas(currentSurvey.functionalAreas || []);
+      setMainPhoto(currentSurvey.sitePhotoUrl || null);
+      setFloorPlan(currentSurvey.floorPlanUrl || null);
+      setExteriorPhoto(currentSurvey.exteriorPhotoUrl || null);
+      setInteriorPhoto(currentSurvey.interiorPhotoUrl || null);
+      setSamplePhoto(currentSurvey.samplePhotoUrl || null);
+    }
+  }, [id]);
 
   
   const handlePhotoUpload = (

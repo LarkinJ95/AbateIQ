@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function SettingsPage() {
     const { user } = useUser();
@@ -37,6 +38,21 @@ export default function SettingsPage() {
         <div className="flex min-h-screen w-full flex-col">
             <Header title="Settings" />
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline">Appearance</CardTitle>
+                        <CardDescription>
+                            Customize the look and feel of the application.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="theme">Theme</Label>
+                           <ThemeToggle />
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle className="font-headline">My Profile</CardTitle>

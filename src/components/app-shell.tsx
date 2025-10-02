@@ -50,7 +50,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/projects', label: 'Projects', icon: Briefcase },
     { href: '/air-monitoring', label: 'Air Monitoring', icon: FlaskConical },
-    { href: '/personnel', label: 'Personnel', icon: Users },
+    { href: '/surveys', label: 'Surveys', icon: FileText },
     { href: '/nea', label: 'NEA Tool', icon: FileText },
     { href: '/documents', label: 'Documents', icon: Folder },
   ];

@@ -19,12 +19,12 @@ import type { Survey } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, ChevronsUpDown } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { personnel } from '@/lib/data';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 interface AddEditSurveyDialogProps {
@@ -49,7 +49,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
     const isEditMode = survey !== null && survey !== undefined;
 
     useEffect(() => {
-        if(isEditMode && survey) {
+        if(isEditMode && survey && isOpen) {
             setSiteName(survey.siteName);
             setAddress(survey.address);
             setInspector(survey.inspector);
@@ -57,7 +57,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             setStatus(survey.status);
             setSurveyType(Array.isArray(survey.surveyType) ? survey.surveyType : []);
             setJobNumber(survey.jobNumber || '');
-        } else {
+        } else if (!isEditMode && isOpen) {
             setSiteName('');
             setAddress('');
             setInspector('');
@@ -148,26 +148,21 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             </Select>
           </div>
            <div className="space-y-2">
-            <Label htmlFor="surveyType">Survey Type</Label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  <span>{surveyType.length > 0 ? surveyType.join(' + ') : 'Select survey types'}</span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                {surveyTypeOptions.map(type => (
-                  <DropdownMenuCheckboxItem
-                    key={type}
+            <Label>Survey Type</Label>
+            <div className="flex flex-col space-y-2">
+              {surveyTypeOptions.map(type => (
+                <div key={type} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`type-${type}`}
                     checked={surveyType.includes(type)}
                     onCheckedChange={(checked) => handleSurveyTypeChange(type, !!checked)}
-                  >
+                  />
+                  <Label htmlFor={`type-${type}`} className="font-normal">
                     {type}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>

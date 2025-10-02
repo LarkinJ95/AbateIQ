@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { surveys as initialSurveys, personnel as allPersonnel } from "@/lib/data";
+import { surveys as initialSurveys } from "@/lib/data";
 import { Search, Plus, MapPin, Calendar, User, Edit, FileText, Filter, Download, Trash2, X, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import type { Survey } from "@/lib/types";
@@ -31,6 +31,8 @@ export default function SurveysPage() {
   const [sortBy, setSortBy] = useState<string>("date-desc");
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false); // Simulate loading
+
+  const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
 
   const handleSaveSurvey = (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
     if (surveyData.id) {

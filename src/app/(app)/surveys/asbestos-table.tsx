@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,7 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, funct
   const [haComboBoxOptions, setHaComboBoxOptions] = useState<ComboboxOption[]>(haOptions);
   
   // Keep combobox options in sync with parent HA state
-  React.useEffect(() => {
+  useEffect(() => {
     setHaComboBoxOptions(homogeneousAreas.map(ha => ({ value: ha.id, label: `${ha.haId} - ${ha.description}` })))
   }, [homogeneousAreas])
 

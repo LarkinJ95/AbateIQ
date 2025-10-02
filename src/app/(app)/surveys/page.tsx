@@ -349,7 +349,8 @@ export default function SurveysPage() {
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredSurveys.map((survey) => (
-                    <Card key={survey.id} className="hover:shadow-lg transition-shadow relative group/survey-card" data-testid={`card-survey-${survey.id}`}>
+                    <Link href={`/surveys/${survey.id}`} key={survey.id} className="block">
+                    <Card className="hover:shadow-lg transition-shadow relative group/survey-card" data-testid={`card-survey-${survey.id}`}>
                         <div className="absolute top-3 left-3 z-10">
                             <Checkbox
                             checked={selectedSurveys.includes(survey.id)}
@@ -420,6 +421,7 @@ export default function SurveysPage() {
                           </CardContent>
                         </div>
                     </Card>
+                    </Link>
                     ))}
                 </div>
                 </div>

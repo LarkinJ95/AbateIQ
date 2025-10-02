@@ -25,11 +25,24 @@ import {
   SidebarInset,
 } from '@/components/ui/sidebar';
 import type { NavItem } from '@/lib/types';
-import { cn } from '@/lib/utils';
-import { Button } from './ui/button';
+import Image from 'next/image';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [companyName, setCompanyName] = React.useState('AbateIQ');
+  const [companyLogo, setCompanyLogo] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    // In a real app, this would be fetched from a global state/context
+    const storedName = localStorage.getItem('companyName');
+    const storedLogo = localStorage.getItem('companyLogo');
+    if (storedName) {
+      setCompanyName(storedName);
+    }
+    if (storedLogo) {
+      setCompanyLogo(storedLogo);
+    }
+  }, []);
 
   const navItems: NavItem[] = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -45,9 +58,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <ShieldAlert className="text-primary size-8" />
+            {companyLogo ? (
+              <Image src={companyLogo} alt={`${companyName} Logo`} width={32} height={32} className="object-contain size-8" />
+            ) : (
+               <ShieldAlert className="text-primary size-8" />
+            )}
             <h1 className="text-xl font-headline font-bold text-sidebar-foreground">
-              AbateIQ
+              {companyName}
             </h1>
           </div>
         </SidebarHeader>

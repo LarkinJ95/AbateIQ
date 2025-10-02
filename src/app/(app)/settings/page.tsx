@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Header } from '@/components/header';
@@ -10,6 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
+import { Shield } from 'lucide-react';
 
 export default function SettingsPage() {
     const { user } = useUser();
@@ -67,6 +71,20 @@ export default function SettingsPage() {
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" value={user?.email || 'Not set'} disabled />
                         </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline">Admin</CardTitle>
+                        <CardDescription>Manage application-wide settings.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild variant="outline">
+                            <Link href="/settings/admin">
+                                <Shield className="mr-2 h-4 w-4" /> Go to Admin Center
+                            </Link>
+                        </Button>
                     </CardContent>
                 </Card>
 

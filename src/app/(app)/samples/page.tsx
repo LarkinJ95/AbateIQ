@@ -2,7 +2,7 @@
 'use client';
 
 import { Header } from '@/components/header';
-import { samples as initialSamples, projects, tasks, personnel } from '@/lib/data';
+import { samples as initialSamples, projects, tasks, personnel, exposureLimits } from '@/lib/data';
 import { SamplesList } from '@/app/(app)/samples/samples-list';
 import { Card, CardContent } from '@/components/ui/card';
 import { AddSampleDialog } from './add-sample-dialog';
@@ -53,14 +53,28 @@ export default function SamplesPage() {
         let resultPayload: Result | undefined = undefined;
         if(newSampleData.result?.analyte) {
             const existingResult = newSampleData.id ? samples.find(s => s.id === newSampleData.id)?.result : undefined;
+            
+            let status: Result['status'] = 'Pending';
+            const concentration = newSampleData.result.concentration;
+            if(concentration !== undefined && concentration !== null) {
+                const limit = exposureLimits.find(l => l.analyte.toLowerCase() === newSampleData.result!.analyte!.toLowerCase());
+                if(limit) {
+                    if (concentration > limit.pel) status = '>PEL';
+                    else if (concentration >= limit.al) status = '≥AL';
+                    else status = 'OK';
+                } else {
+                    status = 'OK'; // Default if no limit is found
+                }
+            }
+
             resultPayload = {
                 id: existingResult?.id || `res-${Math.random()}`,
                 sampleId: newSampleData.id || '',
                 analyte: newSampleData.result.analyte,
                 concentration: newSampleData.result.concentration ?? 0,
-                status: newSampleData.result.concentration !== undefined ? 'OK' : 'Pending', // Add your logic for status
+                status: status,
                 method: existingResult?.method || '',
-                units: existingResult?.units || '',
+                units: existingResult?.units || exposureLimits.find(l => l.analyte.toLowerCase() === newSampleData.result!.analyte!.toLowerCase())?.units || '',
                 reportingLimit: existingResult?.reportingLimit || 0,
                 lab: existingResult?.lab || '',
             }

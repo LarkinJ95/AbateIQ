@@ -3,7 +3,7 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { projects, samples as initialSamples, tasks, personnel } from '@/lib/data';
+import { projects, samples as initialSamples, tasks, personnel, exposureLimits } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -69,7 +69,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     }
   };
   
-  const handleSaveSample = (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
+ const handleSaveSample = (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
       const getMinutes = (start: string, stop: string) => {
         if (start && stop) {
           try {
@@ -89,14 +89,28 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
       let resultPayload: Result | undefined = undefined;
       if(newSampleData.result?.analyte) {
           const existingResult = newSampleData.id ? samples.find(s => s.id === newSampleData.id)?.result : undefined;
+          
+          let status: Result['status'] = 'Pending';
+          const concentration = newSampleData.result.concentration;
+          if(concentration !== undefined && concentration !== null) {
+              const limit = exposureLimits.find(l => l.analyte.toLowerCase() === newSampleData.result!.analyte!.toLowerCase());
+              if(limit) {
+                if (concentration > limit.pel) status = '>PEL';
+                else if (concentration >= limit.al) status = '≥AL';
+                else status = 'OK';
+              } else {
+                status = 'OK'; // Default if no limit is found
+              }
+          }
+
           resultPayload = {
               id: existingResult?.id || `res-${Math.random()}`,
               sampleId: newSampleData.id || '',
               analyte: newSampleData.result.analyte,
               concentration: newSampleData.result.concentration ?? 0,
-              status: newSampleData.result.concentration !== undefined ? 'OK' : 'Pending', // Add your logic for status
+              status: status,
               method: existingResult?.method || '',
-              units: existingResult?.units || '',
+              units: existingResult?.units || exposureLimits.find(l => l.analyte.toLowerCase() === newSampleData.result!.analyte!.toLowerCase())?.units || '',
               reportingLimit: existingResult?.reportingLimit || 0,
               lab: existingResult?.lab || '',
           }

@@ -31,7 +31,8 @@ type LinkedReport = {
 }
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
-  const project = projects.find(p => p.id === params.id);
+  const { id } = params;
+  const project = projects.find(p => p.id === id);
   
   if (!project) {
     notFound();
@@ -325,7 +326,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                                                     {survey.siteName}
                                                 </Link>
                                             </TableCell>
-                                            <TableCell>{survey.surveyType}</TableCell>
+                                            <TableCell>{survey.surveyType.join(', ')}</TableCell>
                                             <TableCell>{survey.inspector}</TableCell>
                                             <TableCell>{new Date(survey.surveyDate).toLocaleDateString()}</TableCell>
                                             <TableCell>

@@ -22,7 +22,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SurveyDetailsPage({ params }: { params: { id: string } }) {
-  const survey = allSurveys.find(s => s.id === params.id);
+  const { id } = params;
+  const survey = allSurveys.find(s => s.id === id);
   const [homogeneousAreas, setHomogeneousAreas] = useState<HomogeneousArea[]>(survey?.homogeneousAreas || []);
   const [asbestosSamples, setAsbestosSamples] = useState<AsbestosSample[]>(survey?.asbestosSamples || []);
   const [paintSamples, setPaintSamples] = useState<PaintSample[]>(survey?.paintSamples || []);

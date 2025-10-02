@@ -15,7 +15,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import Link from 'next/link';
 
 export default function PersonnelDetailsPage({ params }: { params: { id: string } }) {
-  const person = personnel.find(p => p.id === params.id);
+  const { id } = params;
+  const person = personnel.find(p => p.id === id);
 
   if (!person) {
     notFound();
@@ -60,7 +61,7 @@ export default function PersonnelDetailsPage({ params }: { params: { id: string 
                 Certification and compliance status for {person.name}.
               </CardDescription>
             </div>
-            <AddPersonnelDialog person={person}>
+            <AddPersonnelDialog person={person} onSave={() => {}}>
                 <Button variant="outline" size="icon">
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Edit Personnel</span>

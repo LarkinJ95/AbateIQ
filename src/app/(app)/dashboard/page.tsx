@@ -3,13 +3,19 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { activeExceedances } from '@/lib/data';
-import { ActiveExceedances } from '@/components/dashboard/active-exceedances';
+import { exceedances } from '@/lib/data';
+import { RecentExceedances } from '@/components/dashboard/recent-exceedances';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
 import Link from 'next/link';
 import { Users, Briefcase, AlertTriangle } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 
 export default function DashboardPage() {
+    const recentExceedances = exceedances.filter(e => {
+        const exceedanceDate = new Date(); // placeholder as `exceedance` type doesn't have a date
+        return differenceInDays(new Date(), exceedanceDate) <= 30;
+    });
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <Header title="Dashboard" />
@@ -47,7 +53,7 @@ export default function DashboardPage() {
                 </CardContent>
             </Link>
           </Card>
-           <Card className={activeExceedances.length > 0 ? "hover:bg-destructive/10" : ""}>
+           <Card className={recentExceedances.length > 0 ? "hover:bg-destructive/10" : ""}>
              <Link href="/dashboard">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -56,9 +62,9 @@ export default function DashboardPage() {
                   <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className={`text-2xl font-bold ${activeExceedances.length > 0 ? "text-destructive" : ""}`}>{activeExceedances.length}</div>
+                  <div className={`text-2xl font-bold ${recentExceedances.length > 0 ? "text-destructive" : ""}`}>{recentExceedances.length}</div>
                    <p className="text-xs text-muted-foreground">
-                    {activeExceedances.length > 0 ? 'Active exposure limit alerts.' : 'No active exposure alerts.'}
+                    {recentExceedances.length > 0 ? 'Recent exposure limit alerts.' : 'No recent exposure alerts.'}
                   </p>
                 </CardContent>
               </Link>
@@ -74,7 +80,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           <div className="space-y-4 md:space-y-8">
-            <ActiveExceedances exceedances={activeExceedances} />
+            <RecentExceedances exceedances={recentExceedances} />
           </div>
         </div>
       </main>

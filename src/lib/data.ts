@@ -55,8 +55,10 @@ export const existingNeas: ExistingNea[] = [
 ];
 
 export const exceedances: Exceedance[] = [
-  { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limit: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.', evidence: 'path/to/photo.jpg' },
+  { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limit: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.', exceedanceDate: '2024-07-15', evidence: 'path/to/photo.jpg' },
+  { id: 'e2', resultId: 'res-2-placeholder', analyte: 'Silica', concentration: '0.06 mg/m³', limit: '0.05 mg/m³ (PEL)', personnel: 'J. Doe', location: 'Downtown Tower, 10th Floor', correctiveAction: 'Increase ventilation and require respiratory protection.', exceedanceDate: '2024-06-20' },
 ];
+
 
 export const personnelExposureData: PersonnelExposure[] = [
     { name: 'J. Doe', asbestos: 80, silica: 65, 'heavy metals': 45 },
@@ -64,10 +66,6 @@ export const personnelExposureData: PersonnelExposure[] = [
     { name: 'M. Chen', asbestos: 50, silica: 90, 'heavy metals': 75 },
     { name: 'R. Patel', asbestos: 20, silica: 15, 'heavy metals': 10 },
     { name: 'S. Garcia', asbestos: 70, silica: 55, 'heavy metals': 60 },
-];
-
-export const activeExceedances: Exceedance[] = [
-  { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limit: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.' },
 ];
 
 export const documents: Document[] = [

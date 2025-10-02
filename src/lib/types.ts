@@ -88,6 +88,7 @@ export type Exceedance = {
   personnel: string;
   location: string;
   correctiveAction: string;
+  exceedanceDate: string;
   evidence?: string;
 };
 

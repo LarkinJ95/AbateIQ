@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import type { Survey, AsbestosSample, PaintSample, FunctionalArea, HomogeneousArea } from '@/lib/types';
 import Image from 'next/image';
-import { MapPin, Calendar, User, FileText, CheckSquare, Camera, Upload, Bot, Printer, Copy, Loader2 } from 'lucide-react';
+import { MapPin, Calendar, User, FileText, CheckSquare, Camera, Upload, Bot, Printer, Copy, Loader2, Edit } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SurveyChecklist } from '../survey-checklist';
 import { AsbestosTable } from '../asbestos-table';
@@ -26,12 +26,13 @@ import { generateSurveyReport, GenerateSurveyReportOutput } from '@/ai/flows/gen
 export default function SurveyDetailsPage() {
   const params = useParams();
   const id = params.id as string;
-  const survey = allSurveys.find(s => s.id === id);
+  const initialSurvey = allSurveys.find(s => s.id === id);
   
-  if (!survey) {
+  if (!initialSurvey) {
     notFound();
   }
 
+  const [survey, setSurvey] = useState<Survey>(initialSurvey);
   const [homogeneousAreas, setHomogeneousAreas] = useState<HomogeneousArea[]>(survey?.homogeneousAreas || []);
   const [asbestosSamples, setAsbestosSamples] = useState<AsbestosSample[]>(survey?.asbestosSamples || []);
   const [paintSamples, setPaintSamples] = useState<PaintSample[]>(survey?.paintSamples || []);
@@ -106,6 +107,10 @@ export default function SurveyDetailsPage() {
       }
   }
   
+  const handleSaveSurvey = (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
+     setSurvey(prev => ({...prev, ...surveyData} as Survey));
+  }
+
   const handleGenerateReport = async () => {
     setIsGeneratingReport(true);
     setGeneratedReport(null);
@@ -220,8 +225,11 @@ export default function SurveyDetailsPage() {
                           Details for job #{survey.jobNumber}
                         </CardDescription>
                     </div>
-                    <AddEditSurveyDialog survey={survey} onSave={() => {}}>
-                        <Button variant="outline" size="sm">Edit</Button>
+                    <AddEditSurveyDialog survey={survey} onSave={handleSaveSurvey}>
+                        <Button variant="outline" size="icon">
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Edit Survey</span>
+                        </Button>
                     </AddEditSurveyDialog>
                 </div>
               </CardHeader>
@@ -323,3 +331,5 @@ export default function SurveyDetailsPage() {
     </div>
   );
 }
+
+    

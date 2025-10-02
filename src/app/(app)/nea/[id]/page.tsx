@@ -16,8 +16,8 @@ import { useRef, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LinkSamplesDialog } from '@/app/(app)/nea/link-samples-dialog';
 
-export default function NeaDetailsPage({ params }: { params: { id: string } }) {
-  const nea = existingNeas.find(e => e.id === params.id);
+export default function NeaDetailsPage({ params: { id } }: { params: { id: string } }) {
+  const nea = existingNeas.find(e => e.id === id);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [documentUploaded, setDocumentUploaded] = useState(false);

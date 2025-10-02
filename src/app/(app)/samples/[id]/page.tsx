@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Header } from '@/components/header';
@@ -6,8 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { samples, projects, tasks, personnel } from '@/lib/data';
 import { notFound } from 'next/navigation';
 
-export default function SampleDetailsPage({ params }: { params: { id: string } }) {
-  const sample = samples.find(s => s.id === params.id);
+export default function SampleDetailsPage({ params: { id } }: { params: { id: string } }) {
+  const sample = samples.find(s => s.id === id);
 
   if (!sample) {
     notFound();

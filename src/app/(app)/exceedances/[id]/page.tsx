@@ -1,3 +1,4 @@
+
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { exceedances } from '@/lib/data';
@@ -5,8 +6,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-export default function ExceedanceDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ExceedanceDetailsPage({ params: { id } }: { params: { id: string } }) {
   const exceedance = exceedances.find(e => e.id === id);
   const evidenceImage = PlaceHolderImages.find(img => img.id === 'doc-thumb-2');
 

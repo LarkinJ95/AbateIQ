@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Header } from '@/components/header';
@@ -14,8 +15,7 @@ import { AddPersonnelDialog } from '../add-personnel-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 
-export default function PersonnelDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function PersonnelDetailsPage({ params: { id } }: { params: { id: string } }) {
   const person = personnel.find(p => p.id === id);
 
   if (!person) {

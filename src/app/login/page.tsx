@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -11,19 +12,17 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, initiateEmailSignIn } from '@/firebase';
 import { ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -36,23 +35,11 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     setIsLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({
-        title: 'Login Successful',
-        description: "You're now logged in.",
-      });
-      router.push('/dashboard');
-    } catch (error: any) {
-      console.error('Login error:', error);
-      toast({
-        title: 'Login Failed',
-        description: error.message || 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // Non-blocking sign-in. The onAuthStateChanged listener in the provider will handle the redirect.
+    initiateEmailSignIn(auth, email, password);
+    // We don't await here. The UI can proceed, and the listener will react to auth changes.
+    // A timeout is used to reset loading state in case of silent failures (e.g. network issues not caught by listener)
+    setTimeout(() => setIsLoading(false), 5000); // Reset after 5s
   };
 
   if (isUserLoading || user) {

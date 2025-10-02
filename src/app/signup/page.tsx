@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -11,19 +12,17 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, initiateEmailSignUp } from '@/firebase';
 import { ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
@@ -36,23 +35,10 @@ export default function SignUpPage() {
 
   const handleSignUp = async () => {
     setIsLoading(true);
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      toast({
-        title: 'Account Created',
-        description: 'You have been successfully signed up.',
-      });
-      router.push('/dashboard');
-    } catch (error: any) {
-      console.error('Sign up error:', error);
-      toast({
-        title: 'Sign Up Failed',
-        description: error.message || 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // Non-blocking sign-up. The onAuthStateChanged listener will handle success/redirect.
+    initiateEmailSignUp(auth, email, password);
+    // We don't await. A timeout is used to reset loading state in case of silent failures.
+    setTimeout(() => setIsLoading(false), 5000);
   };
   
     if (isUserLoading || user) {

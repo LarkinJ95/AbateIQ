@@ -1,13 +1,12 @@
 
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { HomogeneousArea, FunctionalArea, AsbestosSample } from '@/lib/types';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Edit, Save, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 
@@ -20,6 +19,8 @@ interface HomogeneousAreasTableProps {
 
 export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, asbestosSamples, onSave }: HomogeneousAreasTableProps) {
   const [areas, setAreas] = useState<HomogeneousArea[]>(initialAreas);
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [editedRowData, setEditedRowData] = useState<Partial<HomogeneousArea>>({});
   const [newRow, setNewRow] = useState<Partial<HomogeneousArea>>({ haId: '', description: '', functionalAreaIds: [] });
   const { toast } = useToast();
 
@@ -27,6 +28,10 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
       value: fa.id,
       label: `${fa.faId} - ${fa.faUse}`
   }));
+
+  useEffect(() => {
+    setAreas(initialAreas);
+  }, [initialAreas]);
 
   const handleAddRow = () => {
     if (newRow.haId && newRow.description) {
@@ -53,12 +58,31 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
     toast({ title: 'Homogeneous Area Removed', variant: 'destructive' });
   };
   
-  const handleFALinkChange = (haId: string, faIds: string[]) => {
-      const updatedAreas = areas.map(area => 
-          area.id === haId ? { ...area, functionalAreaIds: faIds } : area
-      );
-      setAreas(updatedAreas);
-      onSave(updatedAreas);
+  const handleEditRow = (area: HomogeneousArea) => {
+    setEditingRowId(area.id);
+    setEditedRowData(area);
+  }
+
+  const handleCancelEdit = () => {
+    setEditingRowId(null);
+    setEditedRowData({});
+  }
+
+  const handleSaveRow = (id: string) => {
+    if (!editedRowData.haId || !editedRowData.description) {
+        toast({ title: 'Missing Data', description: 'Please fill out both HA ID and Description.', variant: 'destructive'});
+        return;
+    }
+    const updatedAreas = areas.map(a => a.id === id ? { ...a, ...editedRowData } : a);
+    setAreas(updatedAreas as HomogeneousArea[]);
+    onSave(updatedAreas as HomogeneousArea[]);
+    setEditingRowId(null);
+    setEditedRowData({});
+    toast({ title: 'Homogeneous Area Updated' });
+  }
+
+  const handleRowDataChange = (field: keyof HomogeneousArea, value: any) => {
+    setEditedRowData(prev => ({ ...prev, [field]: value }));
   }
 
   const getLinkedSamplesCount = (haId: string) => {
@@ -93,32 +117,73 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
           <TableRow>
             <TableHead className="w-[150px]">HA ID</TableHead>
             <TableHead>Description</TableHead>
-            <TableHead>Linked FS</TableHead>
+            <TableHead>Linked FAs</TableHead>
             <TableHead>Linked Samples</TableHead>
             <TableHead>Total Est. Qty</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
+            <TableHead className="w-28 text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {areas.map((area) => (
             <TableRow key={area.id}>
-              <TableCell className="font-medium">{area.haId}</TableCell>
-              <TableCell>{area.description}</TableCell>
-              <TableCell>
-                  <MultiSelect
-                    options={faOptions}
-                    selected={area.functionalAreaIds || []}
-                    onChange={(selected) => handleFALinkChange(area.id, selected)}
-                    placeholder="Link FS..."
-                    className="w-48"
-                  />
-              </TableCell>
-              <TableCell>{getLinkedSamplesCount(area.id)}</TableCell>
-              <TableCell>{getTotalEstQuantity(area.id)}</TableCell>
-              <TableCell>
-                <Button variant="ghost" size="icon" onClick={() => handleDeleteRow(area.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+              {editingRowId === area.id ? (
+                <>
+                  <TableCell>
+                    <Input value={editedRowData.haId} onChange={e => handleRowDataChange('haId', e.target.value)} />
+                  </TableCell>
+                  <TableCell>
+                    <Input value={editedRowData.description} onChange={e => handleRowDataChange('description', e.target.value)} />
+                  </TableCell>
+                  <TableCell>
+                    <MultiSelect
+                        options={faOptions}
+                        selected={editedRowData.functionalAreaIds || []}
+                        onChange={(selected) => handleRowDataChange('functionalAreaIds', selected)}
+                        placeholder="Link FAs..."
+                        className="w-48"
+                    />
+                  </TableCell>
+                  <TableCell>{getLinkedSamplesCount(area.id)}</TableCell>
+                  <TableCell>{getTotalEstQuantity(area.id)}</TableCell>
+                </>
+              ) : (
+                <>
+                  <TableCell className="font-medium">{area.haId}</TableCell>
+                  <TableCell>{area.description}</TableCell>
+                  <TableCell>
+                    <MultiSelect
+                        options={faOptions}
+                        selected={area.functionalAreaIds || []}
+                        onChange={(selected) => handleRowDataChange('functionalAreaIds', selected)}
+                        placeholder="Link FAs..."
+                        className="w-48"
+                        disabled={true}
+                    />
+                  </TableCell>
+                  <TableCell>{getLinkedSamplesCount(area.id)}</TableCell>
+                  <TableCell>{getTotalEstQuantity(area.id)}</TableCell>
+                </>
+              )}
+              <TableCell className="text-right">
+                {editingRowId === area.id ? (
+                  <div className="flex gap-1 justify-end">
+                    <Button variant="ghost" size="icon" onClick={() => handleSaveRow(area.id)}>
+                      <Save className="h-4 w-4 text-green-600" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                      <XCircle className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-1 justify-end">
+                    <Button variant="ghost" size="icon" onClick={() => handleEditRow(area)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteRow(area.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                )}
               </TableCell>
             </TableRow>
           ))}
@@ -143,13 +208,13 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
                     options={faOptions}
                     selected={newRow.functionalAreaIds || []}
                     onChange={(selected) => setNewRow({ ...newRow, functionalAreaIds: selected })}
-                    placeholder="Link FS..."
+                    placeholder="Link FAs..."
                     className="w-48"
                 />
             </TableCell>
             <TableCell></TableCell>
             <TableCell></TableCell>
-            <TableCell>
+            <TableCell className="text-right">
               <Button size="sm" onClick={handleAddRow}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add
               </Button>

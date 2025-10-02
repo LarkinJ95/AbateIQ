@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { Header } from '@/components/header';
 import { notFound, useParams } from 'next/navigation';
 import { surveys as allSurveys } from '@/lib/data';
@@ -51,6 +51,17 @@ export default function SurveyDetailsPage() {
 
 
   const { toast } = useToast();
+
+  // Sync state if initial survey changes (e.g. on navigation)
+  useEffect(() => {
+    setSurvey(initialSurvey);
+    setHomogeneousAreas(initialSurvey.homogeneousAreas || []);
+    setAsbestosSamples(initialSurvey.asbestosSamples || []);
+    setPaintSamples(initialSurvey.paintSamples || []);
+    setFunctionalAreas(initialSurvey.functionalAreas || []);
+    setMainPhoto(initialSurvey.sitePhotoUrl || null);
+  }, [id, initialSurvey]);
+
   
   const handlePhotoUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -171,14 +182,14 @@ export default function SurveyDetailsPage() {
     <div className="flex min-h-screen w-full flex-col">
       <Header title={`Survey: ${survey.siteName}`} />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="grid gap-8 lg:grid-cols-2">
-            <Card>
+        <div className="grid gap-8 lg:grid-cols-3">
+            <Card className="lg:col-span-1">
               <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
                         <CardTitle className="font-headline">Survey Details</CardTitle>
                         <CardDescription>
-                          Details for job #{survey.jobNumber}
+                          Job #{survey.jobNumber}
                         </CardDescription>
                     </div>
                     <AddEditSurveyDialog survey={survey} onSave={handleSaveSurvey}>
@@ -219,7 +230,7 @@ export default function SurveyDetailsPage() {
                 </Button>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="lg:col-span-2">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2">
                         <Camera /> Photo Management
@@ -357,3 +368,4 @@ export default function SurveyDetailsPage() {
       </main>
     </div>
   );
+}

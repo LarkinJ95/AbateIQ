@@ -78,7 +78,7 @@ const GenerateSurveyReportInputSchema = z.object({
   // Photos
   mainPhotoDataUri: z.string().optional(),
   floorPlanDataUri: z.string().optional(),
-  positiveMaterialPhotoDataUris: z-array(z.string()).optional(),
+  positiveMaterialPhotoDataUris: z.array(z.string()).optional(),
 
 });
 

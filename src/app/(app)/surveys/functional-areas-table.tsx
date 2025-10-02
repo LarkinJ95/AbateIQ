@@ -17,12 +17,28 @@ interface FunctionalAreasTableProps {
 }
 
 const defaultFaUseOptions: ComboboxOption[] = [
+    // Residential
+    { value: 'kitchen', label: 'Kitchen' },
+    { value: 'bedroom', label: 'Bedroom' },
+    { value: 'bathroom', label: 'Bathroom' },
+    { value: 'living-room', label: 'Living Room' },
+    { value: 'dining-room', label: 'Dining Room' },
+    { value: 'basement', label: 'Basement' },
+    { value: 'attic', label: 'Attic' },
+    { value: 'garage', label: 'Garage' },
+    // Commercial
     { value: 'office', label: 'Office' },
     { value: 'restroom', label: 'Restroom' },
     { value: 'corridor', label: 'Corridor' },
-    { value: 'mechanical', label: 'Mechanical' },
     { value: 'storage', label: 'Storage' },
     { value: 'classroom', label: 'Classroom' },
+    { value: 'retail-space', label: 'Retail Space' },
+    { value: 'conference-room', label: 'Conference Room' },
+    // Industrial
+    { value: 'warehouse', label: 'Warehouse' },
+    { value: 'process-area', label: 'Process Area' },
+    { value: 'mechanical-room', label: 'Mechanical Room' },
+    { value: 'laboratory', label: 'Laboratory' },
 ];
 
 export function FunctionalAreasTable({ areas: initialAreas, onSave }: FunctionalAreasTableProps) {

@@ -7,12 +7,9 @@
  * CUSTOMIZATION AREA: This file is the central place to customize AI-generated reports.
  * 1. `GenerateSurveyReportInputSchema`: Defines all data available to the AI.
  *    To add new data to your report, add it here first.
- * 2. `reportOrchestratorPrompt`: This is the master prompt. It tells the AI *how*
- *    to structure the report and what data to include in each section by calling
- *    the `generateHtml` tool. You can reorder sections or change the instructions here.
- * 3. `generateHtml` (Tool) prompt: This prompt defines the HTML and CSS for each
- *    individual section of the report. To change styling (colors, fonts, layout) or the
- *    HTML structure of a specific component (like a table), modify the prompt for this tool.
+ * 2. The `prompt` string: This is a large template that contains all the HTML and CSS
+ *    for the report. To change styling (colors, fonts, layout) or the report's
+ *    structure, you will modify this prompt directly.
  */
 
 import { ai } from '@/ai/genkit';
@@ -99,144 +96,58 @@ export type GenerateSurveyReportOutput = z.infer<typeof GenerateSurveyReportOutp
 
 
 // #################################################################################
-// AI TOOLS (The building blocks for the report)
+// AI PROMPT (The "brains" of the operation)
 // #################################################################################
 
+
 /**
- * CUSTOMIZATION AREA 3: HTML Generation Tool
- * This tool is responsible for generating the HTML and CSS for individual sections.
- * Modify the `prompt` string here to change styling (fonts, colors, table layouts)
- * or the HTML structure of the report components.
+ * CUSTOMIZATION AREA 2: Main Report Prompt
+ * This prompt acts as the "director" for the report. It contains all the HTML and CSS.
+ * To change styling (fonts, colors, table layouts) or the HTML structure of the report,
+ * modify the `prompt` string here.
  */
-const generateHtml = ai.defineTool(
-  {
-    name: 'generateHtml',
-    description: 'Generates a single, styled HTML section for a survey report. Use this tool multiple times to build a complete report section by section.',
-    inputSchema: z.object({
-      section: z.enum([
-        'fullReportWrapper',
-        'coverPage',
-        'executiveSummary',
-        'introduction',
-        'inspectionMethods',
-        'functionalAreasSummary',
-        'homogeneousAreasSummary',
-        'asbestosResults',
-        'paintResults',
-        'floorPlan',
-        'positiveMaterialPhotos',
-        'conclusions',
-        'disclaimer',
-      ]),
-      data: z.any().describe('A JSON object or string containing the data for this section. This will be provided by the orchestrator.'),
-    }),
-    outputSchema: z.string().describe('A single string of HTML representing the requested section.'),
-  },
-  async ({ section, data }, flow) => {
-    // This is a simplified internal prompt. In a real application, you might have
-    // different prompts for different sections for more control.
-    
-    // Combine the section-specific data with the overall flow input to ensure colors are available.
-    const promptData = { ...flow.input, ...data };
-    
-    const { text } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
-      prompt: `
+const prompt = ai.definePrompt({
+    name: 'generateSurveyReportPrompt',
+    input: { schema: GenerateSurveyReportInputSchema },
+    output: { schema: GenerateSurveyReportOutputSchema },
+    prompt: `
         You are an expert HTML and CSS developer creating a professional environmental survey report.
-        Generate the HTML for the requested section only. Use the provided data.
-        
+        Generate a single, complete HTML document based on the provided data.
+        The final output must be a JSON object with a single key "reportHtml" containing the full HTML string.
+
         **Styling Rules:**
         - Font: Use Google's 'Inter' font.
-        - Primary Color (for headers, table borders): ${promptData.primaryColor || '#00BFFF'}
-        - Accent Color (for sub-headers): ${promptData.accentColor || '#708090'}
+        - Primary Color (for headers, table borders): {{{primaryColor}}}
+        - Accent Color (for sub-headers): {{{accentColor}}}
         - Use semantic HTML tags and well-structured tables. Photos should be responsive.
         
-        **Section to Generate:** ${section}
-        
-        **Data for Section:**
+        **Data for Report:**
         \`\`\`json
-        ${JSON.stringify(promptData, null, 2)}
+        {{{json aniescape=true this}}}
         \`\`\`
 
-        **Instructions per section:**
-        - **fullReportWrapper**: Create the full HTML document structure (\`<html><head>...<style>...</style></head><body>...</body></html>\`). The body should contain a placeholder comment \`<!-- REPORT_CONTENT -->\` where the other sections will be injected. Include all necessary CSS in the \`<style>\` tag.
-        - **coverPage**: A visually distinct cover page with the main photo, report title, site name, address, job number, date, and company name/logo.
-        - **introduction**: A brief intro paragraph.
-        - **executiveSummary**: A high-level overview of findings. Mention if hazardous materials were found.
-        - **inspectionMethods**: Include the provided text block verbatim.
-        - **functionalAreasSummary**: A table for Functional Areas with columns: FA ID, Use, Length, Width, Height, Floor Area.
-        - **homogeneousAreasSummary**: A table for Homogeneous Areas with columns: HA ID, Description, Linked FAs.
-        - **asbestosResults**: A table for Asbestos Samples. Columns must be in this order: Sample #, HA ID, Location, Material, Result.
-        - **paintResults**: Create a separate table for EACH analyte (e.g., "Lead Paint Sample Results"). Columns: Sample Location, Paint Color, Result (mg/kg), Result (% by weight). Calculate '% by weight' as (mg/kg) / 10000.
-        - **floorPlan**: Display the floor plan image under a clear heading.
-        - **positiveMaterialPhotos**: Display all provided photos in a gallery under a clear heading.
-        - **conclusions**: Provide clear next steps based on the findings.
-        - **disclaimer**: Include the provided disclaimer text, inserting the company name.
+        **HTML Structure:**
+        Create the full HTML document structure (\`<html><head>...<style>...</style></head><body>...</body></html>\`).
+        
+        Include all necessary CSS in the \`<style>\` tag.
+        
+        The body should contain the following sections in order:
+        1.  **Cover Page**: A visually distinct cover page with the main photo, report title, site name, address, job number, date, and company name/logo.
+        2.  **Executive Summary**: A high-level overview of findings. Mention if hazardous materials were found.
+        3.  **Introduction**: A brief intro paragraph.
+        4.  **Inspection Methods**: Include a standard text block about inspection methods.
+        5.  **Functional Areas Summary**: A table for Functional Areas with columns: FA ID, Use, Length, Width, Height, Floor Area.
+        6.  **Homogeneous Areas Summary**: A table for Homogeneous Areas with columns: HA ID, Description, Linked FAs.
+        7.  **Asbestos Results**: A table for Asbestos Samples. Columns must be in this order: Sample #, HA ID, Location, Material, Result.
+        8.  **Paint Results**: Create a separate table for EACH analyte (e.g., "Lead Paint Sample Results"). Columns: Sample Location, Paint Color, Result (mg/kg), Result (% by weight). Calculate '% by weight' as (mg/kg) / 10000.
+        9.  **Floor Plan**: Display the floor plan image under a clear heading.
+        10. **Positive Material Photos**: Display all provided photos in a gallery under a clear heading.
+        11. **Conclusions**: Provide clear next steps based on the findings.
+        12. **Disclaimer**: Include a standard disclaimer text, inserting the company name.
 
-        Generate only the HTML for the requested section. Do not include \`<html>\` or \`<body>\` tags unless the section is 'fullReportWrapper'.
+        Generate the complete HTML as a single string.
       `,
-    });
-    return text;
-  }
-);
-
-
-// #################################################################################
-// ORCHESTRATOR PROMPT (The "brains" of the operation)
-// #################################################################################
-
-
-// Define a schema for the data being passed to the prompt itself, including stringified fields
-const ReportOrchestratorInputSchema = GenerateSurveyReportInputSchema.extend({
-  stringifiedFunctionalAreas: z.string(),
-  stringifiedHomogeneousAreas: z.string(),
-  stringifiedAsbestosSamples: z.string(),
-  stringifiedPaintSamples: z.string(),
-});
-
-
-/**
- * CUSTOMIZATION AREA 2: REPORT ORCHESTRATOR PROMPT
- * This prompt acts as the "director" for the report. It doesn't write HTML itself.
- * Instead, it calls the `generateHtml` tool for each section in the desired order.
- * To reorder the report, change the order of the tool calls in the prompt below.
- */
-const reportOrchestratorPrompt = ai.definePrompt({
-  name: 'reportOrchestratorPrompt',
-  // The system prompt instructs the AI on its role and how to use the tools.
-  system: `You are a report-building agent. Your task is to generate a complete hazardous material survey report by calling the 'generateHtml' tool for each required section, in the correct order.
-  
-  **Report Structure:**
-  1.  Generate the main HTML wrapper first ('fullReportWrapper').
-  2.  Then, generate each content section one by one:
-      - Cover Page
-      - Executive Summary
-      - Introduction & Scope
-      - Inspection Methods
-      - Functional Areas Summary
-      - Homogeneous Areas Summary
-      - Asbestos Results Table
-      - Paint Results Tables (one for each analyte)
-      - Floor Plan / Sketch
-      - Positive Material Photos
-      - Conclusions & Recommendations
-      - Disclaimer
-  `,
-  tools: [generateHtml],
-  // The prompt itself provides the data context to the AI.
-  prompt: `
-    Generate the full report using the 'generateHtml' tool. Call the tool for each section using the provided data.
-
-    **Report Data:**
-    - Site & Survey Info: {{{siteName}}}, {{{address}}}, {{{surveyDate}}}, {{{inspector}}}, {{{jobNumber}}}, Survey Types: {{#each surveyType}}{{{this}}}{{/each}}
-    - Company Info: {{{companyName}}}, Primary Color: {{{primaryColor}}}, Accent Color: {{{accentColor}}}
-    - Functional Areas: {{{stringifiedFunctionalAreas}}}
-    - Homogeneous Areas: {{{stringifiedHomogeneousAreas}}}
-    - Asbestos Samples: {{{stringifiedAsbestosSamples}}}
-    - Paint Samples: {{{stringifiedPaintSamples}}}
-    - Photos: mainPhotoDataUri is available, floorPlanDataUri is available, positiveMaterialPhotoDataUris are available.
-  `,
-});
+  });
 
 
 // #################################################################################
@@ -244,47 +155,21 @@ const reportOrchestratorPrompt = ai.definePrompt({
 // #################################################################################
 
 
+const generateSurveyReportFlow = ai.defineFlow(
+    {
+      name: 'generateSurveyReportFlow',
+      inputSchema: GenerateSurveyReportInputSchema,
+      outputSchema: GenerateSurveyReportOutputSchema,
+    },
+    async (input) => {
+      const { output } = await prompt(input);
+      return output!;
+    }
+);
+
 /**
  * This is the main function that orchestrates the AI report generation.
  */
 export async function generateSurveyReport(input: GenerateSurveyReportInput): Promise<GenerateSurveyReportOutput> {
-
-  // 1. Prepare the input data for the AI.
-  // We stringify complex data to ensure it's passed cleanly to the prompt.
-  const promptInput = {
-    ...input,
-    stringifiedFunctionalAreas: JSON.stringify(input.functionalAreas),
-    stringifiedHomogeneousAreas: JSON.stringify(input.homogeneousAreas),
-    stringifiedAsbestosSamples: JSON.stringify(input.asbestosSamples),
-    stringifiedPaintSamples: JSON.stringify(input.paintSamples),
-  };
-  
-  // 2. Call the orchestrator prompt. This will trigger the AI to make a series of tool calls.
-  const { actions } = await reportOrchestratorPrompt(promptInput);
-
-  // 3. Process the tool calls to build the final report.
-  let fullHtml = '';
-  const contentSections: string[] = [];
-  
-  for (const action of actions) {
-    if (action.tool === 'generateHtml') {
-      const toolOutput = action.output as string;
-      if (action.input.section === 'fullReportWrapper') {
-        fullHtml = toolOutput; // This is the main HTML structure
-      } else {
-        contentSections.push(toolOutput); // These are the content pieces
-      }
-    }
-  }
-
-  // 4. Inject the content sections into the main HTML wrapper.
-  if (fullHtml.includes('<!-- REPORT_CONTENT -->')) {
-    fullHtml = fullHtml.replace('<!-- REPORT_CONTENT -->', contentSections.join('\n'));
-  } else {
-    // Fallback if the placeholder is missing
-    fullHtml = `<html><body>${contentSections.join('\n')}</body></html>`;
-  }
-  
-  // 5. Return the completed report.
-  return { reportHtml: fullHtml };
+    return generateSurveyReportFlow(input);
 }

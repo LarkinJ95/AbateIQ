@@ -1,7 +1,6 @@
 
 'use client';
 
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,7 +20,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export function UserNav() {
-    const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar-1');
     const { toast } = useToast();
     const { user } = useUser();
     const auth = useAuth();
@@ -57,9 +55,8 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
             <AvatarImage 
-                src={user?.photoURL ?? userAvatar?.imageUrl} 
+                src={user?.photoURL ?? undefined} 
                 alt="User avatar" 
-                data-ai-hint={userAvatar?.imageHint} 
             />
             <AvatarFallback>
                 <User className="text-muted-foreground" />

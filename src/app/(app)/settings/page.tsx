@@ -16,7 +16,6 @@ import Link from 'next/link';
 import { Shield, Upload, User } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function SettingsPage() {
     const { user } = useUser();
@@ -28,7 +27,6 @@ export default function SettingsPage() {
     const [photoURL, setPhotoURL] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const userAvatarPlaceholder = PlaceHolderImages.find(img => img.id === 'user-avatar-1');
 
 
     useEffect(() => {
@@ -116,7 +114,7 @@ export default function SettingsPage() {
                                 <Label>Profile Picture</Label>
                                 <div className="relative group">
                                      <Avatar className="h-20 w-20">
-                                        <AvatarImage src={photoURL ?? userAvatarPlaceholder?.imageUrl} alt="User avatar" />
+                                        <AvatarImage src={photoURL ?? undefined} alt="User avatar" />
                                         <AvatarFallback>
                                             <User className="text-muted-foreground h-10 w-10" />
                                         </AvatarFallback>

@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function ExceedanceDetailsPage({ params }: { params: { id: string } }) {
-  const exceedance = exceedances.find(e => e.id === params.id);
+  const { id } = params;
+  const exceedance = exceedances.find(e => e.id === id);
   const evidenceImage = PlaceHolderImages.find(img => img.id === 'doc-thumb-2');
 
   if (!exceedance) {

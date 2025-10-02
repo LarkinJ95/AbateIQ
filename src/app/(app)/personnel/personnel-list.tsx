@@ -25,9 +25,11 @@ import Link from 'next/link';
 
 interface PersonnelListProps {
   personnel: Personnel[];
+  onSave: (personnelData: Omit<Personnel, 'id'> & { id?: string }) => void;
+  onDelete: (personnelId: string) => void;
 }
 
-export function PersonnelList({ personnel }: PersonnelListProps) {
+export function PersonnelList({ personnel, onSave, onDelete }: PersonnelListProps) {
   const { toast } = useToast();
 
   const getStatus = (dateString: string) => {
@@ -42,10 +44,11 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
     return { text: 'Current', variant: 'default' as const };
   };
 
-  const handleDelete = (personName: string) => {
+  const handleDelete = (person: Personnel) => {
+    onDelete(person.id);
     toast({
         title: 'Personnel Deleted',
-        description: `${personName} has been deleted.`,
+        description: `${person.name} has been deleted.`,
         variant: 'destructive',
     });
   };
@@ -103,13 +106,13 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
                             View History
                         </Link>
                     </DropdownMenuItem>
-                    <AddPersonnelDialog person={person}>
+                    <AddPersonnelDialog person={person} onSave={onSave}>
                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                             <Pencil className="mr-2 h-4 w-4"/>
                             Edit
                         </DropdownMenuItem>
                     </AddPersonnelDialog>
-                    <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(person.name)}>
+                    <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(person)}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete
                     </DropdownMenuItem>

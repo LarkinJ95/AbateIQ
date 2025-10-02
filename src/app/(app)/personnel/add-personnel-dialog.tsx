@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Pencil } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
@@ -25,10 +24,11 @@ import { useToast } from '@/hooks/use-toast';
 
 interface AddPersonnelDialogProps {
   person?: Personnel | null;
+  onSave: (personData: Omit<Personnel, 'id'> & { id?: string }) => void;
   children: React.ReactNode;
 }
 
-export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps) {
+export function AddPersonnelDialog({ person, onSave, children }: AddPersonnelDialogProps) {
   const [fitTestDate, setFitTestDate] = useState<Date>();
   const [medClearanceDate, setMedClearanceDate] = useState<Date>();
   const [name, setName] = useState('');
@@ -53,6 +53,28 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
   }, [person, isEditMode, isOpen]);
   
   const handleSave = () => {
+    if (!name || !employeeId || !fitTestDate || !medClearanceDate) {
+        toast({
+            title: 'Missing Fields',
+            description: 'Please fill out all fields.',
+            variant: 'destructive'
+        });
+        return;
+    }
+
+    const personData = {
+        name,
+        employeeId,
+        fitTestDueDate: format(fitTestDate, 'yyyy-MM-dd'),
+        medicalClearanceDueDate: format(medClearanceDate, 'yyyy-MM-dd')
+    };
+
+    if (isEditMode && person) {
+        onSave({ id: person.id, ...personData });
+    } else {
+        onSave(personData);
+    }
+    
     toast({
         title: isEditMode ? "Personnel Updated" : "Personnel Added",
         description: `${name} has been ${isEditMode ? 'updated' : 'saved'}.`,

@@ -45,6 +45,21 @@ export default function ProjectsPage() {
     }
   };
 
+  const handleSaveProject = (projectData: Omit<Project, 'id'> & { id?: string }) => {
+    if (projectData.id) {
+        // Edit existing project
+        setProjects(prev => prev.map(p => p.id === projectData.id ? { ...p, ...projectData } as Project : p));
+    } else {
+        // Add new project
+        const newProject: Project = {
+            ...projectData,
+            id: `proj-${Date.now()}`
+        };
+        setProjects(prev => [newProject, ...prev]);
+    }
+  };
+
+
   const handleDelete = (projectToDelete: Project) => {
     setProjects(prevProjects => prevProjects.filter(p => p.id !== projectToDelete.id));
     toast({
@@ -62,7 +77,7 @@ export default function ProjectsPage() {
           <h2 className="text-2xl font-headline font-bold tracking-tight">
             Manage Projects
           </h2>
-          <AddProjectDialog project={null}>
+          <AddProjectDialog project={null} onSave={handleSaveProject}>
              <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 New Project
@@ -117,7 +132,7 @@ export default function ProjectsPage() {
                                   View Details
                                 </Link>
                               </DropdownMenuItem>
-                              <AddProjectDialog project={project}>
+                              <AddProjectDialog project={project} onSave={handleSaveProject}>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <Pencil className="mr-2 h-4 w-4" />
                                     Edit

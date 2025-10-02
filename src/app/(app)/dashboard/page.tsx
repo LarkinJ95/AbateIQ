@@ -3,7 +3,7 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { exceedances } from '@/lib/data';
+import { exceedances, personnel, projects } from '@/lib/data';
 import { RecentExceedances } from '@/components/dashboard/recent-exceedances';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
 import Link from 'next/link';
@@ -30,7 +30,7 @@ export default function DashboardPage() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">4</div>
+                  <div className="text-2xl font-bold">{personnel.length}</div>
                   <p className="text-xs text-muted-foreground">
                     Manage active personnel.
                   </p>
@@ -46,7 +46,7 @@ export default function DashboardPage() {
                   <Briefcase className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">4</div>
+                  <div className="text-2xl font-bold">{projects.filter(p => p.status === 'Active').length}</div>
                   <p className="text-xs text-muted-foreground">
                     View projects with ongoing monitoring.
                   </p>

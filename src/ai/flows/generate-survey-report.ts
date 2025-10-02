@@ -20,7 +20,7 @@ const SerializableFASchema = z.object({
   faUse: z.string(),
   length: z.number().nullable(),
   width: z.number().nullable(),
-  height: z.number.nullable(),
+  height: z.number().nullable(),
 });
 
 const SerializableHASchema = z.object({
@@ -193,5 +193,3 @@ const generateSurveyReportFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    

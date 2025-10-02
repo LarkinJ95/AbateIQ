@@ -3,17 +3,17 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { projects, samples as initialSamples, tasks, personnel, exposureLimits } from '@/lib/data';
+import { projects, samples as initialSamples, tasks, personnel, exposureLimits, surveys as allSurveys } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { useState, useRef } from 'react';
-import type { Sample, Result } from '@/lib/types';
+import type { Sample, Result, Survey } from '@/lib/types';
 import { AddSampleDialog } from '@/app/(app)/samples/add-sample-dialog';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Pencil, Trash2, PlusCircle, Sparkles, Bot } from 'lucide-react';
+import { MoreHorizontal, Eye, Pencil, Trash2, PlusCircle, Sparkles, Bot, MapPin, Calendar, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInMinutes, parse } from 'date-fns';
 import { summarizeLabReport, SummarizeLabReportOutput } from '@/ai/flows/summarize-lab-report';
@@ -56,6 +56,9 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
             status: sample.result?.status || 'Pending',
         }
     });
+
+  // Filter surveys related to this project (matching by name for this example)
+  const linkedSurveys = allSurveys.filter(survey => survey.siteName.includes(project.name));
 
   const getStatusVariant = (status: "Active" | "Completed" | "On Hold") => {
     switch (status) {
@@ -232,6 +235,15 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     setSelectedReport(report);
     setIsSummaryDialogOpen(true);
   }
+  
+  const getSurveyStatusVariant = (status: Survey['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
+      switch (status) {
+          case 'Completed': return 'default';
+          case 'In Progress': return 'secondary';
+          case 'On Hold': return 'destructive';
+          default: return 'outline';
+      }
+  }
 
 
   return (
@@ -274,31 +286,50 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
             </div>
           </CardContent>
         </Card>
-
+        
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Project Tasks</CardTitle>
+                <CardTitle className="font-headline">Linked Surveys</CardTitle>
+                <CardDescription>All surveys conducted for this project.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Task</TableHead>
-                            <TableHead>Description</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {projectTasks.map(task => (
-                            <TableRow key={task.id}>
-                                <TableCell>{task.name}</TableCell>
-                                <TableCell>{task.description}</TableCell>
+                {linkedSurveys.length > 0 ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Site Name</TableHead>
+                                <TableHead>Survey Type</TableHead>
+                                <TableHead>Inspector</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Status</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {linkedSurveys.map(survey => (
+                                <TableRow key={survey.id}>
+                                    <TableCell className="font-medium">
+                                        <Link href={`/surveys/${survey.id}`} className="hover:underline">
+                                            {survey.siteName}
+                                        </Link>
+                                    </TableCell>
+                                    <TableCell>{survey.surveyType}</TableCell>
+                                    <TableCell>{survey.inspector}</TableCell>
+                                    <TableCell>{new Date(survey.surveyDate).toLocaleDateString()}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={getSurveyStatusVariant(survey.status)}>{survey.status}</Badge>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <div className="text-center p-8 border-2 border-dashed rounded-lg">
+                        <p className="text-sm text-muted-foreground">No surveys have been linked to this project yet.</p>
+                    </div>
+                )}
             </CardContent>
         </Card>
-        
+
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div className="space-y-1.5">
@@ -475,3 +506,5 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     </div>
   );
 }
+
+    

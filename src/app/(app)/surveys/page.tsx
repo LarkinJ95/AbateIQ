@@ -32,8 +32,6 @@ export default function SurveysPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false); // Simulate loading
 
-  const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
-
   const handleSaveSurvey = (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
     if (surveyData.id) {
         // Edit existing survey
@@ -43,6 +41,8 @@ export default function SurveysPage() {
         const newSurvey: Survey = {
             ...surveyData,
             id: `surv-${Date.now()}`,
+            sitePhotoUrl: 'https://picsum.photos/seed/1/600/400',
+            sitePhotoHint: 'construction site',
         };
         setSurveys(prev => [newSurvey, ...prev]);
     }
@@ -428,10 +428,6 @@ export default function SurveysPage() {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                        }}
                                         className="h-8 w-8 p-0"
                                         data-testid={`button-edit-${survey.id}`}
                                         >

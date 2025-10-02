@@ -45,10 +45,11 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleDelete = (projectName: string) => {
+  const handleDelete = (projectToDelete: Project) => {
+    setProjects(prevProjects => prevProjects.filter(p => p.id !== projectToDelete.id));
     toast({
       title: 'Project Deleted',
-      description: `${projectName} has been deleted.`,
+      description: `${projectToDelete.name} has been deleted.`,
       variant: 'destructive',
     });
   };
@@ -122,7 +123,7 @@ export default function ProjectsPage() {
                                     Edit
                                 </DropdownMenuItem>
                               </AddProjectDialog>
-                              <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(project.name)}>
+                              <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(project)}>
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete
                               </DropdownMenuItem>

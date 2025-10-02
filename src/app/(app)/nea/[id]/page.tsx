@@ -4,7 +4,7 @@
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { existingNeas, samples as allSamples, personnel as allPersonnel, projects as allProjects } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, FileUp } from 'lucide-react';
@@ -15,8 +15,9 @@ import { useRef, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LinkSamplesDialog } from '@/app/(app)/nea/link-samples-dialog';
 
-export default function NeaDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function NeaDetailsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const nea = existingNeas.find(e => e.id === id);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);

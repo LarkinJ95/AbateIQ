@@ -4,10 +4,11 @@
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { samples, projects, tasks, personnel } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 
-export default function SampleDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function SampleDetailsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const sample = samples.find(s => s.id === id);
 
   if (!sample) {

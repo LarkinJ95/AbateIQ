@@ -4,7 +4,7 @@
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { projects, samples as initialSamples, tasks, personnel, exposureLimits, surveys as allSurveys } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
@@ -30,8 +30,9 @@ type LinkedReport = {
   summaryResult: SummarizeLabReportOutput;
 }
 
-export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ProjectDetailsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const project = projects.find(p => p.id === id);
   
   if (!project) {

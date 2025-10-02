@@ -3,7 +3,7 @@
 
 import { useState, useRef } from 'react';
 import { Header } from '@/components/header';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { surveys as allSurveys } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,9 +20,15 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
-export default function SurveyDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function SurveyDetailsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const survey = allSurveys.find(s => s.id === id);
+  
+  if (!survey) {
+    notFound();
+  }
+
   const [homogeneousAreas, setHomogeneousAreas] = useState<HomogeneousArea[]>(survey?.homogeneousAreas || []);
   const [asbestosSamples, setAsbestosSamples] = useState<AsbestosSample[]>(survey?.asbestosSamples || []);
   const [paintSamples, setPaintSamples] = useState<PaintSample[]>(survey?.paintSamples || []);
@@ -31,11 +37,6 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
   const [mainPhoto, setMainPhoto] = useState<string | null>(survey?.sitePhotoUrl || null);
   const mainPhotoRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-
-
-  if (!survey) {
-    notFound();
-  }
   
   const handlePhotoUpload = (
     event: React.ChangeEvent<HTMLInputElement>,

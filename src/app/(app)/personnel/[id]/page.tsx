@@ -4,7 +4,7 @@
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { personnel, samples as allSamples, projects, tasks } from '@/lib/data';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { format, isPast, differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
@@ -14,8 +14,9 @@ import { AddPersonnelDialog } from '../add-personnel-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 
-export default function PersonnelDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function PersonnelDetailsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const person = personnel.find(p => p.id === id);
 
   if (!person) {

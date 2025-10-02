@@ -114,6 +114,7 @@ export async function generateSurveyReport(input: GenerateSurveyReportInput): Pr
 const prompt = ai.definePrompt({
   name: 'generateSurveyReportPrompt',
   input: { schema: PromptInputSchema }, // Use the extended schema
+  output: { schema: GenerateSurveyReportOutputSchema },
   model: 'googleai/gemini-2.5-flash',
   prompt: `
     You are an expert environmental consultant specializing in generating regulatory-compliant survey reports for asbestos, lead, and other hazardous materials.
@@ -201,8 +202,7 @@ const generateSurveyReportFlow = ai.defineFlow(
       stringifiedPaintSamples: JSON.stringify(input.paintSamples),
     };
 
-    const result = await prompt(promptInput);
-    const htmlOutput = await result.text();
-    return { reportHtml: htmlOutput };
+    const { output } = await prompt(promptInput);
+    return output!;
   }
 );

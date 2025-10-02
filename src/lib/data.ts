@@ -60,10 +60,10 @@ export const exceedances: Exceedance[] = [
 ];
 
 export const surveys: Survey[] = [
-    { id: 'surv-1', siteName: 'Metro High School', address: '123 Education Ln, Metro City', inspector: 'John Doe', surveyDate: '2024-07-15', status: 'Completed', surveyType: 'Asbestos', jobNumber: '24-1003', sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, sitePhotoHint: findImage('doc-thumb-2')?.imageHint },
-    { id: 'surv-2', siteName: 'Coastal Power Plant', address: '789 Power Rd, Seaside', inspector: 'Laura Smith', surveyDate: '2024-07-20', status: 'In Progress', surveyType: 'Lead', jobNumber: '24-2005' },
-    { id: 'surv-3', siteName: 'Old City Hall', address: '210 Government Ave, Old Town', inspector: 'John Doe', surveyDate: '2024-08-01', status: 'Scheduled', surveyType: 'Asbestos + Lead', jobNumber: '24-3005' },
-    { id: 'surv-4', siteName: 'Suburbia Shopping Mall', address: '456 Market St, Suburbia', inspector: 'Ming Chen', surveyDate: '2024-07-25', status: 'Draft', surveyType: 'Cadmium' },
+    { id: 'surv-1', siteName: 'Metro High School', address: '123 Education Ln, Metro City', inspector: 'John Doe', surveyDate: '2024-07-15', status: 'Completed', surveyType: ['Asbestos'], jobNumber: '24-1003', sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, sitePhotoHint: findImage('doc-thumb-2')?.imageHint },
+    { id: 'surv-2', siteName: 'Coastal Power Plant', address: '789 Power Rd, Seaside', inspector: 'Laura Smith', surveyDate: '2024-07-20', status: 'In Progress', surveyType: ['Lead'], jobNumber: '24-2005' },
+    { id: 'surv-3', siteName: 'Old City Hall', address: '210 Government Ave, Old Town', inspector: 'John Doe', surveyDate: '2024-08-01', status: 'Scheduled', surveyType: ['Asbestos', 'Lead'], jobNumber: '24-3005' },
+    { id: 'surv-4', siteName: 'Suburbia Shopping Mall', address: '456 Market St, Suburbia', inspector: 'Ming Chen', surveyDate: '2024-07-25', status: 'Draft', surveyType: ['Cadmium'] },
 ];
 
 

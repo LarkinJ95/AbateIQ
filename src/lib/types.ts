@@ -99,7 +99,7 @@ export type Survey = {
   inspector: string;
   surveyDate: string;
   status: "Completed" | "In Progress" | "Scheduled" | "On Hold" | "Draft";
-  surveyType: "Asbestos" | "Lead" | "Cadmium" | "Asbestos + Lead";
+  surveyType: string[];
   jobNumber?: string;
   sitePhotoUrl?: string;
   sitePhotoHint?: string;

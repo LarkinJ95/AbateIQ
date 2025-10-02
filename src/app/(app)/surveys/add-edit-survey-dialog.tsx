@@ -19,11 +19,12 @@ import type { Survey } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, ChevronsUpDown } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { personnel } from '@/lib/data';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 
 
 interface AddEditSurveyDialogProps {
@@ -32,13 +33,15 @@ interface AddEditSurveyDialogProps {
   children: React.ReactNode;
 }
 
+const surveyTypeOptions = ['Asbestos', 'Lead', 'Cadmium'];
+
 export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyDialogProps) {
     const [siteName, setSiteName] = useState('');
     const [address, setAddress] = useState('');
     const [inspector, setInspector] = useState('');
     const [surveyDate, setSurveyDate] = useState<Date>();
     const [status, setStatus] = useState<Survey['status'] | ''>('');
-    const [surveyType, setSurveyType] = useState<Survey['surveyType'] | ''>('');
+    const [surveyType, setSurveyType] = useState<string[]>([]);
     const [jobNumber, setJobNumber] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
@@ -52,7 +55,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             setInspector(survey.inspector);
             setSurveyDate(new Date(survey.surveyDate));
             setStatus(survey.status);
-            setSurveyType(survey.surveyType);
+            setSurveyType(Array.isArray(survey.surveyType) ? survey.surveyType : []);
             setJobNumber(survey.jobNumber || '');
         } else {
             setSiteName('');
@@ -60,17 +63,17 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             setInspector('');
             setSurveyDate(new Date());
             setStatus('Draft');
-            setSurveyType('');
+            setSurveyType([]);
             setJobNumber('');
         }
     }, [survey, isEditMode, isOpen]);
 
 
     const handleSave = () => {
-        if (!siteName || !address || !inspector || !surveyDate || !status || !surveyType) {
+        if (!siteName || !address || !inspector || !surveyDate || !status || surveyType.length === 0) {
             toast({
                 title: 'Missing Information',
-                description: 'Please fill out all required fields.',
+                description: 'Please fill out all required fields, including survey type.',
                 variant: 'destructive',
             });
             return;
@@ -98,6 +101,12 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             description: `${siteName} has been ${isEditMode ? 'updated' : 'saved'}.`,
         });
         setIsOpen(false);
+    }
+    
+    const handleSurveyTypeChange = (type: string, checked: boolean) => {
+        setSurveyType(prev => 
+            checked ? [...prev, type] : prev.filter(t => t !== type)
+        );
     }
 
   return (
@@ -140,17 +149,25 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
           </div>
            <div className="space-y-2">
             <Label htmlFor="surveyType">Survey Type</Label>
-            <Select onValueChange={(value) => setSurveyType(value as Survey['surveyType'])} value={surveyType}>
-              <SelectTrigger id="surveyType">
-                <SelectValue placeholder="Select a type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Asbestos">Asbestos</SelectItem>
-                <SelectItem value="Lead">Lead</SelectItem>
-                <SelectItem value="Cadmium">Cadmium</SelectItem>
-                <SelectItem value="Asbestos + Lead">Asbestos + Lead</SelectItem>
-              </SelectContent>
-            </Select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  <span>{surveyType.length > 0 ? surveyType.join(' + ') : 'Select survey types'}</span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                {surveyTypeOptions.map(type => (
+                  <DropdownMenuCheckboxItem
+                    key={type}
+                    checked={surveyType.includes(type)}
+                    onCheckedChange={(checked) => handleSurveyTypeChange(type, !!checked)}
+                  >
+                    {type}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="space-y-2">
             <Label htmlFor="status">Status</Label>
@@ -203,4 +220,3 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
     </Dialog>
   );
 }
-

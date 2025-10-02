@@ -35,7 +35,7 @@ export default function SurveysPage() {
   const handleSaveSurvey = (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
     if (surveyData.id) {
         // Edit existing survey
-        setSurveys(prev => prev.map(s => s.id === surveyData.id ? { ...s, ...surveyData } as Survey : s));
+        setSurveys(prev => prev.map(s => s.id === surveyData.id ? { ...(s as Survey), ...surveyData } : s));
     } else {
         // Add new survey
         const newSurvey: Survey = {
@@ -96,7 +96,7 @@ export default function SurveysPage() {
       survey.siteName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       survey.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       survey.inspector.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      survey.surveyType.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      survey.surveyType.join(' ').toLowerCase().includes(searchQuery.toLowerCase()) ||
       survey.jobNumber?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -105,7 +105,7 @@ export default function SurveysPage() {
     }
  
     if (typeFilter !== "all") {
-      filtered = filtered.filter(survey => survey.surveyType === typeFilter);
+      filtered = filtered.filter(survey => survey.surveyType.includes(typeFilter));
     }
 
     if (dateRange?.from) {
@@ -272,7 +272,6 @@ export default function SurveysPage() {
                           <SelectItem value="Asbestos">Asbestos</SelectItem>
                           <SelectItem value="Lead">Lead</SelectItem>
                           <SelectItem value="Cadmium">Cadmium</SelectItem>
-                          <SelectItem value="Asbestos + Lead">Asbestos + Lead</SelectItem>
                         </SelectContent>
                     </Select>
                     </div>
@@ -385,7 +384,7 @@ export default function SurveysPage() {
                                 {survey.status}
                               </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground capitalize">{survey.surveyType}</p>
+                            <p className="text-sm text-muted-foreground capitalize">{survey.surveyType.join(' + ')}</p>
                           </Link>
 
                           {survey.sitePhotoUrl && (

@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { Logo } from '@/components/logo';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
@@ -85,12 +86,7 @@ export default function SignUpPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-            <div className="flex justify-center items-center gap-2 mb-4">
-                <ShieldAlert className="text-primary size-8" />
-                <h1 className="text-2xl font-headline font-bold">
-                    AbateIQ
-                </h1>
-            </div>
+          <Logo className="w-48 h-auto mx-auto mb-4" />
           <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
           <CardDescription>
             Enter your email and password to get started.

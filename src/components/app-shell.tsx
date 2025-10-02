@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/sidebar';
 import type { NavItem } from '@/lib/types';
 import Image from 'next/image';
+import { Logo } from './logo';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -61,7 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {companyLogo ? (
               <Image src={companyLogo} alt={`${companyName} Logo`} width={32} height={32} className="object-contain size-8" />
             ) : (
-               <ShieldAlert className="text-primary size-8" />
+              <Logo className="w-8 h-8" />
             )}
             <h1 className="text-xl font-headline font-bold text-sidebar-foreground">
               {companyName}

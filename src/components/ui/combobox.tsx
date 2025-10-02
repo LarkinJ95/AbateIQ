@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -75,25 +76,24 @@ export function Combobox({ options, setOptions, value, onValueChange, placeholde
             <CommandEmpty>
                 <div>
                     <p className="p-2">{emptyPlaceholder}</p>
-                    <Button
-                        variant="ghost"
-                        className="w-full justify-start"
-                        onClick={handleCreateNew}
-                    >
-                       <PlusCircle className="mr-2 h-4 w-4" /> Create "{inputValue}"
-                    </Button>
+                    {inputValue && (
+                        <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={handleCreateNew}
+                        >
+                        <PlusCircle className="mr-2 h-4 w-4" /> Create "{inputValue}"
+                        </Button>
+                    )}
                 </div>
             </CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
-                  value={option.label}
-                  onSelect={(currentLabel) => {
-                    const selectedOption = options.find(o => o.label.toLowerCase() === currentLabel.toLowerCase())
-                    if (selectedOption) {
-                      onValueChange(selectedOption.value === value ? "" : selectedOption.value)
-                    }
+                  value={option.value}
+                  onSelect={(currentValue) => {
+                    onValueChange(currentValue === value ? "" : currentValue)
                     setOpen(false)
                   }}
                 >

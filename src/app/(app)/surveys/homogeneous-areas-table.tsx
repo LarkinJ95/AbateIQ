@@ -151,14 +151,14 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
                   <TableCell className="font-medium">{area.haId}</TableCell>
                   <TableCell>{area.description}</TableCell>
                   <TableCell>
-                    <MultiSelect
-                        options={faOptions}
-                        selected={area.functionalAreaIds || []}
-                        onChange={(selected) => handleRowDataChange('functionalAreaIds', selected)}
-                        placeholder="Link FAs..."
-                        className="w-48"
-                        disabled={true}
-                    />
+                    {area.functionalAreaIds && area.functionalAreaIds.length > 0 ? (
+                       <div className="flex flex-wrap gap-1">
+                          {area.functionalAreaIds.map(faId => {
+                              const fa = functionalAreas.find(f => f.id === faId);
+                              return fa ? <Badge key={faId} variant="secondary">{fa.faId}</Badge> : null;
+                          })}
+                       </div>
+                    ): '-'}
                   </TableCell>
                   <TableCell>{getLinkedSamplesCount(area.id)}</TableCell>
                   <TableCell>{getTotalEstQuantity(area.id)}</TableCell>

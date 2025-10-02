@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -63,7 +64,7 @@ export function OverviewChart() {
             radius={[4, 4, 0, 0]}
           />
            <Bar
-            dataKey="heavy metals"
+            dataKey="heavy-metals"
             fill="var(--color-heavy-metals)"
             radius={[4, 4, 0, 0]}
           />

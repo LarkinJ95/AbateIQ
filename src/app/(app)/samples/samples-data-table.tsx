@@ -22,7 +22,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 
 import React from "react"
 
@@ -55,16 +54,6 @@ export function SamplesDataTable<TData, TValue>({
 
   return (
     <div>
-        <div className="flex items-center py-4">
-            <Input
-            placeholder="Filter by project..."
-            value={(table.getColumn("projectName")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-                table.getColumn("projectName")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-            />
-        </div>
         <div className="rounded-md border">
         <Table>
             <TableHeader>

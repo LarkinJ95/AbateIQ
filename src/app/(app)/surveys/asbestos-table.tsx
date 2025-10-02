@@ -108,7 +108,7 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, funct
         return;
     }
     const updatedSamples = samples.map(s => s.id === id ? { ...s, ...editedRowData } : s);
-    setSamples(updatedSamples);
+    setSamples(updatedSamples as AsbestosSample[]);
     onSave(updatedSamples as AsbestosSample[]);
     setEditingRowId(null);
     setEditedRowData({});
@@ -197,7 +197,7 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, funct
                       <Input
                             type="number"
                             placeholder="%"
-                            value={editedRowData.asbestosPercentage === null ? '' : editedRowData.asbestosPercentage}
+                            value={editedRowData.asbestosPercentage === null ? '' : String(editedRowData.asbestosPercentage)}
                             onChange={(e) => handleRowDataChange('asbestosPercentage', e.target.value === '' ? null : parseFloat(e.target.value) )}
                             className="w-20"
                             disabled={editedRowData.asbestosType === 'ND' || editedRowData.asbestosType === 'Trace'}
@@ -302,7 +302,7 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, funct
                <Input
                     type="number"
                     placeholder="%"
-                    value={newRow.asbestosPercentage === null ? '' : newRow.asbestosPercentage}
+                    value={newRow.asbestosPercentage === null ? '' : String(newRow.asbestosPercentage)}
                     onChange={(e) => setNewRow({ ...newRow, asbestosPercentage: e.target.value === '' ? null : parseFloat(e.target.value) })}
                     className="w-20"
                     disabled={newRow.asbestosType === 'ND' || newRow.asbestosType === 'Trace'}

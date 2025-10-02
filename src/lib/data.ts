@@ -85,10 +85,73 @@ const initialPaintSamples: PaintSample[] = [
 ];
 
 export const surveys: Survey[] = [
-    { id: 'surv-1', siteName: 'Metro High School', address: '123 Education Ln, Metro City', inspector: 'John Doe', surveyDate: '2024-07-15', status: 'Completed', surveyType: ['Asbestos', 'Lead', 'Cadmium'], jobNumber: '24-1003', sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, sitePhotoHint: findImage('doc-thumb-2')?.imageHint, floorPlanUrl: findImage('floor-plan-1')?.imageUrl, floorPlanHint: findImage('floor-plan-1')?.imageHint, exteriorPhotoUrl: findImage('exterior-1')?.imageUrl, exteriorPhotoHint: findImage('exterior-1')?.imageHint, interiorPhotoUrl: findImage('interior-1')?.imageUrl, interiorPhotoHint: findImage('interior-1')?.imageHint, samplePhotoUrl: findImage('sample-photo-1')?.imageUrl, samplePhotoHint: findImage('sample-photo-1')?.imageHint, homogeneousAreas: initialHomogeneousAreas, asbestosSamples: initialAsbestosSamples, paintSamples: initialPaintSamples, functionalAreas: initialFunctionalAreas, checklistTemplates: ['pre-survey', 'safety'] },
-    { id: 'surv-2', siteName: 'Coastal Power Plant', address: '789 Power Rd, Seaside', inspector: 'Laura Smith', surveyDate: '2024-07-20', status: 'In Progress', surveyType: ['Lead', 'Cadmium'], jobNumber: '24-2005', paintSamples: initialPaintSamples, checklistTemplates: ['pre-survey', 'safety', 'equipment'] },
-    { id: 'surv-3', siteName: 'Old City Hall', address: '210 Government Ave, Old Town', inspector: 'John Doe', surveyDate: '2024-08-01', status: 'Scheduled', surveyType: ['Asbestos', 'Lead'], jobNumber: '24-3005' },
-    { id: 'surv-4', siteName: 'Suburbia Shopping Mall', address: '456 Market St, Suburbia', inspector: 'Ming Chen', surveyDate: '2024-07-25', status: 'Draft', surveyType: ['Cadmium'] },
+    { 
+      id: 'surv-1', 
+      siteName: 'Metro High School', 
+      address: '123 Education Ln, Metro City', 
+      inspector: 'John Doe', 
+      surveyDate: '2024-07-15', 
+      status: 'Completed', 
+      surveyType: ['Asbestos', 'Lead', 'Cadmium'], 
+      jobNumber: '24-1003', 
+      sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, 
+      sitePhotoHint: findImage('doc-thumb-2')?.imageHint, 
+      floorPlanUrl: findImage('floor-plan-1')?.imageUrl, 
+      floorPlanHint: findImage('floor-plan-1')?.imageHint, 
+      exteriorPhotoUrl: findImage('exterior-1')?.imageUrl, 
+      exteriorPhotoHint: findImage('exterior-1')?.imageHint, 
+      interiorPhotoUrl: findImage('interior-1')?.imageUrl, 
+      interiorPhotoHint: findImage('interior-1')?.imageHint, 
+      samplePhotoUrl: findImage('sample-photo-1')?.imageUrl, 
+      samplePhotoHint: findImage('sample-photo-1')?.imageHint, 
+      homogeneousAreas: initialHomogeneousAreas, 
+      asbestosSamples: initialAsbestosSamples, 
+      paintSamples: initialPaintSamples, 
+      functionalAreas: initialFunctionalAreas, 
+      checklistTemplates: ['pre-survey', 'safety'] 
+    },
+    { 
+      id: 'surv-2', 
+      siteName: 'Coastal Power Plant', 
+      address: '789 Power Rd, Seaside', 
+      inspector: 'Laura Smith', 
+      surveyDate: '2024-07-20', 
+      status: 'In Progress', 
+      surveyType: ['Lead', 'Cadmium'], 
+      jobNumber: '24-2005', 
+      paintSamples: initialPaintSamples, 
+      checklistTemplates: ['pre-survey', 'safety', 'equipment'],
+      homogeneousAreas: [], 
+      asbestosSamples: [], 
+      functionalAreas: [],
+    },
+    { 
+      id: 'surv-3', 
+      siteName: 'Old City Hall', 
+      address: '210 Government Ave, Old Town', 
+      inspector: 'John Doe', 
+      surveyDate: '2024-08-01', 
+      status: 'Scheduled', 
+      surveyType: ['Asbestos', 'Lead'], 
+      jobNumber: '24-3005',
+      homogeneousAreas: [], 
+      asbestosSamples: [], 
+      paintSamples: [], 
+      functionalAreas: [],
+    },
+    { 
+      id: 'surv-4', 
+      siteName: 'Suburbia Shopping Mall', 
+      address: '456 Market St, Suburbia', 
+      inspector: 'Ming Chen', 
+      surveyDate: '2024-07-25', 
+      status: 'Draft', 
+      surveyType: ['Cadmium'],
+      homogeneousAreas: [], 
+      asbestosSamples: [], 
+      paintSamples: [], 
+      functionalAreas: [],
+    },
 ];
 
 export const checklistTemplates: ChecklistTemplate[] = [
@@ -131,11 +194,11 @@ export const checklistTemplates: ChecklistTemplate[] = [
 
 
 export const personnelExposureData: PersonnelExposure[] = [
-    { name: 'J. Doe', asbestos: 80, silica: 65, 'heavy metals': 45 },
-    { name: 'L. Smith', asbestos: 30, silica: 40, 'heavy metals': 20 },
-    { name: 'M. Chen', asbestos: 50, silica: 90, 'heavy metals': 75 },
-    { name: 'R. Patel', asbestos: 20, silica: 15, 'heavy metals': 10 },
-    { name: 'S. Garcia', asbestos: 70, silica: 55, 'heavy metals': 60 },
+    { name: 'J. Doe', asbestos: 80, silica: 65, 'heavy-metals': 45 },
+    { name: 'L. Smith', asbestos: 30, silica: 40, 'heavy-metals': 20 },
+    { name: 'M. Chen', asbestos: 50, silica: 90, 'heavy-metals': 75 },
+    { name: 'R. Patel', asbestos: 20, silica: 15, 'heavy-metals': 10 },
+    { name: 'S. Garcia', asbestos: 70, silica: 55, 'heavy-metals': 60 },
 ];
 
 export const documents: Document[] = [

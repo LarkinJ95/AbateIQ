@@ -11,7 +11,8 @@ import {
   LayoutDashboard,
   ShieldAlert,
   Users,
-  TestTube
+  TestTube,
+  FlaskConical,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -48,8 +49,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navItems: NavItem[] = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/projects', label: 'Projects', icon: Briefcase },
+    { href: '/air-monitoring', label: 'Air Monitoring', icon: FlaskConical },
     { href: '/personnel', label: 'Personnel', icon: Users },
-    { href: '/samples', label: 'Samples', icon: TestTube },
     { href: '/nea', label: 'NEA Tool', icon: FileText },
     { href: '/documents', label: 'Documents', icon: Folder },
   ];
@@ -72,7 +73,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <SidebarMenuItem key={item.href}>
                  <Link href={item.href}>
                   <SidebarMenuButton
-                    isActive={pathname === item.href}
+                    isActive={pathname.startsWith(item.href)}
                     tooltip={{ children: item.label, side: 'right' }}
                   >
                     <item.icon />

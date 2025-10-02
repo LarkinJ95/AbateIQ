@@ -9,6 +9,9 @@ import type { Sample, Result } from '@/lib/types';
 import { differenceInMinutes, parse } from 'date-fns';
 import { SamplesDataTable } from './samples-data-table';
 import { columns } from './columns';
+import { AddSampleDialog } from './add-sample-dialog';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
 
 export default function SamplesPage() {
     const [samples, setSamples] = useState(initialSamples);
@@ -111,6 +114,14 @@ export default function SamplesPage() {
     <div className="flex min-h-screen w-full flex-col">
       <Header title="Samples" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div className="flex justify-end">
+          <AddSampleDialog onSave={handleSaveSample} sample={null}>
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Sample
+            </Button>
+          </AddSampleDialog>
+        </div>
         <Card>
             <CardContent className="p-4">
                 <SamplesDataTable columns={columns} data={samplesWithDetails} />
@@ -120,3 +131,4 @@ export default function SamplesPage() {
     </div>
   );
 }
+

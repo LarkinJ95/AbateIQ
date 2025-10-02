@@ -221,9 +221,6 @@ const reportOrchestratorPrompt = ai.definePrompt({
       - Conclusions & Recommendations
       - Disclaimer
   `,
-  input: { schema: ReportOrchestratorInputSchema },
-  // The AI's output is not text, but a series of tool calls.
-  output: { schema: z.any() }, 
   tools: [generateHtml],
   // The prompt itself provides the data context to the AI.
   prompt: `

@@ -16,27 +16,52 @@ interface AsbestosTableProps {
   onSave: (samples: AsbestosSample[]) => void;
 }
 
+const asbestosTypes: AsbestosSample['asbestosType'][] = ['ND', 'Chrysotile', 'Amosite', 'Crocidolite', 'Trace'];
+
+
 export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTableProps) {
   const [samples, setSamples] = useState<AsbestosSample[]>(initialSamples);
-  const [newRow, setNewRow] = useState<Partial<AsbestosSample>>({});
+  const [newRow, setNewRow] = useState<Partial<AsbestosSample>>({
+      sampleNumber: '',
+      location: '',
+      homogeneousArea: '',
+      material: '',
+      estimatedQuantity: '',
+      friable: false,
+      asbestosType: 'ND',
+      asbestosPercentage: null,
+  });
   const { toast } = useToast();
 
   const handleAddRow = () => {
-    if (newRow.location && newRow.material) {
+    if (newRow.sampleNumber && newRow.location && newRow.material) {
         const newSample: AsbestosSample = {
             id: `asb-${Date.now()}`,
+            sampleNumber: newRow.sampleNumber,
             location: newRow.location,
+            homogeneousArea: newRow.homogeneousArea || '',
             material: newRow.material,
+            estimatedQuantity: newRow.estimatedQuantity || '',
             friable: newRow.friable ?? false,
-            result: newRow.result ?? 'ND',
+            asbestosType: newRow.asbestosType ?? 'ND',
+            asbestosPercentage: newRow.asbestosPercentage ?? null,
         };
         const updatedSamples = [...samples, newSample];
         setSamples(updatedSamples);
         onSave(updatedSamples);
-        setNewRow({});
+        setNewRow({
+            sampleNumber: '',
+            location: '',
+            homogeneousArea: '',
+            material: '',
+            estimatedQuantity: '',
+            friable: false,
+            asbestosType: 'ND',
+            asbestosPercentage: null,
+        });
         toast({ title: 'Sample Added', description: 'Asbestos sample has been logged.' });
     } else {
-        toast({ title: 'Missing Data', description: 'Please fill out Location and Material.', variant: 'destructive'});
+        toast({ title: 'Missing Data', description: 'Please fill out Sample #, Location, and Material.', variant: 'destructive'});
     }
   };
   
@@ -47,13 +72,26 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
     toast({ title: 'Sample Removed', variant: 'destructive'});
   }
 
+  const renderResult = (sample: AsbestosSample) => {
+      if (sample.asbestosType === 'ND' || sample.asbestosType === 'Trace') {
+          return sample.asbestosType;
+      }
+      if (sample.asbestosPercentage !== null) {
+          return `${sample.asbestosPercentage}% ${sample.asbestosType}`;
+      }
+      return sample.asbestosType;
+  }
+
   return (
     <div className="space-y-4">
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Sample #</TableHead>
             <TableHead>Location</TableHead>
+            <TableHead>Homogeneous Area</TableHead>
             <TableHead>Material</TableHead>
+            <TableHead>Est. Qty</TableHead>
             <TableHead>Friable</TableHead>
             <TableHead>Result</TableHead>
             <TableHead className="w-[50px]"></TableHead>
@@ -62,10 +100,13 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
         <TableBody>
           {samples.map((sample) => (
             <TableRow key={sample.id}>
+              <TableCell>{sample.sampleNumber}</TableCell>
               <TableCell>{sample.location}</TableCell>
+              <TableCell>{sample.homogeneousArea}</TableCell>
               <TableCell>{sample.material}</TableCell>
+              <TableCell>{sample.estimatedQuantity}</TableCell>
               <TableCell>{sample.friable ? 'Yes' : 'No'}</TableCell>
-              <TableCell>{sample.result}</TableCell>
+              <TableCell>{renderResult(sample)}</TableCell>
               <TableCell>
                   <Button variant="ghost" size="icon" onClick={() => handleDeleteRow(sample.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -75,6 +116,14 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
           ))}
           {/* New Row for adding data */}
           <TableRow>
+             <TableCell>
+              <Input
+                placeholder="e.g., 001A"
+                value={newRow.sampleNumber || ''}
+                onChange={(e) => setNewRow({ ...newRow, sampleNumber: e.target.value })}
+                className="w-24"
+              />
+            </TableCell>
             <TableCell>
               <Input
                 placeholder="e.g., Kitchen floor"
@@ -83,11 +132,26 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
               />
             </TableCell>
             <TableCell>
+                <Input 
+                    placeholder="e.g., HA-01"
+                    value={newRow.homogeneousArea || ''}
+                    onChange={(e) => setNewRow({ ...newRow, homogeneousArea: e.target.value })}
+                />
+            </TableCell>
+            <TableCell>
               <Input
                 placeholder="e.g., 12x12 Vinyl Tile"
                 value={newRow.material || ''}
                 onChange={(e) => setNewRow({ ...newRow, material: e.target.value })}
               />
+            </TableCell>
+            <TableCell>
+                <Input 
+                    placeholder="e.g., 200 sqft"
+                    value={newRow.estimatedQuantity || ''}
+                    onChange={(e) => setNewRow({ ...newRow, estimatedQuantity: e.target.value })}
+                    className="w-28"
+                />
             </TableCell>
             <TableCell className="text-center">
               <Checkbox
@@ -95,17 +159,25 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
                 onCheckedChange={(checked) => setNewRow({ ...newRow, friable: !!checked })}
               />
             </TableCell>
-            <TableCell>
-              <Select onValueChange={(value) => setNewRow({ ...newRow, result: value as AsbestosSample['result'] })} value={newRow.result}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select" />
+            <TableCell className="flex items-center gap-2">
+              <Select onValueChange={(value) => setNewRow({ ...newRow, asbestosType: value as AsbestosSample['asbestosType'] })} value={newRow.asbestosType}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ND">ND</SelectItem>
-                  <SelectItem value="Trace">Trace</SelectItem>
-                  <SelectItem value=">1%">>1%</SelectItem>
+                    {asbestosTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
+               <Input
+                    type="number"
+                    placeholder="%"
+                    value={newRow.asbestosPercentage === null ? '' : newRow.asbestosPercentage}
+                    onChange={(e) => setNewRow({ ...newRow, asbestosPercentage: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                    className="w-20"
+                    disabled={newRow.asbestosType === 'ND' || newRow.asbestosType === 'Trace'}
+                />
             </TableCell>
             <TableCell>
               <Button size="sm" onClick={handleAddRow}>

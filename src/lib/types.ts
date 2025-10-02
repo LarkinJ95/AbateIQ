@@ -110,10 +110,14 @@ export type Survey = {
 
 export type AsbestosSample = {
     id: string;
+    sampleNumber: string;
     location: string;
+    homogeneousArea: string;
     material: string;
+    estimatedQuantity: string;
     friable: boolean;
-    result: 'ND' | 'Trace' | '>1%';
+    asbestosType: 'ND' | 'Chrysotile' | 'Amosite' | 'Crocidolite' | 'Trace';
+    asbestosPercentage: number | null;
 }
 
 export type PaintSample = {

@@ -60,8 +60,8 @@ export const exceedances: Exceedance[] = [
 ];
 
 const initialAsbestosSamples: AsbestosSample[] = [
-  { id: 'asb-1', location: '10th Floor - Ceiling Tiles', material: 'Acoustic Tile', friable: true, result: '>1%' },
-  { id: 'asb-2', location: 'Lobby - Floor Tiles', material: '9x9 Vinyl Tile', friable: false, result: 'ND' },
+    { id: 'asb-1', sampleNumber: 'MS-ASB-01', location: '10th Floor - Ceiling Tiles', material: 'Acoustic Tile', friable: true, homogeneousArea: 'HA-01', estimatedQuantity: '1000 sqft', asbestosType: 'Chrysotile', asbestosPercentage: 5 },
+    { id: 'asb-2', sampleNumber: 'MS-ASB-02', location: 'Lobby - Floor Tiles', material: '9x9 Vinyl Tile', friable: false, homogeneousArea: 'HA-02', estimatedQuantity: '500 sqft', asbestosType: 'ND', asbestosPercentage: null },
 ];
 
 const initialPaintSamples: PaintSample[] = [

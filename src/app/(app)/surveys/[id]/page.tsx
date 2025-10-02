@@ -51,24 +51,30 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 font-headline">
                         <CheckSquare />
-                        Survey Data & Checklist
+                        Survey Data
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="checklist">
-                        <TabsList className="grid w-full grid-cols-3">
+                    <Tabs defaultValue="homogeneous-areas">
+                        <TabsList className="grid w-full grid-cols-4">
+                            <TabsTrigger value="homogeneous-areas">Homogeneous Areas</TabsTrigger>
+                            <TabsTrigger value="functional-areas">Functional Areas</TabsTrigger>
+                            <TabsTrigger value="paint-samples">Paint Samples</TabsTrigger>
                             <TabsTrigger value="checklist">Checklist</TabsTrigger>
-                            <TabsTrigger value="asbestos">Asbestos Samples</TabsTrigger>
-                            <TabsTrigger value="paint">Paint Samples</TabsTrigger>
                         </TabsList>
-                        <TabsContent value="checklist" className="mt-4">
-                            <SurveyChecklist survey={survey} />
-                        </TabsContent>
-                        <TabsContent value="asbestos" className="mt-4">
+                        <TabsContent value="homogeneous-areas" className="mt-4">
                             <AsbestosTable samples={asbestosSamples} onSave={handleAsbestosSave} />
                         </TabsContent>
-                        <TabsContent value="paint" className="mt-4">
+                        <TabsContent value="functional-areas" className="mt-4">
+                            <div className="text-center py-10 text-muted-foreground">
+                                <p>Functional Areas feature coming soon.</p>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="paint-samples" className="mt-4">
                             <PaintTable samples={paintSamples} onSave={handlePaintSave} />
+                        </TabsContent>
+                        <TabsContent value="checklist" className="mt-4">
+                            <SurveyChecklist survey={survey} />
                         </TabsContent>
                     </Tabs>
                 </CardContent>

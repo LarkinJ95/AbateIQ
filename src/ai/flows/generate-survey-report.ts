@@ -101,7 +101,7 @@ const prompt = ai.definePrompt({
     - Use semantic HTML tags (\`<h1>\`, \`<h2>\`, \`<h3>\`, \`<p>\`, \`<ul>\`, \`<li>\`).
     - Ensure the final output is a single, complete HTML document string.
 
-    **Input Data:**
+    **Input Data (parse these JSON strings):**
     - Site Name: {{{siteName}}}
     - Address: {{{address}}}
     - Survey Date: {{{surveyDate}}}
@@ -115,7 +115,17 @@ const prompt = ai.definePrompt({
 
     Now, generate the complete HTML report.
   `,
+  customizers: [
+    (model, request) => {
+      // Add a Handlebars helper to stringify JSON
+      request.config!.template!.helpers = {
+        JSONstringify: (obj: any) => JSON.stringify(obj),
+      };
+      return request;
+    },
+  ],
 });
+
 
 const generateSurveyReportFlow = ai.defineFlow(
   {
@@ -124,17 +134,7 @@ const generateSurveyReportFlow = ai.defineFlow(
     outputSchema: GenerateSurveyReportOutputSchema,
   },
   async (input) => {
-    // Stringify the array data before passing it to the prompt
-    const promptInput = {
-      ...input,
-      functionalAreas: JSON.stringify(input.functionalAreas),
-      homogeneousAreas: JSON.stringify(input.homogeneousAreas),
-      asbestosSamples: JSON.stringify(input.asbestosSamples),
-      paintSamples: JSON.stringify(input.paintSamples),
-    };
-    const { output } = await prompt(promptInput as any);
+    const { output } = await prompt(input);
     return output!;
   }
 );
-
-    

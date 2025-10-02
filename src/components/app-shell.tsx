@@ -58,15 +58,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
+          <div className="flex items-center justify-center p-2">
             {companyLogo ? (
-              <Image src={companyLogo} alt={`${companyName} Logo`} width={32} height={32} className="object-contain size-8" />
+              <Image src={companyLogo} alt={`${companyName} Logo`} width={48} height={48} className="object-contain size-12" />
             ) : (
-              <Logo className="w-8 h-8" />
+              <Logo className="w-auto h-10" />
             )}
-            <h1 className="text-xl font-headline font-bold text-sidebar-foreground">
-              {companyName}
-            </h1>
           </div>
         </SidebarHeader>
         <SidebarContent>

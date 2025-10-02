@@ -39,6 +39,7 @@ const prompt = ai.definePrompt({
   name: 'summarizeLabReportPrompt',
   input: {schema: SummarizeLabReportInputSchema},
   output: {schema: SummarizeLabReportOutputSchema},
+  model: 'googleai/gemini-2.5-flash',
   prompt: `You are an AI expert in occupational hygiene and air monitoring, specializing in reviewing lab reports.
 
 You will review the provided lab report and provide a summary of the key findings and any potential exceedances of exposure limits.

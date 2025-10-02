@@ -63,7 +63,7 @@ const SerializablePaintSampleSchema = z.object({
 const GenerateSurveyReportInputSchema = z.object({
   // Basic Info
   siteName: z.string(),
-  address: zstring(),
+  address: z.string(),
   surveyDate: z.string(),
   inspector: z.string(),
   jobNumber: z.string().optional(),

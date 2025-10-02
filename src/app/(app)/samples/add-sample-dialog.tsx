@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox, ComboboxOption } from '@/components/ui/combobox';
-import { projects, tasks, personnel } from '@/lib/data';
+import { projects, tasks, personnel, exposureLimits } from '@/lib/data';
 import { useEffect, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { Sample } from '@/lib/types';
@@ -29,10 +29,22 @@ interface AddSampleDialogProps {
   children: React.ReactNode;
 }
 
+const defaultAnalyteOptions: ComboboxOption[] = [
+    { value: 'asbestos', label: 'Asbestos' },
+    { value: 'lead', label: 'Lead' },
+    { value: 'cadmium', label: 'Cadmium' },
+    { value: 'silica', label: 'Silica' },
+    { value: 'mold', label: 'Mold' },
+];
+
+const unitOptions: string[] = ['mg/m³', 'µg/m³', 'f/cc', 'ppm'];
+
+
 export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogProps) {
   const [projectOptions, setProjectOptions] = useState<ComboboxOption[]>(projects.map(p => ({ value: p.id, label: p.name })));
   const [taskOptions, setTaskOptions] = useState<ComboboxOption[]>(tasks.map(t => ({ value: t.id, label: t.name })));
   const [personnelOptions, setPersonnelOptions] = useState<ComboboxOption[]>(personnel.map(p => ({ value: p.id, label: p.name })));
+  const [analyteOptions, setAnalyteOptions] = useState<ComboboxOption[]>(defaultAnalyteOptions);
   
   const [projectId, setProjectId] = useState('');
   const [taskId, setTaskId] = useState('');
@@ -44,6 +56,7 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
   const [flowRate, setFlowRate] = useState(2.5);
   const [analyte, setAnalyte] = useState('');
   const [concentration, setConcentration] = useState<number | ''>('');
+  const [units, setUnits] = useState('');
 
 
   const [isOpen, setIsOpen] = useState(false);
@@ -75,8 +88,16 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
         setStartTime(sample.startTime.split(' ')[1] || '');
         setStopTime(sample.stopTime.split(' ')[1] || '');
         setFlowRate(sample.flowRate);
-        setAnalyte(sample.result?.analyte || '');
+        
+        const currentAnalyte = sample.result?.analyte || '';
+        // Ensure the current analyte is in the options list
+        if (currentAnalyte && !analyteOptions.some(opt => opt.label.toLowerCase() === currentAnalyte.toLowerCase())) {
+            setAnalyteOptions(prev => [...prev, { value: currentAnalyte.toLowerCase(), label: currentAnalyte}]);
+        }
+        setAnalyte(currentAnalyte ? currentAnalyte.toLowerCase() : '');
         setConcentration(sample.result?.concentration ?? '');
+        setUnits(sample.result?.units || '');
+
     } else {
         setProjectId('');
         setTaskId('');
@@ -88,6 +109,8 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
         setFlowRate(2.5);
         setAnalyte('');
         setConcentration('');
+        setUnits('');
+        setAnalyteOptions(defaultAnalyteOptions);
     }
   }, [sample, isEditMode, isOpen]);
 
@@ -103,6 +126,7 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
     }
 
     const today = new Date().toISOString().split('T')[0];
+    const selectedAnalyteLabel = analyteOptions.find(opt => opt.value === analyte)?.label;
 
     const sampleData = {
       projectId,
@@ -113,9 +137,10 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
       startTime: `${today} ${startTime}`,
       stopTime: `${today} ${stopTime}`,
       flowRate: Number(flowRate),
-      result: analyte ? {
-          analyte,
-          concentration: Number(concentration)
+      result: selectedAnalyteLabel ? {
+          analyte: selectedAnalyteLabel,
+          concentration: Number(concentration),
+          units: units
       } : undefined
     };
 
@@ -220,14 +245,35 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
                     <Input id="flow-rate" type="number" step="0.01" value={flowRate} onChange={(e) => setFlowRate(parseFloat(e.target.value))} />
             </div>
            </div>
-            <div className="md:col-span-2 border-t pt-4 grid grid-cols-2 gap-4">
-                 <div className="space-y-2">
+            <div className="md:col-span-2 border-t pt-4 grid grid-cols-3 gap-4">
+                 <div className="space-y-2 col-span-1">
                     <Label htmlFor="analyte">Analyte</Label>
-                    <Input id="analyte" placeholder="e.g., Silica" value={analyte} onChange={(e) => setAnalyte(e.target.value)} />
+                    <Combobox
+                        options={analyteOptions}
+                        setOptions={setAnalyteOptions}
+                        value={analyte}
+                        onValueChange={setAnalyte}
+                        placeholder="Select analyte"
+                        searchPlaceholder="Search analytes..."
+                        emptyPlaceholder="No analyte found."
+                    />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="concentration">Concentration</Label>
                     <Input id="concentration" type="number" placeholder="e.g., 0.03" value={concentration} onChange={(e) => setConcentration(e.target.value === '' ? '' : parseFloat(e.target.value))} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="units">Units</Label>
+                    <Select value={units} onValueChange={setUnits}>
+                        <SelectTrigger id="units">
+                            <SelectValue placeholder="Select unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {unitOptions.map(unit => (
+                                <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
         </div>
@@ -241,3 +287,5 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
     </Dialog>
   );
 }
+
+    

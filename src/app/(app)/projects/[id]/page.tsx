@@ -13,7 +13,7 @@ import type { Sample, Result, Survey } from '@/lib/types';
 import { AddSampleDialog } from '@/app/(app)/samples/add-sample-dialog';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Pencil, Trash2, PlusCircle, Sparkles, Bot, MapPin, Calendar, User } from 'lucide-react';
+import { MoreHorizontal, Eye, Pencil, Trash2, PlusCircle, Sparkles, Bot, Link as LinkIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInMinutes, parse } from 'date-fns';
 import { summarizeLabReport, SummarizeLabReportOutput } from '@/ai/flows/summarize-lab-report';
@@ -21,6 +21,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 type LinkedReport = {
   id: string;
@@ -289,133 +291,139 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
         
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Linked Surveys</CardTitle>
-                <CardDescription>All surveys conducted for this project.</CardDescription>
+                <CardTitle>Project Data</CardTitle>
             </CardHeader>
             <CardContent>
-                {linkedSurveys.length > 0 ? (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Site Name</TableHead>
-                                <TableHead>Survey Type</TableHead>
-                                <TableHead>Inspector</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {linkedSurveys.map(survey => (
-                                <TableRow key={survey.id}>
-                                    <TableCell className="font-medium">
-                                        <Link href={`/surveys/${survey.id}`} className="hover:underline">
-                                            {survey.siteName}
-                                        </Link>
-                                    </TableCell>
-                                    <TableCell>{survey.surveyType}</TableCell>
-                                    <TableCell>{survey.inspector}</TableCell>
-                                    <TableCell>{new Date(survey.surveyDate).toLocaleDateString()}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getSurveyStatusVariant(survey.status)}>{survey.status}</Badge>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                ) : (
-                    <div className="text-center p-8 border-2 border-dashed rounded-lg">
-                        <p className="text-sm text-muted-foreground">No surveys have been linked to this project yet.</p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div className="space-y-1.5">
-                    <CardTitle className="font-headline">Project Samples</CardTitle>
-                    <CardDescription>All samples logged for this project.</CardDescription>
-                </div>
-                <AddSampleDialog onSave={handleSaveSample} sample={null}>
-                    <Button>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        New Sample
-                    </Button>
-                </AddSampleDialog>
-            </CardHeader>
-            <CardContent>
-               {projectSamples.length > 0 ? (
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Sample ID</TableHead>
-                            <TableHead>Task</TableHead>
-                            <TableHead>Personnel</TableHead>
-                            <TableHead>Analyte</TableHead>
-                            <TableHead>Result</TableHead>
-                            <TableHead>Status</TableHead>
-                             <TableHead>
-                                <span className="sr-only">Actions</span>
-                            </TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {projectSamples.map(sample => (
-                             <TableRow key={sample.id}>
-                                <TableCell className="font-medium">
-                                    <Link href={`/samples/${sample.id}`} className="hover:underline">
-                                        {sample.id}
-                                    </Link>
-                                </TableCell>
-                                <TableCell>{sample.taskName}</TableCell>
-                                <TableCell>{sample.personnelName}</TableCell>
-                                <TableCell>{sample.result?.analyte || 'N/A'}</TableCell>
-                                <TableCell>
-                                    {sample.result?.concentration !== undefined && sample.result.status !== 'Pending'
-                                    ? `${sample.result.concentration} ${sample.result.units}`
-                                    : 'Pending'}
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant={getSampleStatusVariant(sample.status)}>
-                                    {sample.status}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem asChild>
-                                        <Link href={`/samples/${sample.id}`}>
-                                            <Eye className="mr-2 h-4 w-4" />
-                                            View Details
-                                        </Link>
-                                        </DropdownMenuItem>
-                                        <AddSampleDialog onSave={handleSaveSample} sample={sample}>
-                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                                <Pencil className="mr-2 h-4 w-4"/>
-                                                Edit
-                                            </DropdownMenuItem>
-                                        </AddSampleDialog>
-                                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteSample(sample.id)}>
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                 </Table>
-               ) : (
-                <div className="text-center p-8 border-2 border-dashed rounded-lg">
-                    <p className="text-sm text-muted-foreground">No samples have been logged for this project yet.</p>
-                </div>
-               )}
+                <Tabs defaultValue="surveys">
+                    <TabsList>
+                        <TabsTrigger value="surveys">Linked Surveys</TabsTrigger>
+                        <TabsTrigger value="samples">Air Samples</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="surveys" className="mt-4">
+                        <div className="flex justify-end mb-4">
+                            <Button variant="outline">
+                                <LinkIcon className="mr-2 h-4 w-4" />
+                                Link Survey
+                            </Button>
+                        </div>
+                        {linkedSurveys.length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Site Name</TableHead>
+                                        <TableHead>Survey Type</TableHead>
+                                        <TableHead>Inspector</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {linkedSurveys.map(survey => (
+                                        <TableRow key={survey.id}>
+                                            <TableCell className="font-medium">
+                                                <Link href={`/surveys/${survey.id}`} className="hover:underline">
+                                                    {survey.siteName}
+                                                </Link>
+                                            </TableCell>
+                                            <TableCell>{survey.surveyType}</TableCell>
+                                            <TableCell>{survey.inspector}</TableCell>
+                                            <TableCell>{new Date(survey.surveyDate).toLocaleDateString()}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={getSurveyStatusVariant(survey.status)}>{survey.status}</Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <div className="text-center p-8 border-2 border-dashed rounded-lg">
+                                <p className="text-sm text-muted-foreground">No surveys have been linked to this project yet.</p>
+                            </div>
+                        )}
+                    </TabsContent>
+                    <TabsContent value="samples" className="mt-4">
+                        <div className="flex justify-end mb-4">
+                            <AddSampleDialog onSave={handleSaveSample} sample={null}>
+                                <Button>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    New Air Sample
+                                </Button>
+                            </AddSampleDialog>
+                        </div>
+                         {projectSamples.length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Sample ID</TableHead>
+                                        <TableHead>Task</TableHead>
+                                        <TableHead>Personnel</TableHead>
+                                        <TableHead>Analyte</TableHead>
+                                        <TableHead>Result</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>
+                                            <span className="sr-only">Actions</span>
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {projectSamples.map(sample => (
+                                        <TableRow key={sample.id}>
+                                            <TableCell className="font-medium">
+                                                <Link href={`/samples/${sample.id}`} className="hover:underline">
+                                                    {sample.id}
+                                                </Link>
+                                            </TableCell>
+                                            <TableCell>{sample.taskName}</TableCell>
+                                            <TableCell>{sample.personnelName}</TableCell>
+                                            <TableCell>{sample.result?.analyte || 'N/A'}</TableCell>
+                                            <TableCell>
+                                                {sample.result?.concentration !== undefined && sample.result.status !== 'Pending'
+                                                ? `${sample.result.concentration} ${sample.result.units}`
+                                                : 'Pending'}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant={getSampleStatusVariant(sample.status)}>
+                                                {sample.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem asChild>
+                                                    <Link href={`/samples/${sample.id}`}>
+                                                        <Eye className="mr-2 h-4 w-4" />
+                                                        View Details
+                                                    </Link>
+                                                    </DropdownMenuItem>
+                                                    <AddSampleDialog onSave={handleSaveSample} sample={sample}>
+                                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                            <Pencil className="mr-2 h-4 w-4"/>
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                    </AddSampleDialog>
+                                                    <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteSample(sample.id)}>
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <div className="text-center p-8 border-2 border-dashed rounded-lg">
+                                <p className="text-sm text-muted-foreground">No air samples have been logged for this project yet.</p>
+                            </div>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </CardContent>
         </Card>
 
@@ -506,5 +514,3 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
     </div>
   );
 }
-
-    

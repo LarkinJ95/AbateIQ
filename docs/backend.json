@@ -484,6 +484,21 @@
         "filePath",
         "fileName"
       ]
+    },
+    "SurveyReport": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SurveyReport",
+      "type": "object",
+      "description": "Represents an AI-generated survey report.",
+      "properties": {
+        "reportHtml": {
+          "type": "string",
+          "description": "The full survey report formatted as a single HTML string."
+        }
+      },
+      "required": [
+        "reportHtml"
+      ]
     }
   },
   "auth": {

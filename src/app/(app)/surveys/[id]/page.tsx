@@ -40,6 +40,10 @@ export default function SurveyDetailsPage() {
 
   const [mainPhoto, setMainPhoto] = useState<string | null>(survey?.sitePhotoUrl || null);
   const [floorPlan, setFloorPlan] = useState<string | null>(null);
+  const [exteriorPhoto, setExteriorPhoto] = useState<string | null>(null);
+  const [interiorPhoto, setInteriorPhoto] = useState<string | null>(null);
+  const [samplePhoto, setSamplePhoto] = useState<string | null>(null);
+
 
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [generatedReport, setGeneratedReport] = useState<GenerateSurveyReportOutput | null>(null);
@@ -167,55 +171,7 @@ export default function SurveyDetailsPage() {
     <div className="flex min-h-screen w-full flex-col">
       <Header title={`Survey: ${survey.siteName}`} />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-headline">
-                        <CheckSquare />
-                        Survey Data
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Tabs defaultValue="homogeneous-areas">
-                        <TabsList className="grid w-full grid-cols-5">
-                            <TabsTrigger value="homogeneous-areas">Homogeneous Areas</TabsTrigger>
-                            <TabsTrigger value="asbestos-samples">Asbestos Samples</TabsTrigger>
-                            <TabsTrigger value="functional-areas">Functional Areas</TabsTrigger>
-                            <TabsTrigger value="paint-samples">Paint Samples</TabsTrigger>
-                            <TabsTrigger value="checklist">Checklist</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="homogeneous-areas" className="mt-4">
-                            <HomogeneousAreasTable 
-                                areas={homogeneousAreas} 
-                                functionalAreas={functionalAreas}
-                                asbestosSamples={asbestosSamples}
-                                onSave={setHomogeneousAreas} 
-                            />
-                        </TabsContent>
-                         <TabsContent value="asbestos-samples" className="mt-4">
-                            <AsbestosTable 
-                                samples={asbestosSamples} 
-                                homogeneousAreas={homogeneousAreas} 
-                                functionalAreas={functionalAreas}
-                                onSave={setAsbestosSamples}
-                                onHaCreated={setHomogeneousAreas} 
-                            />
-                        </TabsContent>
-                        <TabsContent value="functional-areas" className="mt-4">
-                            <FunctionalAreasTable areas={functionalAreas} onSave={setFunctionalAreas} />
-                        </TabsContent>
-                        <TabsContent value="paint-samples" className="mt-4">
-                            <PaintTable samples={paintSamples} onSave={setPaintSamples} />
-                        </TabsContent>
-                        <TabsContent value="checklist" className="mt-4">
-                            <SurveyChecklist survey={survey} />
-                        </TabsContent>
-                    </Tabs>
-                </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-8">
+        <div className="grid gap-8 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -263,7 +219,7 @@ export default function SurveyDetailsPage() {
                 </Button>
               </CardContent>
             </Card>
-             <Card>
+            <Card>
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2">
                         <Camera /> Photo Management
@@ -271,9 +227,12 @@ export default function SurveyDetailsPage() {
                 </CardHeader>
                  <CardContent>
                     <Tabs defaultValue="main">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="main">Main Photo</TabsTrigger>
+                        <TabsList className="grid w-full grid-cols-5">
+                            <TabsTrigger value="main">Main</TabsTrigger>
                             <TabsTrigger value="floor-plan">Floor Plan</TabsTrigger>
+                            <TabsTrigger value="exterior">Exterior</TabsTrigger>
+                            <TabsTrigger value="interior">Interior</TabsTrigger>
+                            <TabsTrigger value="samples">Samples</TabsTrigger>
                         </TabsList>
                         <TabsContent value="main" className="mt-4">
                              <PhotoUploader 
@@ -289,10 +248,78 @@ export default function SurveyDetailsPage() {
                                 onUpload={(e) => handlePhotoUpload(e, setFloorPlan, 'Floor Plan')}
                             />
                         </TabsContent>
+                         <TabsContent value="exterior" className="mt-4">
+                             <PhotoUploader 
+                                title="Exterior Photo"
+                                currentPhoto={exteriorPhoto}
+                                onUpload={(e) => handlePhotoUpload(e, setExteriorPhoto, 'Exterior Photo')}
+                            />
+                        </TabsContent>
+                         <TabsContent value="interior" className="mt-4">
+                             <PhotoUploader 
+                                title="Interior Photo"
+                                currentPhoto={interiorPhoto}
+                                onUpload={(e) => handlePhotoUpload(e, setInteriorPhoto, 'Interior Photo')}
+                            />
+                        </TabsContent>
+                         <TabsContent value="samples" className="mt-4">
+                             <PhotoUploader 
+                                title="Sample Photo"
+                                currentPhoto={samplePhoto}
+                                onUpload={(e) => handlePhotoUpload(e, setSamplePhoto, 'Sample Photo')}
+                            />
+                        </TabsContent>
                     </Tabs>
                 </CardContent>
             </Card>
-          </div>
+        </div>
+        
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 font-headline">
+                        <CheckSquare />
+                        Survey Data
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Tabs defaultValue="homogeneous-areas">
+                        <TabsList className="grid w-full grid-cols-5">
+                            <TabsTrigger value="homogeneous-areas">Homogeneous Areas</TabsTrigger>
+                            <TabsTrigger value="asbestos-samples">Asbestos Samples</TabsTrigger>
+                            <TabsTrigger value="functional-areas">Functional Areas</TabsTrigger>
+                            <TabsTrigger value="paint-samples">Paint Samples</TabsTrigger>
+                            <TabsTrigger value="checklist">Checklist</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="homogeneous-areas" className="mt-4">
+                            <HomogeneousAreasTable 
+                                areas={homogeneousAreas} 
+                                functionalAreas={functionalAreas}
+                                asbestosSamples={asbestosSamples}
+                                onSave={setHomogeneousAreas} 
+                            />
+                        </TabsContent>
+                         <TabsContent value="asbestos-samples" className="mt-4">
+                            <AsbestosTable 
+                                samples={asbestosSamples} 
+                                homogeneousAreas={homogeneousAreas} 
+                                functionalAreas={functionalAreas}
+                                onSave={setAsbestosSamples}
+                                onHaCreated={setHomogeneousAreas} 
+                            />
+                        </TabsContent>
+                        <TabsContent value="functional-areas" className="mt-4">
+                            <FunctionalAreasTable areas={functionalAreas} onSave={setFunctionalAreas} />
+                        </TabsContent>
+                        <TabsContent value="paint-samples" className="mt-4">
+                            <PaintTable samples={paintSamples} onSave={setPaintSamples} />
+                        </TabsContent>
+                        <TabsContent value="checklist" className="mt-4">
+                            <SurveyChecklist survey={survey} />
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
         </div>
 
         <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
@@ -330,4 +357,3 @@ export default function SurveyDetailsPage() {
       </main>
     </div>
   );
-}

@@ -108,10 +108,10 @@ const prompt = ai.definePrompt({
     - Inspector: {{{inspector}}}
     - Job Number: {{{jobNumber}}}
     - Survey Type: {{#each surveyType}}{{{this}}}{{/each}}
-    - Functional Areas: {{{JSONstringify functionalAreas}}}
-    - Homogeneous Areas: {{{JSONstringify homogeneousAreas}}}
-    - Asbestos Samples: {{{JSONstringify asbestosSamples}}}
-    - Paint Samples: {{{JSONstringify paintSamples}}}
+    - Functional Areas: {{{functionalAreas}}}
+    - Homogeneous Areas: {{{homogeneousAreas}}}
+    - Asbestos Samples: {{{asbestosSamples}}}
+    - Paint Samples: {{{paintSamples}}}
 
     Now, generate the complete HTML report.
   `,
@@ -124,7 +124,15 @@ const generateSurveyReportFlow = ai.defineFlow(
     outputSchema: GenerateSurveyReportOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    // Stringify the array data before passing it to the prompt
+    const promptInput = {
+      ...input,
+      functionalAreas: JSON.stringify(input.functionalAreas),
+      homogeneousAreas: JSON.stringify(input.homogeneousAreas),
+      asbestosSamples: JSON.stringify(input.asbestosSamples),
+      paintSamples: JSON.stringify(input.paintSamples),
+    };
+    const { output } = await prompt(promptInput as any);
     return output!;
   }
 );

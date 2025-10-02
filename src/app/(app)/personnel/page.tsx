@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useState } from 'react';
 import type { Personnel } from '@/lib/types';
+import { ImportPersonnelDialog } from './import-personnel-dialog';
 
 export default function PersonnelPage() {
   const [personnel, setPersonnel] = useState<Personnel[]>(initialPersonnel);
@@ -31,6 +32,14 @@ export default function PersonnelPage() {
   const handleDeletePersonnel = (personnelId: string) => {
     setPersonnel(prev => prev.filter(p => p.id !== personnelId));
   };
+  
+  const handleImportPersonnel = (newPersonnel: Omit<Personnel, 'id'>[]) => {
+    const personnelWithIds: Personnel[] = newPersonnel.map((p, index) => ({
+      ...p,
+      id: `per-${Date.now()}-${index}`,
+    }));
+    setPersonnel(prev => [...personnelWithIds, ...prev]);
+  };
 
 
   return (
@@ -41,12 +50,15 @@ export default function PersonnelPage() {
             <h2 className="text-2xl font-headline font-bold tracking-tight">
                 Manage Personnel
             </h2>
-            <AddPersonnelDialog person={null} onSave={handleSavePersonnel}>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Personnel
-                </Button>
-            </AddPersonnelDialog>
+            <div className="flex gap-2">
+                <ImportPersonnelDialog onImport={handleImportPersonnel} />
+                <AddPersonnelDialog person={null} onSave={handleSavePersonnel}>
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Personnel
+                    </Button>
+                </AddPersonnelDialog>
+            </div>
         </div>
         <Card>
             <CardContent className="p-0">

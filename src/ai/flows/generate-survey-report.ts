@@ -123,7 +123,7 @@ const prompt = ai.definePrompt({
         
         **Data for Report:**
         \`\`\`json
-        {{{json aniescape=true this}}}
+        {{{json this}}}
         \`\`\`
 
         **HTML Structure:**

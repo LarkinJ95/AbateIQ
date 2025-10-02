@@ -2,14 +2,14 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { HomogeneousArea, FunctionalArea, AsbestosSample } from '@/lib/types';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 
 interface HomogeneousAreasTableProps {
   areas: HomogeneousArea[];
@@ -20,8 +20,13 @@ interface HomogeneousAreasTableProps {
 
 export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, asbestosSamples, onSave }: HomogeneousAreasTableProps) {
   const [areas, setAreas] = useState<HomogeneousArea[]>(initialAreas);
-  const [newRow, setNewRow] = useState<Partial<HomogeneousArea>>({ haId: '', description: '', functionalAreaId: '' });
+  const [newRow, setNewRow] = useState<Partial<HomogeneousArea>>({ haId: '', description: '', functionalAreaIds: [] });
   const { toast } = useToast();
+
+  const faOptions: MultiSelectOption[] = functionalAreas.map(fa => ({
+      value: fa.id,
+      label: `${fa.faId} - ${fa.faUse}`
+  }));
 
   const handleAddRow = () => {
     if (newRow.haId && newRow.description) {
@@ -29,12 +34,12 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
         id: `ha-${Date.now()}`,
         haId: newRow.haId,
         description: newRow.description,
-        functionalAreaId: newRow.functionalAreaId || null,
+        functionalAreaIds: newRow.functionalAreaIds || [],
       };
       const updatedAreas = [...areas, newArea];
       setAreas(updatedAreas);
       onSave(updatedAreas);
-      setNewRow({ haId: '', description: '', functionalAreaId: '' });
+      setNewRow({ haId: '', description: '', functionalAreaIds: [] });
       toast({ title: 'Homogeneous Area Added' });
     } else {
       toast({ title: 'Missing Data', description: 'Please fill out both HA ID and Description.', variant: 'destructive' });
@@ -48,9 +53,9 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
     toast({ title: 'Homogeneous Area Removed', variant: 'destructive' });
   };
   
-  const handleFALinkChange = (haId: string, faId: string) => {
+  const handleFALinkChange = (haId: string, faIds: string[]) => {
       const updatedAreas = areas.map(area => 
-          area.id === haId ? { ...area, functionalAreaId: faId === 'none' ? null : faId } : area
+          area.id === haId ? { ...area, functionalAreaIds: faIds } : area
       );
       setAreas(updatedAreas);
       onSave(updatedAreas);
@@ -100,20 +105,13 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
               <TableCell className="font-medium">{area.haId}</TableCell>
               <TableCell>{area.description}</TableCell>
               <TableCell>
-                  <Select 
-                      value={area.functionalAreaId || 'none'} 
-                      onValueChange={(value) => handleFALinkChange(area.id, value)}
-                  >
-                    <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Link FS" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {functionalAreas.map(fa => (
-                            <SelectItem key={fa.id} value={fa.id}>{fa.faId}</SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelect
+                    options={faOptions}
+                    selected={area.functionalAreaIds || []}
+                    onChange={(selected) => handleFALinkChange(area.id, selected)}
+                    placeholder="Link FS..."
+                    className="w-48"
+                  />
               </TableCell>
               <TableCell>{getLinkedSamplesCount(area.id)}</TableCell>
               <TableCell>{getTotalEstQuantity(area.id)}</TableCell>
@@ -141,20 +139,13 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
               />
             </TableCell>
             <TableCell>
-                <Select 
-                    value={newRow.functionalAreaId || 'none'}
-                    onValueChange={(value) => setNewRow({ ...newRow, functionalAreaId: value === 'none' ? '' : value })}
-                >
-                    <SelectTrigger className="w-32">
-                        <SelectValue placeholder="Link FS" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {functionalAreas.map(fa => (
-                            <SelectItem key={fa.id} value={fa.id}>{fa.faId}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <MultiSelect
+                    options={faOptions}
+                    selected={newRow.functionalAreaIds || []}
+                    onChange={(selected) => setNewRow({ ...newRow, functionalAreaIds: selected })}
+                    placeholder="Link FS..."
+                    className="w-48"
+                />
             </TableCell>
             <TableCell></TableCell>
             <TableCell></TableCell>

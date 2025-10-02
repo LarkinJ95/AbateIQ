@@ -110,12 +110,12 @@ export type GenerateSurveyReportOutput = z.infer<typeof GenerateSurveyReportOutp
 const prompt = ai.definePrompt({
     name: 'generateSurveyReportPrompt',
     input: { schema: GenerateSurveyReportInputSchema },
-    output: { schema: GenerateSurveyReportOutputSchema },
+    // By not specifying an output schema, we are telling the AI to return raw text.
     model: 'googleai/gemini-2.5-flash',
     prompt: `
         You are an expert HTML and CSS developer creating a professional environmental survey report.
         Generate a single, complete HTML document based on the provided data.
-        The final output must be ONLY the raw HTML string, starting with <html> and ending with </html>.
+        The final output must be ONLY the raw HTML string, starting with <html> and ending with </html>. Do not wrap it in JSON or markdown.
 
         **Styling Rules:**
         - Font: Use Google's 'Inter' font.
@@ -164,7 +164,9 @@ const generateSurveyReportFlow = ai.defineFlow(
       outputSchema: GenerateSurveyReportOutputSchema,
     },
     async (input) => {
+      // The AI will return raw HTML text.
       const { text } = await prompt(input);
+      // We wrap the raw HTML in the expected JSON object structure.
       return { reportHtml: text };
     }
 );

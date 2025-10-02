@@ -2,7 +2,7 @@
 'use client';
 
 import { Header } from '@/components/header';
-import { documents } from '@/lib/data';
+import { documents as initialDocuments } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,21 +27,45 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import type { Document } from '@/lib/types';
+import { format } from 'date-fns';
 
 export default function DocumentsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [summaryResult, setSummaryResult] = useState<SummarizeLabReportOutput | null>(null);
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
 
   const handleUploadClick = () => {
     if (fileInputRef.current?.files && fileInputRef.current.files.length > 0) {
+      const file = fileInputRef.current.files[0];
+      const defaultThumbnail = PlaceHolderImages.find(img => img.id === 'doc-thumb-1');
+
+      const newDocument: Document = {
+        id: `doc-${Date.now()}`,
+        name: file.name,
+        type: file.type.startsWith('image/') ? 'Photo' : 'Lab Report',
+        uploadDate: format(new Date(), 'yyyy-MM-dd'),
+        thumbnailUrl: defaultThumbnail?.imageUrl || 'https://placehold.co/400x300',
+        thumbnailHint: defaultThumbnail?.imageHint || 'document paper',
+      };
+      
+      setDocuments(prevDocs => [newDocument, ...prevDocs]);
+
       toast({
         title: 'Upload Successful',
-        description: `${fileInputRef.current.files[0].name} has been uploaded.`,
+        description: `${file.name} has been added to Project Files.`,
       });
+
+      // Clear the file input
+      if(fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
     } else {
       toast({
         title: 'No File Selected',

@@ -1,5 +1,5 @@
 
-import { Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit, Survey } from './types';
+import { Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit, Survey, AsbestosSample, PaintSample, ChecklistTemplate } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
@@ -59,11 +59,59 @@ export const exceedances: Exceedance[] = [
   { id: 'e2', resultId: 'res-2-placeholder', analyte: 'Silica', concentration: '0.06 mg/m³', limit: '0.05 mg/m³ (PEL)', personnel: 'J. Doe', location: 'Downtown Tower, 10th Floor', correctiveAction: 'Increase ventilation and require respiratory protection.', exceedanceDate: '2024-06-20' },
 ];
 
+const initialAsbestosSamples: AsbestosSample[] = [
+  { id: 'asb-1', location: '10th Floor - Ceiling Tiles', material: 'Acoustic Tile', friable: true, result: '>1%' },
+  { id: 'asb-2', location: 'Lobby - Floor Tiles', material: '9x9 Vinyl Tile', friable: false, result: 'ND' },
+];
+
+const initialPaintSamples: PaintSample[] = [
+    { id: 'paint-1', location: 'Exterior Window Sills', paintColor: 'White', result: 'Positive' },
+    { id: 'paint-2', location: 'Interior Door Frames', paintColor: 'Brown', result: 'ND' },
+];
+
 export const surveys: Survey[] = [
-    { id: 'surv-1', siteName: 'Metro High School', address: '123 Education Ln, Metro City', inspector: 'John Doe', surveyDate: '2024-07-15', status: 'Completed', surveyType: ['Asbestos'], jobNumber: '24-1003', sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, sitePhotoHint: findImage('doc-thumb-2')?.imageHint },
-    { id: 'surv-2', siteName: 'Coastal Power Plant', address: '789 Power Rd, Seaside', inspector: 'Laura Smith', surveyDate: '2024-07-20', status: 'In Progress', surveyType: ['Lead'], jobNumber: '24-2005' },
+    { id: 'surv-1', siteName: 'Metro High School', address: '123 Education Ln, Metro City', inspector: 'John Doe', surveyDate: '2024-07-15', status: 'Completed', surveyType: ['Asbestos'], jobNumber: '24-1003', sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, sitePhotoHint: findImage('doc-thumb-2')?.imageHint, asbestosSamples: initialAsbestosSamples, checklistTemplates: ['pre-survey', 'safety'] },
+    { id: 'surv-2', siteName: 'Coastal Power Plant', address: '789 Power Rd, Seaside', inspector: 'Laura Smith', surveyDate: '2024-07-20', status: 'In Progress', surveyType: ['Lead', 'Cadmium'], jobNumber: '24-2005', paintSamples: initialPaintSamples, checklistTemplates: ['pre-survey', 'safety', 'equipment'] },
     { id: 'surv-3', siteName: 'Old City Hall', address: '210 Government Ave, Old Town', inspector: 'John Doe', surveyDate: '2024-08-01', status: 'Scheduled', surveyType: ['Asbestos', 'Lead'], jobNumber: '24-3005' },
     { id: 'surv-4', siteName: 'Suburbia Shopping Mall', address: '456 Market St, Suburbia', inspector: 'Ming Chen', surveyDate: '2024-07-25', status: 'Draft', surveyType: ['Cadmium'] },
+];
+
+export const checklistTemplates: ChecklistTemplate[] = [
+    {
+        id: 'cl-pre-survey',
+        name: 'Pre-Survey Preparations',
+        description: 'Initial steps to take before arriving on site.',
+        category: 'pre-survey',
+        isRequired: true,
+        items: [
+            { id: 'pre-1', text: 'Review project scope and objectives', itemType: 'checkbox', isRequired: true },
+            { id: 'pre-2', text: 'Confirm site access and contact person', itemType: 'text_input', isRequired: true, description: 'Enter contact name and phone number.' },
+            { id: 'pre-3', text: 'Prepare sampling equipment', itemType: 'checkbox', isRequired: true },
+        ],
+    },
+    {
+        id: 'cl-safety',
+        name: 'On-Site Safety Review',
+        description: 'Initial safety checks upon arrival.',
+        category: 'safety',
+        isRequired: true,
+        items: [
+            { id: 'safe-1', text: 'Site safety briefing conducted', itemType: 'checkbox', isRequired: true },
+            { id: 'safe-2', text: 'Personal Protective Equipment (PPE) confirmed', itemType: 'checkbox', isRequired: true },
+            { id: 'safe-3', text: 'Identified site hazards', itemType: 'text_input', isRequired: false, description: 'List any observed hazards (e.g., trip hazards, electrical).' },
+        ],
+    },
+     {
+        id: 'cl-equipment',
+        name: 'Equipment Calibration',
+        description: 'Verify equipment is calibrated and ready.',
+        category: 'equipment',
+        isRequired: false,
+        items: [
+            { id: 'equip-1', text: 'Confirm pump calibration date', itemType: 'checkbox', isRequired: true },
+            { id: 'equip-2', text: 'Take photo of calibration certificate', itemType: 'photo', isRequired: false },
+        ],
+    },
 ];
 
 

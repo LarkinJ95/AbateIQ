@@ -1,18 +1,24 @@
 
 'use client';
 
+import { useState } from 'react';
 import { Header } from '@/components/header';
 import { notFound } from 'next/navigation';
 import { surveys as allSurveys } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Survey } from '@/lib/types';
+import type { Survey, AsbestosSample, PaintSample } from '@/lib/types';
 import Image from 'next/image';
-import { MapPin, Calendar, User, FileText } from 'lucide-react';
-
+import { MapPin, Calendar, User, FileText, CheckSquare } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SurveyChecklist } from '../survey-checklist';
+import { AsbestosTable } from '../asbestos-table';
+import { PaintTable } from '../paint-table';
 
 export default function SurveyDetailsPage({ params }: { params: { id: string } }) {
   const survey = allSurveys.find(s => s.id === params.id);
+  const [asbestosSamples, setAsbestosSamples] = useState<AsbestosSample[]>(survey?.asbestosSamples || []);
+  const [paintSamples, setPaintSamples] = useState<PaintSample[]>(survey?.paintSamples || []);
 
   if (!survey) {
     notFound();
@@ -26,6 +32,14 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
           default: return 'outline';
       }
   }
+  
+  const handleAsbestosSave = (samples: AsbestosSample[]) => {
+      setAsbestosSamples(samples);
+  }
+
+  const handlePaintSave = (samples: PaintSample[]) => {
+      setPaintSamples(samples);
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -33,13 +47,30 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-8">
-            {/* Future home of the checklist */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Checklist</CardTitle>
+                    <CardTitle className="flex items-center gap-2 font-headline">
+                        <CheckSquare />
+                        Survey Data & Checklist
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground">The survey checklist will be displayed here.</p>
+                    <Tabs defaultValue="checklist">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="checklist">Checklist</TabsTrigger>
+                            <TabsTrigger value="asbestos">Asbestos Samples</TabsTrigger>
+                            <TabsTrigger value="paint">Paint Samples</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="checklist" className="mt-4">
+                            <SurveyChecklist survey={survey} />
+                        </TabsContent>
+                        <TabsContent value="asbestos" className="mt-4">
+                            <AsbestosTable samples={asbestosSamples} onSave={handleAsbestosSave} />
+                        </TabsContent>
+                        <TabsContent value="paint" className="mt-4">
+                            <PaintTable samples={paintSamples} onSave={handlePaintSave} />
+                        </TabsContent>
+                    </Tabs>
                 </CardContent>
             </Card>
           </div>
@@ -91,4 +122,3 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
     </div>
   );
 }
-

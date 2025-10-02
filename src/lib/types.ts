@@ -103,6 +103,48 @@ export type Survey = {
   jobNumber?: string;
   sitePhotoUrl?: string;
   sitePhotoHint?: string;
+  asbestosSamples?: AsbestosSample[];
+  paintSamples?: PaintSample[];
+  checklistTemplates?: string[];
+};
+
+export type AsbestosSample = {
+    id: string;
+    location: string;
+    material: string;
+    friable: boolean;
+    result: 'ND' | 'Trace' | '>1%';
+}
+
+export type PaintSample = {
+    id: string;
+    location: string;
+    paintColor: string;
+    result: 'ND' | 'Trace' | 'Positive';
+}
+
+export type ChecklistItem = {
+  id: string;
+  text: string;
+  description?: string;
+  itemType: 'checkbox' | 'text_input' | 'number_input' | 'file_upload' | 'photo';
+  isRequired: boolean;
+};
+
+export type ChecklistTemplate = {
+  id: string;
+  name: string;
+  description?: string;
+  category: 'pre-survey' | 'during-survey' | 'post-survey' | 'safety' | 'equipment';
+  isRequired: boolean;
+  items: ChecklistItem[];
+};
+
+export type ChecklistResponse = {
+  [itemId: string]: {
+    response: string;
+    isCompleted: boolean;
+  }
 };
 
 

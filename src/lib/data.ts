@@ -1,5 +1,5 @@
 
-import { Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit, Survey, AsbestosSample, PaintSample, ChecklistTemplate } from './types';
+import { Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit, Survey, AsbestosSample, PaintSample, ChecklistTemplate, FunctionalArea } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
@@ -69,8 +69,13 @@ const initialPaintSamples: PaintSample[] = [
     { id: 'paint-2', location: 'Interior Door Frames', paintColor: 'Brown', analyte: 'Lead', resultMgKg: null },
 ];
 
+const initialFunctionalAreas: FunctionalArea[] = [
+    { id: 'fa-1', faId: 'FA-01', faUse: 'Office', length: 20, width: 15, height: 8 },
+    { id: 'fa-2', faId: 'FA-02', faUse: 'Corridor', length: 50, width: 8, height: 8 },
+];
+
 export const surveys: Survey[] = [
-    { id: 'surv-1', siteName: 'Metro High School', address: '123 Education Ln, Metro City', inspector: 'John Doe', surveyDate: '2024-07-15', status: 'Completed', surveyType: ['Asbestos'], jobNumber: '24-1003', sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, sitePhotoHint: findImage('doc-thumb-2')?.imageHint, asbestosSamples: initialAsbestosSamples, checklistTemplates: ['pre-survey', 'safety'] },
+    { id: 'surv-1', siteName: 'Metro High School', address: '123 Education Ln, Metro City', inspector: 'John Doe', surveyDate: '2024-07-15', status: 'Completed', surveyType: ['Asbestos'], jobNumber: '24-1003', sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, sitePhotoHint: findImage('doc-thumb-2')?.imageHint, asbestosSamples: initialAsbestosSamples, functionalAreas: initialFunctionalAreas, checklistTemplates: ['pre-survey', 'safety'] },
     { id: 'surv-2', siteName: 'Coastal Power Plant', address: '789 Power Rd, Seaside', inspector: 'Laura Smith', surveyDate: '2024-07-20', status: 'In Progress', surveyType: ['Lead', 'Cadmium'], jobNumber: '24-2005', paintSamples: initialPaintSamples, checklistTemplates: ['pre-survey', 'safety', 'equipment'] },
     { id: 'surv-3', siteName: 'Old City Hall', address: '210 Government Ave, Old Town', inspector: 'John Doe', surveyDate: '2024-08-01', status: 'Scheduled', surveyType: ['Asbestos', 'Lead'], jobNumber: '24-3005' },
     { id: 'surv-4', siteName: 'Suburbia Shopping Mall', address: '456 Market St, Suburbia', inspector: 'Ming Chen', surveyDate: '2024-07-25', status: 'Draft', surveyType: ['Cadmium'] },

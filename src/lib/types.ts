@@ -105,6 +105,7 @@ export type Survey = {
   sitePhotoHint?: string;
   asbestosSamples?: AsbestosSample[];
   paintSamples?: PaintSample[];
+  functionalAreas?: FunctionalArea[];
   checklistTemplates?: string[];
 };
 
@@ -127,6 +128,15 @@ export type PaintSample = {
     analyte: 'Lead' | 'Cadmium' | '';
     resultMgKg: number | null;
 }
+
+export type FunctionalArea = {
+  id: string;
+  faId: string;
+  faUse: string;
+  length: number | null;
+  width: number | null;
+  height: number | null;
+};
 
 export type ChecklistItem = {
   id: string;

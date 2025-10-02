@@ -1,0 +1,178 @@
+
+'use client';
+
+import { useState, useMemo } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FunctionalArea } from '@/lib/types';
+import { PlusCircle, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface FunctionalAreasTableProps {
+  areas: FunctionalArea[];
+  onSave: (areas: FunctionalArea[]) => void;
+}
+
+const faUseOptions = ['Office', 'Restroom', 'Corridor', 'Mechanical', 'Storage', 'Classroom'];
+
+export function FunctionalAreasTable({ areas: initialAreas, onSave }: FunctionalAreasTableProps) {
+  const [areas, setAreas] = useState<FunctionalArea[]>(initialAreas);
+  const [newRow, setNewRow] = useState<Partial<FunctionalArea>>({
+    faId: '',
+    faUse: '',
+    length: null,
+    width: null,
+    height: null,
+  });
+  const { toast } = useToast();
+
+  const handleAddRow = () => {
+    if (newRow.faId && newRow.faUse) {
+      const newArea: FunctionalArea = {
+        id: `fa-${Date.now()}`,
+        faId: newRow.faId,
+        faUse: newRow.faUse,
+        length: newRow.length ?? null,
+        width: newRow.width ?? null,
+        height: newRow.height ?? null,
+      };
+      const updatedAreas = [...areas, newArea];
+      setAreas(updatedAreas);
+      onSave(updatedAreas);
+      setNewRow({
+        faId: '',
+        faUse: '',
+        length: null,
+        width: null,
+        height: null,
+      });
+      toast({ title: 'Functional Area Added' });
+    } else {
+      toast({ title: 'Missing Data', description: 'Please fill out FA ID and FA Use.', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteRow = (id: string) => {
+    const updatedAreas = areas.filter(a => a.id !== id);
+    setAreas(updatedAreas);
+    onSave(updatedAreas);
+    toast({ title: 'Functional Area Removed', variant: 'destructive' });
+  };
+
+  const calculateSqFt = (length: number | null, width: number | null) => {
+    if (length && width) {
+      return (length * width).toFixed(2);
+    }
+    return '-';
+  };
+
+  const calculateWallSqFt = (length: number | null, width: number | null, height: number | null) => {
+    if (length && width && height) {
+      return ((length * height * 2) + (width * height * 2)).toFixed(2);
+    }
+    return '-';
+  };
+
+  const newRowSqFt = useMemo(() => calculateSqFt(newRow.length, newRow.width), [newRow.length, newRow.width]);
+  const newRowWallSqFt = useMemo(() => calculateWallSqFt(newRow.length, newRow.width, newRow.height), [newRow.length, newRow.width, newRow.height]);
+
+  return (
+    <div className="space-y-4">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>FA ID</TableHead>
+            <TableHead>FA Use</TableHead>
+            <TableHead>Length (ft)</TableHead>
+            <TableHead>Width (ft)</TableHead>
+            <TableHead>Height (ft)</TableHead>
+            <TableHead>SqFt</TableHead>
+            <TableHead>Wall SqFt</TableHead>
+            <TableHead className="w-[50px]"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {areas.map((area) => (
+            <TableRow key={area.id}>
+              <TableCell>{area.faId}</TableCell>
+              <TableCell>{area.faUse}</TableCell>
+              <TableCell>{area.length}</TableCell>
+              <TableCell>{area.width}</TableCell>
+              <TableCell>{area.height}</TableCell>
+              <TableCell>{calculateSqFt(area.length, area.width)}</TableCell>
+              <TableCell>{calculateWallSqFt(area.length, area.width, area.height)}</TableCell>
+              <TableCell>
+                <Button variant="ghost" size="icon" onClick={() => handleDeleteRow(area.id)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+          {/* New Row for adding data */}
+          <TableRow>
+            <TableCell>
+              <Input
+                placeholder="e.g., FA-01"
+                value={newRow.faId || ''}
+                onChange={(e) => setNewRow({ ...newRow, faId: e.target.value })}
+                className="w-24"
+              />
+            </TableCell>
+            <TableCell>
+              <Select onValueChange={(value) => setNewRow({ ...newRow, faUse: value })} value={newRow.faUse}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Select Use" />
+                </SelectTrigger>
+                <SelectContent>
+                  {faUseOptions.map(use => (
+                    <SelectItem key={use} value={use}>{use}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TableCell>
+            <TableCell>
+              <Input
+                type="number"
+                placeholder="e.g., 12.5"
+                value={newRow.length === null ? '' : String(newRow.length)}
+                onChange={(e) => setNewRow({ ...newRow, length: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                className="w-24"
+              />
+            </TableCell>
+            <TableCell>
+              <Input
+                type="number"
+                placeholder="e.g., 10"
+                value={newRow.width === null ? '' : String(newRow.width)}
+                onChange={(e) => setNewRow({ ...newRow, width: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                className="w-24"
+              />
+            </TableCell>
+            <TableCell>
+              <Input
+                type="number"
+                placeholder="e.g., 8"
+                value={newRow.height === null ? '' : String(newRow.height)}
+                onChange={(e) => setNewRow({ ...newRow, height: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                className="w-24"
+              />
+            </TableCell>
+            <TableCell>
+              <Input value={newRowSqFt} readOnly disabled className="w-24 bg-muted" />
+            </TableCell>
+            <TableCell>
+              <Input value={newRowWallSqFt} readOnly disabled className="w-24 bg-muted" />
+            </TableCell>
+            <TableCell>
+              <Button size="sm" onClick={handleAddRow}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add
+              </Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+  );
+}

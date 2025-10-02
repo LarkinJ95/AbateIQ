@@ -7,18 +7,20 @@ import { notFound } from 'next/navigation';
 import { surveys as allSurveys } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Survey, AsbestosSample, PaintSample } from '@/lib/types';
+import type { Survey, AsbestosSample, PaintSample, FunctionalArea } from '@/lib/types';
 import Image from 'next/image';
 import { MapPin, Calendar, User, FileText, CheckSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SurveyChecklist } from '../survey-checklist';
 import { AsbestosTable } from '../asbestos-table';
 import { PaintTable } from '../paint-table';
+import { FunctionalAreasTable } from '../functional-areas-table';
 
 export default function SurveyDetailsPage({ params }: { params: { id: string } }) {
   const survey = allSurveys.find(s => s.id === params.id);
   const [asbestosSamples, setAsbestosSamples] = useState<AsbestosSample[]>(survey?.asbestosSamples || []);
   const [paintSamples, setPaintSamples] = useState<PaintSample[]>(survey?.paintSamples || []);
+  const [functionalAreas, setFunctionalAreas] = useState<FunctionalArea[]>(survey?.functionalAreas || []);
 
   if (!survey) {
     notFound();
@@ -39,6 +41,10 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
 
   const handlePaintSave = (samples: PaintSample[]) => {
       setPaintSamples(samples);
+  }
+  
+  const handleFunctionalAreasSave = (areas: FunctionalArea[]) => {
+      setFunctionalAreas(areas);
   }
 
   return (
@@ -66,9 +72,7 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
                             <AsbestosTable samples={asbestosSamples} onSave={handleAsbestosSave} />
                         </TabsContent>
                         <TabsContent value="functional-areas" className="mt-4">
-                            <div className="text-center py-10 text-muted-foreground">
-                                <p>Functional Areas feature coming soon.</p>
-                            </div>
+                            <FunctionalAreasTable areas={functionalAreas} onSave={handleFunctionalAreasSave} />
                         </TabsContent>
                         <TabsContent value="paint-samples" className="mt-4">
                             <PaintTable samples={paintSamples} onSave={handlePaintSave} />

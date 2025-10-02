@@ -4,9 +4,9 @@
 /**
  * @fileOverview An AI agent for generating comprehensive survey reports.
  *
- * - generateSurveyReport - A function that handles the report generation.
- * - GenerateSurveyReportInput - The input type for the generateSurveyReport function.
- * - GenerateSurveyReportOutput - The return type for the generateSurveyReport function.
+ * This file now uses a tool-based approach for more reliable report generation.
+ * - generateSurveyReport - The main function that orchestrates the report generation.
+ * - generateHtml (Tool) - An AI tool that generates individual HTML sections.
  */
 
 import { ai } from '@/ai/genkit';
@@ -47,6 +47,7 @@ const SerializablePaintSampleSchema = z.object({
     analyte: z.enum(['Lead', 'Cadmium', '']),
     resultMgKg: z.number().nullable(),
 });
+
 
 // =================================================================================
 // CUSTOMIZATION AREA 1: INPUT SCHEMA
@@ -113,9 +114,9 @@ export async function generateSurveyReport(input: GenerateSurveyReportInput): Pr
 // =================================================================================
 const prompt = ai.definePrompt({
   name: 'generateSurveyReportPrompt',
-  input: { schema: PromptInputSchema }, // Use the extended schema
+  input: { schema: PromptInputSchema },
   output: { schema: GenerateSurveyReportOutputSchema },
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-1.5-flash',
   prompt: `
     You are an expert environmental consultant specializing in generating regulatory-compliant survey reports for asbestos, lead, and other hazardous materials.
     Your task is to generate a complete, professional, and well-formatted HTML report based on the provided survey data.
@@ -206,3 +207,5 @@ const generateSurveyReportFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

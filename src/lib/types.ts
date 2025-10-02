@@ -92,6 +92,19 @@ export type Exceedance = {
   evidence?: string;
 };
 
+export type Survey = {
+  id: string;
+  siteName: string;
+  address: string;
+  inspector: string;
+  surveyDate: string;
+  status: "Completed" | "In Progress" | "Scheduled" | "On Hold" | "Draft";
+  surveyType: "Asbestos" | "Lead" | "Cadmium" | "Asbestos + Lead";
+  jobNumber?: string;
+  sitePhotoUrl?: string;
+  sitePhotoHint?: string;
+};
+
 
 // Old types - will be reviewed and updated/removed
 export type PersonnelExposure = {
@@ -103,7 +116,7 @@ export type PersonnelExposure = {
 
 export type Document = {
   id: string;
-  name: string;
+  name:string;
   type: "Lab Report" | "Photo" | "Chain of Custody";
   uploadDate: string;
   thumbnailUrl: string;

@@ -1,5 +1,5 @@
 
-import { Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit } from './types';
+import { Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit, Survey } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
@@ -57,6 +57,13 @@ export const existingNeas: ExistingNea[] = [
 export const exceedances: Exceedance[] = [
   { id: 'e1', resultId: 'res-1-placeholder', analyte: 'Lead', concentration: '65 µg/m³', limit: '50 µg/m³ (PEL)', personnel: 'L. Smith', location: 'Coastal Bridge, Area B', correctiveAction: 'Stop work, implement wet methods, and re-sample.', exceedanceDate: '2024-07-15', evidence: 'path/to/photo.jpg' },
   { id: 'e2', resultId: 'res-2-placeholder', analyte: 'Silica', concentration: '0.06 mg/m³', limit: '0.05 mg/m³ (PEL)', personnel: 'J. Doe', location: 'Downtown Tower, 10th Floor', correctiveAction: 'Increase ventilation and require respiratory protection.', exceedanceDate: '2024-06-20' },
+];
+
+export const surveys: Survey[] = [
+    { id: 'surv-1', siteName: 'Metro High School', address: '123 Education Ln, Metro City', inspector: 'John Doe', surveyDate: '2024-07-15', status: 'Completed', surveyType: 'Asbestos', jobNumber: '24-1003', sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, sitePhotoHint: findImage('doc-thumb-2')?.imageHint },
+    { id: 'surv-2', siteName: 'Coastal Power Plant', address: '789 Power Rd, Seaside', inspector: 'Laura Smith', surveyDate: '2024-07-20', status: 'In Progress', surveyType: 'Lead', jobNumber: '24-2005' },
+    { id: 'surv-3', siteName: 'Old City Hall', address: '210 Government Ave, Old Town', inspector: 'John Doe', surveyDate: '2024-08-01', status: 'Scheduled', surveyType: 'Asbestos + Lead', jobNumber: '24-3005' },
+    { id: 'surv-4', siteName: 'Suburbia Shopping Mall', address: '456 Market St, Suburbia', inspector: 'Ming Chen', surveyDate: '2024-07-25', status: 'Draft', surveyType: 'Cadmium' },
 ];
 
 

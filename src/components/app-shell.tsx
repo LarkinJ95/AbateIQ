@@ -9,9 +9,6 @@ import {
   FileText,
   Folder,
   LayoutDashboard,
-  ShieldAlert,
-  Users,
-  TestTube,
   FlaskConical,
 } from 'lucide-react';
 import {

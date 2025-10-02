@@ -9,6 +9,7 @@ import type { HomogeneousArea, FunctionalArea, AsbestosSample } from '@/lib/type
 import { PlusCircle, Trash2, Edit, Save, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
+import { Badge } from '@/components/ui/badge';
 
 interface HomogeneousAreasTableProps {
   areas: HomogeneousArea[];

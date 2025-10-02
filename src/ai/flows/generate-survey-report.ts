@@ -132,9 +132,13 @@ const generateHtml = ai.defineTool(
     }),
     outputSchema: z.string().describe('A single string of HTML representing the requested section.'),
   },
-  async ({ section, data }) => {
+  async ({ section, data }, flow) => {
     // This is a simplified internal prompt. In a real application, you might have
     // different prompts for different sections for more control.
+    
+    // Combine the section-specific data with the overall flow input to ensure colors are available.
+    const promptData = { ...flow.input, ...data };
+    
     const { text } = await ai.generate({
       prompt: `
         You are an expert HTML and CSS developer creating a professional environmental survey report.
@@ -142,19 +146,19 @@ const generateHtml = ai.defineTool(
         
         **Styling Rules:**
         - Font: Use Google's 'Inter' font.
-        - Primary Color (for headers, table borders): ${data.primaryColor || '#00BFFF'}
-        - Accent Color (for sub-headers): ${data.accentColor || '#708090'}
+        - Primary Color (for headers, table borders): ${promptData.primaryColor || '#00BFFF'}
+        - Accent Color (for sub-headers): ${promptData.accentColor || '#708090'}
         - Use semantic HTML tags and well-structured tables. Photos should be responsive.
         
         **Section to Generate:** ${section}
         
         **Data for Section:**
         \`\`\`json
-        ${JSON.stringify(data, null, 2)}
+        ${JSON.stringify(promptData, null, 2)}
         \`\`\`
 
         **Instructions per section:**
-        - **fullReportWrapper**: Create the full HTML document structure (\`<html><head>...<style>...</style></head><body>...\</body></html>\`). The body should contain a placeholder comment \`<!-- REPORT_CONTENT -->\` where the other sections will be injected. Include all necessary CSS in the \`<style>\` tag.
+        - **fullReportWrapper**: Create the full HTML document structure (\`<html><head>...<style>...</style></head><body>...</body></html>\`). The body should contain a placeholder comment \`<!-- REPORT_CONTENT -->\` where the other sections will be injected. Include all necessary CSS in the \`<style>\` tag.
         - **coverPage**: A visually distinct cover page with the main photo, report title, site name, address, job number, date, and company name/logo.
         - **introduction**: A brief intro paragraph.
         - **executiveSummary**: A high-level overview of findings. Mention if hazardous materials were found.

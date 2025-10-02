@@ -140,6 +140,7 @@ const generateHtml = ai.defineTool(
     const promptData = { ...flow.input, ...data };
     
     const { text } = await ai.generate({
+      model: 'googleai/gemini-2.5-flash',
       prompt: `
         You are an expert HTML and CSS developer creating a professional environmental survey report.
         Generate the HTML for the requested section only. Use the provided data.

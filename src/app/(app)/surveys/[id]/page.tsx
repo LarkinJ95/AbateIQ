@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import type { Survey, AsbestosSample, PaintSample, FunctionalArea, HomogeneousArea } from '@/lib/types';
 import Image from 'next/image';
-import { MapPin, Calendar, User, FileText, CheckSquare, Camera, Upload, Bot, Printer, Copy, Loader2, Edit } from 'lucide-react';
+import { MapPin, Calendar, User, FileText, CheckSquare, Camera, Upload, Bot, Printer, Copy, Loader2, Edit, TestTube, FlaskConical, CheckCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SurveyChecklist } from '../survey-checklist';
 import { AsbestosTable } from '../asbestos-table';
@@ -58,6 +58,11 @@ export default function SurveyDetailsPage() {
   const [interiorPhoto, setInteriorPhoto] = useState<string | null>(survey?.interiorPhotoUrl || null);
   const [samplePhoto, setSamplePhoto] = useState<string | null>(survey?.samplePhotoUrl || null);
 
+  const asbestosFileInputRef = useRef<HTMLInputElement>(null);
+  const paintFileInputRef = useRef<HTMLInputElement>(null);
+  const [asbestosReports, setAsbestosReports] = useState<string[]>([]);
+  const [paintReports, setPaintReports] = useState<string[]>([]);
+
 
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [generatedReport, setGeneratedReport] = useState<GenerateSurveyReportOutput | null>(null);
@@ -103,6 +108,29 @@ export default function SurveyDetailsPage() {
       reader.readAsDataURL(file);
     }
   };
+
+  const handleReportUpload = (
+    fileInputRef: React.RefObject<HTMLInputElement>,
+    setReports: React.Dispatch<React.SetStateAction<string[]>>,
+    reportType: string
+    ) => {
+        const file = fileInputRef.current?.files?.[0];
+        if (file) {
+            setReports(prev => [...prev, file.name]);
+            toast({
+                title: 'Report Uploaded',
+                description: `${file.name} has been added to ${reportType} reports.`
+            });
+            // Clear file input
+            if(fileInputRef.current) fileInputRef.current.value = '';
+        } else {
+             toast({
+                title: 'No File Selected',
+                description: 'Please select a file to upload.',
+                variant: 'destructive',
+            });
+        }
+    }
   
     const PhotoUploader = ({
     title,
@@ -227,106 +255,106 @@ export default function SurveyDetailsPage() {
       <Header title={`Survey: ${survey.siteName}`} />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="grid gap-8 lg:grid-cols-3">
-            <Card className="lg:col-span-1">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                  <div>
+                      <CardTitle className="font-headline">Survey Details</CardTitle>
+                      <CardDescription>
+                        Job #{survey.jobNumber}
+                      </CardDescription>
+                  </div>
+                  <AddEditSurveyDialog survey={survey} onSave={handleSaveSurvey}>
+                      <Button variant="outline" size="icon">
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Edit Survey</span>
+                      </Button>
+                  </AddEditSurveyDialog>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <Badge variant={getStatusVariant(survey.status)}>{survey.status}</Badge>
+              </div>
+                <div className="flex items-center text-sm">
+                  <MapPin className="h-4 w-4 mr-2 flex-shrink-0 text-muted-foreground" />
+                  <span className="truncate">{survey.address}</span>
+              </div>
+                <div className="flex items-center text-sm">
+                  <FileText className="h-4 w-4 mr-2 flex-shrink-0 text-muted-foreground" />
+                  <span className="truncate">Job #{survey.jobNumber}</span>
+              </div>
+              <div className="flex items-center text-sm">
+                  <User className="h-4 w-4 mr-2 flex-shrink-0 text-muted-foreground" />
+                  <span className="truncate">{survey.inspector}</span>
+              </div>
+              <div className="flex items-center text-sm">
+                  <Calendar className="h-4 w-4 mr-2 flex-shrink-0 text-muted-foreground" />
+                  <span>{new Date(survey.surveyDate).toLocaleDateString()}</span>
+              </div>
+              <Button onClick={handleGenerateReport} disabled={isGeneratingReport} className="w-full">
+                  {isGeneratingReport ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
+                  ) : (
+                      <><Bot className="mr-2 h-4 w-4" /> Generate AI Report</>
+                  )}
+              </Button>
+            </CardContent>
+          </Card>
+          <Card className="lg:col-span-1">
               <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="font-headline">Survey Details</CardTitle>
-                        <CardDescription>
-                          Job #{survey.jobNumber}
-                        </CardDescription>
-                    </div>
-                    <AddEditSurveyDialog survey={survey} onSave={handleSaveSurvey}>
-                        <Button variant="outline" size="icon">
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit Survey</span>
-                        </Button>
-                    </AddEditSurveyDialog>
-                </div>
+                  <CardTitle className="font-headline flex items-center gap-2">
+                      <Camera /> Photo Management
+                  </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                 <div className="flex justify-between items-center">
-                    <p className="text-sm font-medium text-muted-foreground">Status</p>
-                    <Badge variant={getStatusVariant(survey.status)}>{survey.status}</Badge>
-                </div>
-                 <div className="flex items-center text-sm">
-                    <MapPin className="h-4 w-4 mr-2 flex-shrink-0 text-muted-foreground" />
-                    <span className="truncate">{survey.address}</span>
-                </div>
-                 <div className="flex items-center text-sm">
-                    <FileText className="h-4 w-4 mr-2 flex-shrink-0 text-muted-foreground" />
-                    <span className="truncate">Job #{survey.jobNumber}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                    <User className="h-4 w-4 mr-2 flex-shrink-0 text-muted-foreground" />
-                    <span className="truncate">{survey.inspector}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                    <Calendar className="h-4 w-4 mr-2 flex-shrink-0 text-muted-foreground" />
-                    <span>{new Date(survey.surveyDate).toLocaleDateString()}</span>
-                </div>
-                <Button onClick={handleGenerateReport} disabled={isGeneratingReport} className="w-full">
-                    {isGeneratingReport ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
-                    ) : (
-                        <><Bot className="mr-2 h-4 w-4" /> Generate AI Report</>
-                    )}
-                </Button>
+                <CardContent>
+                  <Tabs defaultValue="main">
+                      <TabsList className="grid w-full grid-cols-5">
+                          <TabsTrigger value="main">Main</TabsTrigger>
+                          <TabsTrigger value="floor-plan">Floor Plan</TabsTrigger>
+                          <TabsTrigger value="exterior">Exterior</TabsTrigger>
+                          <TabsTrigger value="interior">Interior</TabsTrigger>
+                          <TabsTrigger value="samples">Samples</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="main" className="mt-4">
+                            <PhotoUploader 
+                              title="Main Photo"
+                              currentPhoto={mainPhoto}
+                              onUpload={(e) => handlePhotoUpload(e, setMainPhoto, 'Main Photo')}
+                          />
+                      </TabsContent>
+                      <TabsContent value="floor-plan" className="mt-4">
+                            <PhotoUploader 
+                              title="Floor Plan"
+                              currentPhoto={floorPlan}
+                              onUpload={(e) => handlePhotoUpload(e, setFloorPlan, 'Floor Plan')}
+                          />
+                      </TabsContent>
+                        <TabsContent value="exterior" className="mt-4">
+                            <PhotoUploader 
+                              title="Exterior Photo"
+                              currentPhoto={exteriorPhoto}
+                              onUpload={(e) => handlePhotoUpload(e, setExteriorPhoto, 'Exterior Photo')}
+                          />
+                      </TabsContent>
+                        <TabsContent value="interior" className="mt-4">
+                            <PhotoUploader 
+                              title="Interior Photo"
+                              currentPhoto={interiorPhoto}
+                              onUpload={(e) => handlePhotoUpload(e, setInteriorPhoto, 'Interior Photo')}
+                          />
+                      </TabsContent>
+                        <TabsContent value="samples" className="mt-4">
+                            <PhotoUploader 
+                              title="Sample Photo"
+                              currentPhoto={samplePhoto}
+                              onUpload={(e) => handlePhotoUpload(e, setSamplePhoto, 'Sample Photo')}
+                          />
+                      </TabsContent>
+                  </Tabs>
               </CardContent>
-            </Card>
-            <Card className="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2">
-                        <Camera /> Photo Management
-                    </CardTitle>
-                </CardHeader>
-                 <CardContent>
-                    <Tabs defaultValue="main">
-                        <TabsList className="grid w-full grid-cols-5">
-                            <TabsTrigger value="main">Main</TabsTrigger>
-                            <TabsTrigger value="floor-plan">Floor Plan</TabsTrigger>
-                            <TabsTrigger value="exterior">Exterior</TabsTrigger>
-                            <TabsTrigger value="interior">Interior</TabsTrigger>
-                            <TabsTrigger value="samples">Samples</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="main" className="mt-4">
-                             <PhotoUploader 
-                                title="Main Photo"
-                                currentPhoto={mainPhoto}
-                                onUpload={(e) => handlePhotoUpload(e, setMainPhoto, 'Main Photo')}
-                            />
-                        </TabsContent>
-                        <TabsContent value="floor-plan" className="mt-4">
-                             <PhotoUploader 
-                                title="Floor Plan"
-                                currentPhoto={floorPlan}
-                                onUpload={(e) => handlePhotoUpload(e, setFloorPlan, 'Floor Plan')}
-                            />
-                        </TabsContent>
-                         <TabsContent value="exterior" className="mt-4">
-                             <PhotoUploader 
-                                title="Exterior Photo"
-                                currentPhoto={exteriorPhoto}
-                                onUpload={(e) => handlePhotoUpload(e, setExteriorPhoto, 'Exterior Photo')}
-                            />
-                        </TabsContent>
-                         <TabsContent value="interior" className="mt-4">
-                             <PhotoUploader 
-                                title="Interior Photo"
-                                currentPhoto={interiorPhoto}
-                                onUpload={(e) => handlePhotoUpload(e, setInteriorPhoto, 'Interior Photo')}
-                            />
-                        </TabsContent>
-                         <TabsContent value="samples" className="mt-4">
-                             <PhotoUploader 
-                                title="Sample Photo"
-                                currentPhoto={samplePhoto}
-                                onUpload={(e) => handlePhotoUpload(e, setSamplePhoto, 'Sample Photo')}
-                            />
-                        </TabsContent>
-                    </Tabs>
-                </CardContent>
-            </Card>
+          </Card>
         </div>
         
         <div className="space-y-8">
@@ -339,11 +367,12 @@ export default function SurveyDetailsPage() {
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue="homogeneous-areas">
-                        <TabsList className="grid w-full grid-cols-5">
+                        <TabsList className="grid w-full grid-cols-6">
                             <TabsTrigger value="homogeneous-areas">Homogeneous Areas</TabsTrigger>
                             <TabsTrigger value="asbestos-samples">Asbestos Samples</TabsTrigger>
                             <TabsTrigger value="functional-areas">Functional Areas</TabsTrigger>
                             <TabsTrigger value="paint-samples">Paint Samples</TabsTrigger>
+                            <TabsTrigger value="lab-reports">Lab Reports</TabsTrigger>
                             <TabsTrigger value="checklist">Checklist</TabsTrigger>
                         </TabsList>
                         <TabsContent value="homogeneous-areas" className="mt-4">
@@ -368,6 +397,44 @@ export default function SurveyDetailsPage() {
                         </TabsContent>
                         <TabsContent value="paint-samples" className="mt-4">
                             <PaintTable samples={paintSamples} onSave={setPaintSamples} />
+                        </TabsContent>
+                        <TabsContent value="lab-reports" className="mt-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4 p-4 border rounded-lg">
+                                    <h3 className="font-semibold flex items-center gap-2"><TestTube /> Asbestos Reports</h3>
+                                     <div className="flex gap-2">
+                                        <Input id="asbestos-report" type="file" ref={asbestosFileInputRef} accept=".pdf" />
+                                        <Button onClick={() => handleReportUpload(asbestosFileInputRef, setAsbestosReports, 'Asbestos')}>
+                                            <Upload className="mr-2 h-4 w-4" /> Upload
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {asbestosReports.map((name, index) => (
+                                            <div key={index} className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-2 rounded-md">
+                                                <CheckCircle className="h-4 w-4" />
+                                                <span>{name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                 <div className="space-y-4 p-4 border rounded-lg">
+                                    <h3 className="font-semibold flex items-center gap-2"><FlaskConical /> Paint Reports</h3>
+                                    <div className="flex gap-2">
+                                        <Input id="paint-report" type="file" ref={paintFileInputRef} accept=".pdf" />
+                                        <Button onClick={() => handleReportUpload(paintFileInputRef, setPaintReports, 'Paint')}>
+                                            <Upload className="mr-2 h-4 w-4" /> Upload
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {paintReports.map((name, index) => (
+                                             <div key={index} className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-2 rounded-md">
+                                                <CheckCircle className="h-4 w-4" />
+                                                <span>{name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
                         </TabsContent>
                         <TabsContent value="checklist" className="mt-4">
                             <SurveyChecklist survey={survey} />
@@ -413,5 +480,3 @@ export default function SurveyDetailsPage() {
     </div>
   );
 }
-
-    

@@ -48,7 +48,12 @@ const SerializablePaintSampleSchema = z.object({
     resultMgKg: z.number().nullable(),
 });
 
-
+// =================================================================================
+// CUSTOMIZATION AREA 1: INPUT SCHEMA
+// This schema defines all the data you can pass to the report generator.
+// To add new customizable data to your report (e.g., a new field, a footer note),
+// add it to this Zod schema first. Then, you can reference it in the prompt below.
+// =================================================================================
 const GenerateSurveyReportInputSchema = z.object({
   // Basic Info
   siteName: z.string(),
@@ -73,7 +78,7 @@ const GenerateSurveyReportInputSchema = z.object({
   // Photos
   mainPhotoDataUri: z.string().optional(),
   floorPlanDataUri: z.string().optional(),
-  positiveMaterialPhotoDataUris: z.array(z.string()).optional(),
+  positiveMaterialPhotoDataUris: z-array(z.string()).optional(),
 
 });
 
@@ -98,6 +103,14 @@ export async function generateSurveyReport(input: GenerateSurveyReportInput): Pr
   return generateSurveyReportFlow(input);
 }
 
+
+// =================================================================================
+// CUSTOMIZATION AREA 2: THE AI PROMPT
+// This is the main template for the AI-generated HTML report.
+// You can modify the HTML structure, inline CSS, and content sections here.
+// Use Handlebars syntax `{{{fieldName}}}` to insert data from the Input Schema above.
+// For example, to use the company name, you would use `{{{companyName}}}`.
+// =================================================================================
 const prompt = ai.definePrompt({
   name: 'generateSurveyReportPrompt',
   input: { schema: PromptInputSchema }, // Use the extended schema

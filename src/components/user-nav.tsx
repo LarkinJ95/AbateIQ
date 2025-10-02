@@ -1,3 +1,4 @@
+
 'use client';
 
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -56,11 +57,13 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
             <AvatarImage 
-                src={userAvatar?.imageUrl} 
+                src={user?.photoURL ?? userAvatar?.imageUrl} 
                 alt="User avatar" 
                 data-ai-hint={userAvatar?.imageHint} 
             />
-            <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+            <AvatarFallback>
+                <User className="text-muted-foreground" />
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

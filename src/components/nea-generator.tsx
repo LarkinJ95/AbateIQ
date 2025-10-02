@@ -41,11 +41,11 @@ export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: ExistingNea)
   const { toast } = useToast();
 
   useEffect(() => {
-    if (state.message) {
+    if (state.message && state.isError) {
       toast({
-        title: state.isError ? 'Error' : 'Success',
+        title: 'Error',
         description: state.message,
-        variant: state.isError ? 'destructive' : 'default',
+        variant: 'destructive',
       });
     }
   }, [state.message, state.isError, toast]);
@@ -69,6 +69,7 @@ export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: ExistingNea)
 
 
   return (
+    <>
     <form action={formAction}>
       <Card>
         <CardHeader>
@@ -110,16 +111,17 @@ export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: ExistingNea)
             />
           </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-            <div/>
+        <CardFooter className="flex justify-end">
             <SubmitButton />
         </CardFooter>
       </Card>
+      </form>
       
       {state.assessment && !state.isError && (
         <Card className="mt-8">
             <CardHeader>
                 <CardTitle className="font-headline">Generated Assessment</CardTitle>
+                 <CardDescription>Review the draft below and save it to the system.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Textarea readOnly value={state.assessment} rows={15} className="font-mono bg-secondary"/>
@@ -132,6 +134,6 @@ export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: ExistingNea)
             </CardFooter>
         </Card>
       )}
-    </form>
+    </>
   );
 }

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { ExistingNea } from '@/lib/types';
+import { AddNeaDialog } from './add-nea-dialog';
 
 export default function NeaPage() {
     const router = useRouter();
@@ -45,7 +46,20 @@ export default function NeaPage() {
     <div className="flex min-h-screen w-full flex-col">
       <Header title="Negative Exposure Assessments" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <NeaGenerator onNeaSaved={handleNeaSaved}/>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <NeaGenerator onNeaSaved={handleNeaSaved}/>
+          <Card>
+             <CardHeader>
+                <CardTitle className="font-headline">Manual NEA Entry</CardTitle>
+                <CardDescription>
+                    Manually add an existing Negative Exposure Assessment to the system.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <AddNeaDialog onNeaAdded={handleNeaSaved} />
+            </CardContent>
+          </Card>
+        </div>
 
         <Card className="mt-8">
             <CardHeader>

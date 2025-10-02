@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,7 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, funct
   const [haComboBoxOptions, setHaComboBoxOptions] = useState<ComboboxOption[]>(haOptions);
   
   // Keep combobox options in sync with parent HA state
-  useEffect(() => {
+  React.useEffect(() => {
     setHaComboBoxOptions(homogeneousAreas.map(ha => ({ value: ha.id, label: `${ha.haId} - ${ha.description}` })))
   }, [homogeneousAreas])
 
@@ -99,13 +99,18 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, funct
       return sample.asbestosType;
   }
   
-  const getLinkedFsDisplay = (haId: string) => {
+  const getLinkedFsId = (haId: string) => {
     const ha = homogeneousAreas.find(h => h.id === haId);
-    if (ha && ha.functionalAreaId) {
-        const fa = functionalAreas.find(f => f.id === ha.functionalAreaId);
-        return fa?.faId || 'N/A';
-    }
-    return '-';
+    return ha?.functionalAreaId || 'none';
+  }
+
+  const handleFALinkChange = (haId: string | undefined, faId: string) => {
+    if (!haId) return;
+
+    const updatedHAs = homogeneousAreas.map(ha => 
+        ha.id === haId ? { ...ha, functionalAreaId: faId === 'none' ? null : faId } : ha
+    );
+    onHaCreated(updatedHAs); // This will bubble up the change
   }
 
   const handleHaCreation = (newHaLabel: string) => {
@@ -126,7 +131,7 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, funct
           <TableRow>
             <TableHead>Sample #</TableHead>
             <TableHead>HA</TableHead>
-            <TableHead>Linked FS</TableHead>
+            <TableHead>FS</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Material</TableHead>
             <TableHead>Est. Qty</TableHead>
@@ -140,7 +145,22 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, funct
             <TableRow key={sample.id}>
               <TableCell>{sample.sampleNumber}</TableCell>
               <TableCell>{haComboBoxOptions.find(opt => opt.value === sample.homogeneousAreaId)?.label || ''}</TableCell>
-              <TableCell>{getLinkedFsDisplay(sample.homogeneousAreaId)}</TableCell>
+              <TableCell>
+                 <Select 
+                      value={getLinkedFsId(sample.homogeneousAreaId)}
+                      onValueChange={(value) => handleFALinkChange(sample.homogeneousAreaId, value)}
+                  >
+                    <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Link FS" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {functionalAreas.map(fa => (
+                            <SelectItem key={fa.id} value={fa.id}>{fa.faId}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+              </TableCell>
               <TableCell>{sample.location}</TableCell>
               <TableCell>{sample.material}</TableCell>
               <TableCell>{sample.estimatedQuantity}</TableCell>
@@ -176,7 +196,21 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, funct
                 />
             </TableCell>
             <TableCell>
-                 <Input value={getLinkedFsDisplay(newRow.homogeneousAreaId || '')} readOnly disabled className="w-24 bg-muted" />
+                 <Select 
+                      value={getLinkedFsId(newRow.homogeneousAreaId || '')}
+                      onValueChange={(value) => handleFALinkChange(newRow.homogeneousAreaId, value)}
+                      disabled={!newRow.homogeneousAreaId}
+                  >
+                    <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Link FS" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {functionalAreas.map(fa => (
+                            <SelectItem key={fa.id} value={fa.id}>{fa.faId}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
             </TableCell>
             <TableCell>
               <Input

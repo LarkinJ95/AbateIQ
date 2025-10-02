@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from "react";
@@ -13,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { surveys as initialSurveys } from "@/lib/data";
-import { Search, Plus, MapPin, Calendar, User, Edit, FileText, Filter, Download, Trash2, X, CalendarDays } from "lucide-react";
+import { Search, Plus, MapPin, Calendar, User, Edit, FileText, Filter, Download, Trash2, X, CalendarDays, FileDown, FileUp } from "lucide-react";
 import { format } from "date-fns";
 import type { Survey } from "@/lib/types";
 import Link from "next/link";
@@ -23,6 +24,7 @@ import { AddEditSurveyDialog } from "./add-edit-survey-dialog";
 export default function SurveysPage() {
   const [surveys, setSurveys] = useState<Survey[]>(initialSurveys);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editSurvey, setEditSurvey] = useState<Survey | null>(null);
   const [selectedSurveys, setSelectedSurveys] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -49,7 +51,7 @@ export default function SurveysPage() {
   };
 
 
-  const handleBulkAction = (action: 'download' | 'delete') => {
+  const handleBulkAction = (action: 'excel' | 'pdf' | 'delete') => {
     if (selectedSurveys.length === 0) {
       toast({
         title: 'No Surveys Selected',
@@ -70,8 +72,8 @@ export default function SurveysPage() {
       }
     } else {
        toast({
-        title: 'Reports Generated',
-        description: `Successfully generated ${selectedSurveys.length} reports. (Simulated)`,
+        title: 'Export Started',
+        description: `Exporting ${selectedSurveys.length} surveys to ${action.toUpperCase()}. This feature is not yet fully implemented.`,
       });
       setSelectedSurveys([]);
     }
@@ -224,11 +226,19 @@ export default function SurveysPage() {
                     <>
                     <Button
                         variant="outline"
-                        onClick={() => handleBulkAction('download')}
-                        data-testid="button-bulk-download"
+                        onClick={() => handleBulkAction('excel')}
+                        data-testid="button-bulk-excel"
                     >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download ({selectedSurveys.length})
+                        <FileUp className="h-4 w-4 mr-2" />
+                        Excel
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => handleBulkAction('pdf')}
+                        data-testid="button-bulk-pdf"
+                    >
+                        <FileDown className="h-4 w-4 mr-2" />
+                        PDF
                     </Button>
                     <Button
                         variant="destructive"
@@ -379,15 +389,19 @@ export default function SurveysPage() {
                         </div>
                         
                         <div className="p-4">
-                          <Link href={`/surveys/${survey.id}`} className="block pl-8">
+                          <div className="pl-8">
                             <div className="flex justify-between items-start">
-                              <CardTitle className="text-lg truncate pr-2 font-headline">{survey.siteName}</CardTitle>
-                              <Badge variant={getStatusVariant(survey.status)} data-testid={`status-${survey.status}`}>
-                                {survey.status}
-                              </Badge>
+                                <Link href={`/surveys/${survey.id}`} className="block">
+                                    <CardTitle className="text-lg truncate pr-2 font-headline">{survey.siteName}</CardTitle>
+                                </Link>
+                                <Badge variant={getStatusVariant(survey.status)} data-testid={`status-${survey.status}`}>
+                                    {survey.status}
+                                </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground capitalize">{survey.surveyType.join(' + ')}</p>
-                          </Link>
+                             <Link href={`/surveys/${survey.id}`} className="block">
+                                <p className="text-sm text-muted-foreground capitalize">{survey.surveyType.join(' + ')}</p>
+                            </Link>
+                          </div>
 
                           {survey.sitePhotoUrl && (
                             <Link href={`/surveys/${survey.id}`} className="block pl-8 mt-4">

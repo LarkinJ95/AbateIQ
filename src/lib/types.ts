@@ -2,6 +2,18 @@
 
 import type { LucideIcon } from "lucide-react";
 
+export type Company = {
+  id: string;
+  name: string;
+  contactName: string;
+  contactEmail: string;
+  status: 'active' | 'inactive' | 'suspended';
+  createdAt: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+};
+
 export type Project = {
   id: string;
   name: string;

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
@@ -30,9 +30,10 @@ import {
   BarChart3,
   Server,
   HardDrive,
-  Palette
+  Building
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 interface User {
   id: string;
@@ -179,6 +180,7 @@ export default function AdminDashboard() {
      toast({
         title: "User Deleted",
         description: "User has been removed from the system.",
+        variant: 'destructive'
       });
   }
 
@@ -268,6 +270,7 @@ export default function AdminDashboard() {
         <TabsList>
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="system">System Health</TabsTrigger>
+          <TabsTrigger value="super-admin">Super Admin</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -351,7 +354,7 @@ export default function AdminDashboard() {
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -367,7 +370,7 @@ export default function AdminDashboard() {
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction 
                                     onClick={() => handleDeleteUser(user.id)}
-                                    className="bg-destructive"
+                                    className="bg-destructive hover:bg-destructive/90"
                                   >
                                     Delete
                                   </AlertDialogAction>
@@ -383,6 +386,22 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="super-admin">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Super Admin</CardTitle>
+                    <CardDescription>Manage companies on the platform.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Link href="/settings/super-admin">
+                        <Button>
+                            <Building className="mr-2 h-4 w-4" /> Go to Company Management
+                        </Button>
+                    </Link>
+                </CardContent>
+            </Card>
         </TabsContent>
 
         <TabsContent value="system" className="space-y-4">
@@ -517,7 +536,7 @@ export default function AdminDashboard() {
               </div>
 
               <div className="pt-4 border-t">
-                <Button>Save Configuration</Button>
+                <Button onClick={() => toast({ title: 'Configuration Saved!'})}>Save Configuration</Button>
               </div>
             </CardContent>
           </Card>
@@ -792,4 +811,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

@@ -50,7 +50,7 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
   
   const handleFALinkChange = (haId: string, faId: string) => {
       const updatedAreas = areas.map(area => 
-          area.id === haId ? { ...area, functionalAreaId: faId } : area
+          area.id === haId ? { ...area, functionalAreaId: faId === 'none' ? null : faId } : area
       );
       setAreas(updatedAreas);
       onSave(updatedAreas);
@@ -101,14 +101,14 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
               <TableCell>{area.description}</TableCell>
               <TableCell>
                   <Select 
-                      value={area.functionalAreaId || ''} 
+                      value={area.functionalAreaId || 'none'} 
                       onValueChange={(value) => handleFALinkChange(area.id, value)}
                   >
                     <SelectTrigger className="w-32">
                         <SelectValue placeholder="Link FS" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {functionalAreas.map(fa => (
                             <SelectItem key={fa.id} value={fa.id}>{fa.faId}</SelectItem>
                         ))}
@@ -142,14 +142,14 @@ export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, as
             </TableCell>
             <TableCell>
                 <Select 
-                    value={newRow.functionalAreaId || ''}
-                    onValueChange={(value) => setNewRow({ ...newRow, functionalAreaId: value })}
+                    value={newRow.functionalAreaId || 'none'}
+                    onValueChange={(value) => setNewRow({ ...newRow, functionalAreaId: value === 'none' ? '' : value })}
                 >
                     <SelectTrigger className="w-32">
                         <SelectValue placeholder="Link FS" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {functionalAreas.map(fa => (
                             <SelectItem key={fa.id} value={fa.id}>{fa.faId}</SelectItem>
                         ))}

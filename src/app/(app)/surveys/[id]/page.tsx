@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useMemo, useEffect } from 'react';
@@ -9,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import type { Survey, AsbestosSample, PaintSample, FunctionalArea, HomogeneousArea } from '@/lib/types';
 import Image from 'next/image';
-import { MapPin, Calendar, User, FileText, CheckSquare, Camera, Upload, Bot, Printer, Copy, Loader2, Edit, TestTube, FlaskConical, CheckCircle } from 'lucide-react';
+import { MapPin, Calendar, User, FileText, CheckSquare, Camera, Upload, Bot, Printer, Copy, Loader2, Edit, TestTube, FlaskConical, CheckCircle, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SurveyChecklist } from '../survey-checklist';
 import { AsbestosTable } from '../asbestos-table';
@@ -54,9 +55,9 @@ export default function SurveyDetailsPage() {
 
   const [mainPhoto, setMainPhoto] = useState<string | null>(survey?.sitePhotoUrl || null);
   const [floorPlan, setFloorPlan] = useState<string | null>(survey?.floorPlanUrl || null);
-  const [exteriorPhoto, setExteriorPhoto] = useState<string | null>(survey?.exteriorPhotoUrl || null);
-  const [interiorPhoto, setInteriorPhoto] = useState<string | null>(survey?.interiorPhotoUrl || null);
-  const [samplePhoto, setSamplePhoto] = useState<string | null>(survey?.samplePhotoUrl || null);
+  const [exteriorPhotos, setExteriorPhotos] = useState<string[]>(survey?.exteriorPhotoUrls || []);
+  const [interiorPhotos, setInteriorPhotos] = useState<string[]>(survey?.interiorPhotoUrls || []);
+  const [samplePhotos, setSamplePhotos] = useState<string[]>(survey?.samplePhotoUrls || []);
 
   const asbestosFileInputRef = useRef<HTMLInputElement>(null);
   const paintFileInputRef = useRef<HTMLInputElement>(null);
@@ -82,16 +83,16 @@ export default function SurveyDetailsPage() {
       setFunctionalAreas(currentSurvey.functionalAreas || []);
       setMainPhoto(currentSurvey.sitePhotoUrl || null);
       setFloorPlan(currentSurvey.floorPlanUrl || null);
-      setExteriorPhoto(currentSurvey.exteriorPhotoUrl || null);
-      setInteriorPhoto(currentSurvey.interiorPhotoUrl || null);
-      setSamplePhoto(currentSurvey.samplePhotoUrl || null);
+      setExteriorPhotos(currentSurvey.exteriorPhotoUrls || []);
+      setInteriorPhotos(currentSurvey.interiorPhotoUrls || []);
+      setSamplePhotos(currentSurvey.samplePhotoUrls || []);
     }
   }, [id]);
 
   
-  const handlePhotoUpload = (
+  const handleSinglePhotoUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
-    setter: React.Dispatch<React.SetStateAction<any>>,
+    setter: React.Dispatch<React.SetStateAction<string | null>>,
     category: string
   ) => {
     const file = event.target.files?.[0];
@@ -108,6 +109,34 @@ export default function SurveyDetailsPage() {
       reader.readAsDataURL(file);
     }
   };
+
+  const handleMultiplePhotoUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setter: React.Dispatch<React.SetStateAction<string[]>>,
+    category: string
+  ) => {
+     const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setter(prev => [...prev, result]);
+        toast({
+          title: `Photo Added`,
+          description: `${file.name} added to ${category} gallery.`,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  const handleRemovePhoto = (
+      index: number,
+      setter: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+      setter(prev => prev.filter((_, i) => i !== index));
+  }
+
 
   const handleReportUpload = (
     fileInputRef: React.RefObject<HTMLInputElement>,
@@ -162,6 +191,48 @@ export default function SurveyDetailsPage() {
         );
     };
 
+    const PhotoGalleryUploader = ({
+        title,
+        photos,
+        onUpload,
+        onRemove
+    }: {
+        title: string;
+        photos: string[];
+        onUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+        onRemove: (index: number) => void;
+    }) => {
+        const inputRef = useRef<HTMLInputElement>(null);
+
+        return (
+            <div className="space-y-4">
+                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {photos.map((photo, index) => (
+                        <div key={index} className="aspect-square relative group rounded-md overflow-hidden border">
+                            <Image src={photo} alt={`${title} photo ${index + 1}`} fill className="object-cover" />
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button variant="destructive" size="icon" onClick={() => onRemove(index)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                     {photos.length === 0 && (
+                         <div className="col-span-full aspect-video flex items-center justify-center rounded-md border-2 border-dashed">
+                            <p className="text-muted-foreground">No {title} photos</p>
+                        </div>
+                    )}
+                </div>
+                <Input type="file" accept="image/*" className="hidden" ref={inputRef} onChange={onUpload} />
+                <Button variant="outline" onClick={() => inputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Add {title} Photo
+                </Button>
+            </div>
+        );
+    };
+
+
   const getStatusVariant = (status: Survey['status']): 'default' | 'secondary' | 'destructive' | 'outline' => {
       switch (status) {
           case 'Completed': return 'default';
@@ -182,20 +253,20 @@ export default function SurveyDetailsPage() {
         const [
             mainPhotoDataUri, 
             floorPlanDataUri,
-            exteriorPhotoUri,
-            interiorPhotoUri,
-            samplePhotoUri,
+            exteriorPhotoUris,
+            interiorPhotoUris,
+            samplePhotoUris,
             logoDataUri
         ] = await Promise.all([
             mainPhoto ? toDataUri(mainPhoto) : Promise.resolve(undefined),
             floorPlan ? toDataUri(floorPlan) : Promise.resolve(undefined),
-            exteriorPhoto ? toDataUri(exteriorPhoto) : Promise.resolve(undefined),
-            interiorPhoto ? toDataUri(interiorPhoto) : Promise.resolve(undefined),
-            samplePhoto ? toDataUri(samplePhoto) : Promise.resolve(undefined),
+            Promise.all(exteriorPhotos.map(url => toDataUri(url))),
+            Promise.all(interiorPhotos.map(url => toDataUri(url))),
+            Promise.all(samplePhotos.map(url => toDataUri(url))),
             user?.photoURL ? toDataUri(user.photoURL) : Promise.resolve(undefined),
         ]);
 
-        const positiveMaterialPhotoDataUris = [exteriorPhotoUri, interiorPhotoUri, samplePhotoUri].filter(Boolean) as string[];
+        const positiveMaterialPhotoDataUris = [...exteriorPhotoUris, ...interiorPhotoUris, ...samplePhotoUris];
 
         const serializableFAs = functionalAreas.map(fa => ({ id: fa.id, faId: fa.faId, faUse: fa.faUse, length: fa.length, width: fa.width, height: fa.height }));
         const serializableHAs = homogeneousAreas.map(ha => ({ id: ha.id, haId: ha.haId, description: ha.description, functionalAreaIds: ha.functionalAreaIds }));
@@ -321,37 +392,40 @@ export default function SurveyDetailsPage() {
                             <PhotoUploader 
                               title="Main Photo"
                               currentPhoto={mainPhoto}
-                              onUpload={(e) => handlePhotoUpload(e, setMainPhoto, 'Main Photo')}
+                              onUpload={(e) => handleSinglePhotoUpload(e, setMainPhoto, 'Main Photo')}
                           />
                       </TabsContent>
                       <TabsContent value="floor-plan" className="mt-4">
                             <PhotoUploader 
                               title="Floor Plan"
                               currentPhoto={floorPlan}
-                              onUpload={(e) => handlePhotoUpload(e, setFloorPlan, 'Floor Plan')}
+                              onUpload={(e) => handleSinglePhotoUpload(e, setFloorPlan, 'Floor Plan')}
                           />
                       </TabsContent>
                         <TabsContent value="exterior" className="mt-4">
-                            <PhotoUploader 
-                              title="Exterior Photo"
-                              currentPhoto={exteriorPhoto}
-                              onUpload={(e) => handlePhotoUpload(e, setExteriorPhoto, 'Exterior Photo')}
-                          />
-                      </TabsContent>
+                            <PhotoGalleryUploader
+                                title="Exterior"
+                                photos={exteriorPhotos}
+                                onUpload={(e) => handleMultiplePhotoUpload(e, setExteriorPhotos, 'Exterior')}
+                                onRemove={(index) => handleRemovePhoto(index, setExteriorPhotos)}
+                            />
+                        </TabsContent>
                         <TabsContent value="interior" className="mt-4">
-                            <PhotoUploader 
-                              title="Interior Photo"
-                              currentPhoto={interiorPhoto}
-                              onUpload={(e) => handlePhotoUpload(e, setInteriorPhoto, 'Interior Photo')}
-                          />
-                      </TabsContent>
+                            <PhotoGalleryUploader
+                                title="Interior"
+                                photos={interiorPhotos}
+                                onUpload={(e) => handleMultiplePhotoUpload(e, setInteriorPhotos, 'Interior')}
+                                onRemove={(index) => handleRemovePhoto(index, setInteriorPhotos)}
+                            />
+                        </TabsContent>
                         <TabsContent value="samples" className="mt-4">
-                            <PhotoUploader 
-                              title="Sample Photo"
-                              currentPhoto={samplePhoto}
-                              onUpload={(e) => handlePhotoUpload(e, setSamplePhoto, 'Sample Photo')}
-                          />
-                      </TabsContent>
+                            <PhotoGalleryUploader
+                                title="Sample"
+                                photos={samplePhotos}
+                                onUpload={(e) => handleMultiplePhotoUpload(e, setSamplePhotos, 'Sample')}
+                                onRemove={(index) => handleRemovePhoto(index, setSamplePhotos)}
+                            />
+                        </TabsContent>
                   </Tabs>
               </CardContent>
           </Card>

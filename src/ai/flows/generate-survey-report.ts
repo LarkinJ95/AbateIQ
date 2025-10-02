@@ -1,4 +1,5 @@
 
+
 'use server';
 
 /**
@@ -110,6 +111,7 @@ const prompt = ai.definePrompt({
     name: 'generateSurveyReportPrompt',
     input: { schema: GenerateSurveyReportInputSchema },
     output: { schema: GenerateSurveyReportOutputSchema },
+    model: 'googleai/gemini-2.5-flash',
     prompt: `
         You are an expert HTML and CSS developer creating a professional environmental survey report.
         Generate a single, complete HTML document based on the provided data.
@@ -141,7 +143,7 @@ const prompt = ai.definePrompt({
         7.  **Asbestos Results**: A table for Asbestos Samples. Columns must be in this order: Sample #, HA ID, Location, Material, Result.
         8.  **Paint Results**: Create a separate table for EACH analyte (e.g., "Lead Paint Sample Results"). Columns: Sample Location, Paint Color, Result (mg/kg), Result (% by weight). Calculate '% by weight' as (mg/kg) / 10000.
         9.  **Floor Plan**: Display the floor plan image under a clear heading.
-        10. **Positive Material Photos**: Display all provided photos in a gallery under a clear heading.
+        10. **Positive Material Photos**: Display all provided photos in a gallery under a clear heading. If there are multiple photos in \`positiveMaterialPhotoDataUris\`, create a grid or flexbox layout to show them all.
         11. **Conclusions**: Provide clear next steps based on the findings.
         12. **Disclaimer**: Include a standard disclaimer text, inserting the company name.
 

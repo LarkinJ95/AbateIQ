@@ -13,14 +13,20 @@ import type { Sample, Result } from '@/lib/types';
 import { AddSampleDialog } from '@/app/(app)/samples/add-sample-dialog';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Pencil, Trash2, PlusCircle, Sparkles, Bot, FileUp } from 'lucide-react';
+import { MoreHorizontal, Eye, Pencil, Trash2, PlusCircle, Sparkles, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInMinutes, parse } from 'date-fns';
 import { summarizeLabReport, SummarizeLabReportOutput } from '@/ai/flows/summarize-lab-report';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 
+type LinkedReport = {
+  id: string;
+  fileName: string;
+  summaryResult: SummarizeLabReportOutput;
+}
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
   const project = projects.find(p => p.id === params.id);
@@ -33,7 +39,9 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   const [samples, setSamples] = useState(initialSamples.filter(s => s.projectId === project.id));
   const reportFileRef = useRef<HTMLInputElement>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
-  const [summaryResult, setSummaryResult] = useState<SummarizeLabReportOutput | null>(null);
+  const [linkedReports, setLinkedReports] = useState<LinkedReport[]>([]);
+  const [selectedReport, setSelectedReport] = useState<LinkedReport | null>(null);
+  const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
 
   const projectTasks = tasks.filter(t => t.projectId === project.id);
   
@@ -168,7 +176,6 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
 
     const file = reportFileRef.current.files[0];
     setIsSummarizing(true);
-    setSummaryResult(null);
 
     try {
       const reader = new FileReader();
@@ -177,11 +184,19 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
         const reportDataUri = reader.result as string;
         try {
           const result = await summarizeLabReport({ reportDataUri });
-          setSummaryResult(result);
+          const newReport: LinkedReport = {
+            id: `report-${Date.now()}`,
+            fileName: file.name,
+            summaryResult: result,
+          };
+          setLinkedReports(prev => [...prev, newReport]);
           toast({
-            title: 'Summary Generated',
-            description: 'AI analysis of the lab report is complete.',
-          })
+            title: 'Summary Generated & Linked',
+            description: `${file.name} has been analyzed and added to the project.`,
+          });
+          if (reportFileRef.current) {
+            reportFileRef.current.value = '';
+          }
         } catch (error) {
           console.error('Error summarizing report:', error);
           toast({
@@ -212,6 +227,11 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
       setIsSummarizing(false);
     }
   };
+  
+  const handleViewSummary = (report: LinkedReport) => {
+    setSelectedReport(report);
+    setIsSummaryDialogOpen(true);
+  }
 
 
   return (
@@ -383,36 +403,75 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                         'Summarizing...'
                     ) : (
                         <>
-                            <Sparkles className="mr-2 h-4 w-4" /> Summarize
+                            <Sparkles className="mr-2 h-4 w-4" /> Summarize & Link
                         </>
                     )}
                 </Button>
               </div>
             </div>
 
-            {summaryResult && (
-              <div className="border-t pt-4 mt-4 space-y-4">
-                 <div>
-                    <h3 className="font-semibold text-lg mb-2">Summary</h3>
-                    <p className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
-                        {summaryResult.summary}
-                    </p>
+            {linkedReports.length > 0 && (
+                <div className="border-t pt-4 mt-4">
+                    <h3 className="font-semibold text-lg mb-2">Linked Reports</h3>
+                     <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>File Name</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {linkedReports.map((report) => (
+                                <TableRow key={report.id}>
+                                    <TableCell className="font-medium">{report.fileName}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => handleViewSummary(report)}>
+                                            <Eye className="mr-2 h-4 w-4" />
+                                            View Summary
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
-                <Separator />
-                 <div>
-                    <h3 className="font-semibold text-lg mb-2">Detected Exceedances</h3>
-                     <p className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
-                        {summaryResult.exceedances || 'None'}
-                    </p>
-                </div>
-              </div>
             )}
           </CardContent>
         </Card>
-
       </main>
+
+        <Dialog open={isSummaryDialogOpen} onOpenChange={setIsSummaryDialogOpen}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 font-headline">
+                        <Bot /> AI Summary for {selectedReport?.fileName}
+                    </DialogTitle>
+                    <DialogDescription>
+                        This summary was generated by AI. Always verify critical information against the original document.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[60vh] overflow-y-auto p-1 pr-4 space-y-6">
+                    {selectedReport?.summaryResult && (
+                        <div>
+                            <h3 className="font-semibold text-lg mb-2">Summary</h3>
+                            <p className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
+                                {selectedReport.summaryResult.summary}
+                            </p>
+
+                            <Separator className="my-4" />
+
+                            <h3 className="font-semibold text-lg mb-2">Detected Exceedances</h3>
+                             <p className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
+                                {selectedReport.summaryResult.exceedances || 'None'}
+                            </p>
+                        </div>
+                    )}
+                </div>
+                 <DialogClose asChild>
+                    <Button variant="outline" className="mt-4">Close</Button>
+                </DialogClose>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
-
-    

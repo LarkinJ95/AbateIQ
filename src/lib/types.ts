@@ -124,7 +124,8 @@ export type PaintSample = {
     id: string;
     location: string;
     paintColor: string;
-    result: 'ND' | 'Trace' | 'Positive';
+    analyte: 'Lead' | 'Cadmium' | '';
+    resultMgKg: number | null;
 }
 
 export type ChecklistItem = {

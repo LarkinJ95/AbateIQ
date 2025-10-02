@@ -17,24 +17,35 @@ interface PaintTableProps {
 
 export function PaintTable({ samples: initialSamples, onSave }: PaintTableProps) {
   const [samples, setSamples] = useState<PaintSample[]>(initialSamples);
-  const [newRow, setNewRow] = useState<Partial<PaintSample>>({});
+  const [newRow, setNewRow] = useState<Partial<PaintSample>>({
+    location: '',
+    paintColor: '',
+    analyte: '',
+    resultMgKg: null,
+  });
   const { toast } = useToast();
 
   const handleAddRow = () => {
-    if (newRow.location && newRow.paintColor) {
+    if (newRow.location && newRow.paintColor && newRow.analyte) {
         const newSample: PaintSample = {
             id: `paint-${Date.now()}`,
             location: newRow.location,
             paintColor: newRow.paintColor,
-            result: newRow.result ?? 'ND',
+            analyte: newRow.analyte,
+            resultMgKg: newRow.resultMgKg ?? null,
         };
         const updatedSamples = [...samples, newSample];
         setSamples(updatedSamples);
         onSave(updatedSamples);
-        setNewRow({});
+        setNewRow({
+            location: '',
+            paintColor: '',
+            analyte: '',
+            resultMgKg: null,
+        });
         toast({ title: 'Sample Added', description: 'Paint sample has been logged.' });
     } else {
-        toast({ title: 'Missing Data', description: 'Please fill out Location and Paint Color.', variant: 'destructive'});
+        toast({ title: 'Missing Data', description: 'Please fill out Location, Paint Color, and Analyte.', variant: 'destructive'});
     }
   };
   
@@ -45,6 +56,13 @@ export function PaintTable({ samples: initialSamples, onSave }: PaintTableProps)
     toast({ title: 'Sample Removed', variant: 'destructive'});
   }
 
+  const calculatePercentByWeight = (result: number | null) => {
+      if (result === null || isNaN(result)) {
+          return '-';
+      }
+      return (result / 10000).toFixed(4);
+  }
+
   return (
     <div className="space-y-4">
       <Table>
@@ -52,7 +70,9 @@ export function PaintTable({ samples: initialSamples, onSave }: PaintTableProps)
           <TableRow>
             <TableHead>Location</TableHead>
             <TableHead>Paint Color</TableHead>
-            <TableHead>Result</TableHead>
+            <TableHead>Analyte</TableHead>
+            <TableHead>Result (mg/kg)</TableHead>
+            <TableHead>% by Weight</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -61,7 +81,9 @@ export function PaintTable({ samples: initialSamples, onSave }: PaintTableProps)
             <TableRow key={sample.id}>
               <TableCell>{sample.location}</TableCell>
               <TableCell>{sample.paintColor}</TableCell>
-              <TableCell>{sample.result}</TableCell>
+              <TableCell>{sample.analyte}</TableCell>
+              <TableCell>{sample.resultMgKg ?? 'N/A'}</TableCell>
+              <TableCell>{calculatePercentByWeight(sample.resultMgKg)}</TableCell>
               <TableCell>
                   <Button variant="ghost" size="icon" onClick={() => handleDeleteRow(sample.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -83,19 +105,36 @@ export function PaintTable({ samples: initialSamples, onSave }: PaintTableProps)
                 placeholder="e.g., Red"
                 value={newRow.paintColor || ''}
                 onChange={(e) => setNewRow({ ...newRow, paintColor: e.target.value })}
+                 className="w-28"
               />
             </TableCell>
             <TableCell>
-              <Select onValueChange={(value) => setNewRow({ ...newRow, result: value as PaintSample['result'] })} value={newRow.result}>
-                <SelectTrigger>
+              <Select onValueChange={(value) => setNewRow({ ...newRow, analyte: value as PaintSample['analyte'] })} value={newRow.analyte}>
+                <SelectTrigger className="w-32">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ND">ND</SelectItem>
-                  <SelectItem value="Trace">Trace</SelectItem>
-                  <SelectItem value="Positive">Positive</SelectItem>
+                  <SelectItem value="Lead">Lead</SelectItem>
+                  <SelectItem value="Cadmium">Cadmium</SelectItem>
                 </SelectContent>
               </Select>
+            </TableCell>
+            <TableCell>
+                <Input 
+                    type="number"
+                    placeholder="e.g., 5000"
+                    value={newRow.resultMgKg === null ? '' : String(newRow.resultMgKg)}
+                    onChange={(e) => setNewRow({ ...newRow, resultMgKg: e.target.value === '' ? null : parseFloat(e.target.value) })}
+                    className="w-32"
+                />
+            </TableCell>
+             <TableCell>
+                <Input 
+                    value={calculatePercentByWeight(newRow.resultMgKg ?? null)}
+                    readOnly
+                    disabled
+                    className="w-28 bg-muted"
+                />
             </TableCell>
             <TableCell>
               <Button size="sm" onClick={handleAddRow}>

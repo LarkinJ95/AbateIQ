@@ -65,8 +65,8 @@ const initialAsbestosSamples: AsbestosSample[] = [
 ];
 
 const initialPaintSamples: PaintSample[] = [
-    { id: 'paint-1', location: 'Exterior Window Sills', paintColor: 'White', result: 'Positive' },
-    { id: 'paint-2', location: 'Interior Door Frames', paintColor: 'Brown', result: 'ND' },
+    { id: 'paint-1', location: 'Exterior Window Sills', paintColor: 'White', analyte: 'Lead', resultMgKg: 1200 },
+    { id: 'paint-2', location: 'Interior Door Frames', paintColor: 'Brown', analyte: 'Lead', resultMgKg: null },
 ];
 
 export const surveys: Survey[] = [

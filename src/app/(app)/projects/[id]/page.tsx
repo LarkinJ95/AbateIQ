@@ -2,20 +2,24 @@
 'use client';
 
 import { Header } from '@/components/header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { projects, samples as initialSamples, tasks, personnel, exposureLimits } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { Sample, Result } from '@/lib/types';
 import { AddSampleDialog } from '@/app/(app)/samples/add-sample-dialog';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Pencil, Trash2, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, Eye, Pencil, Trash2, PlusCircle, Sparkles, Bot, FileUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInMinutes, parse } from 'date-fns';
+import { summarizeLabReport, SummarizeLabReportOutput } from '@/ai/flows/summarize-lab-report';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
@@ -27,6 +31,9 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
 
   const { toast } = useToast();
   const [samples, setSamples] = useState(initialSamples.filter(s => s.projectId === project.id));
+  const reportFileRef = useRef<HTMLInputElement>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [summaryResult, setSummaryResult] = useState<SummarizeLabReportOutput | null>(null);
 
   const projectTasks = tasks.filter(t => t.projectId === project.id);
   
@@ -147,6 +154,63 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
         description: `Sample ${sampleId} has been deleted.`,
         variant: 'destructive'
     });
+  };
+
+  const handleSummarizeReport = async () => {
+    if (!reportFileRef.current?.files || reportFileRef.current.files.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'No file selected',
+        description: 'Please select a lab report file to summarize.',
+      });
+      return;
+    }
+
+    const file = reportFileRef.current.files[0];
+    setIsSummarizing(true);
+    setSummaryResult(null);
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const reportDataUri = reader.result as string;
+        try {
+          const result = await summarizeLabReport({ reportDataUri });
+          setSummaryResult(result);
+          toast({
+            title: 'Summary Generated',
+            description: 'AI analysis of the lab report is complete.',
+          })
+        } catch (error) {
+          console.error('Error summarizing report:', error);
+          toast({
+            variant: 'destructive',
+            title: 'Summarization Failed',
+            description: 'An error occurred while generating the AI summary.',
+          });
+        } finally {
+          setIsSummarizing(false);
+        }
+      };
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        toast({
+          variant: 'destructive',
+          title: 'File Read Error',
+          description: 'Could not read the selected file.',
+        });
+        setIsSummarizing(false);
+      }
+    } catch (error) {
+      console.error('Error initiating summarization:', error);
+       toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+      });
+      setIsSummarizing(false);
+    }
   };
 
 
@@ -304,7 +368,51 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
             </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2"><Bot /> Lab Reports & Summaries</CardTitle>
+            <CardDescription>Upload lab reports to generate AI summaries and detect exceedances.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid w-full max-w-lg items-end gap-2">
+              <Label htmlFor="document">Select Lab Report</Label>
+              <div className="flex gap-2">
+                <Input id="document" type="file" ref={reportFileRef} accept=".pdf,.doc,.docx,.txt" />
+                <Button onClick={handleSummarizeReport} disabled={isSummarizing}>
+                    {isSummarizing ? (
+                        'Summarizing...'
+                    ) : (
+                        <>
+                            <Sparkles className="mr-2 h-4 w-4" /> Summarize
+                        </>
+                    )}
+                </Button>
+              </div>
+            </div>
+
+            {summaryResult && (
+              <div className="border-t pt-4 mt-4 space-y-4">
+                 <div>
+                    <h3 className="font-semibold text-lg mb-2">Summary</h3>
+                    <p className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
+                        {summaryResult.summary}
+                    </p>
+                </div>
+                <Separator />
+                 <div>
+                    <h3 className="font-semibold text-lg mb-2">Detected Exceedances</h3>
+                     <p className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
+                        {summaryResult.exceedances || 'None'}
+                    </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
       </main>
     </div>
   );
 }
+
+    

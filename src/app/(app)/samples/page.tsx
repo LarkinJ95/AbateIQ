@@ -3,14 +3,12 @@
 
 import { Header } from '@/components/header';
 import { samples as initialSamples, projects, tasks, personnel, exposureLimits } from '@/lib/data';
-import { SamplesList } from '@/app/(app)/samples/samples-list';
 import { Card, CardContent } from '@/components/ui/card';
-import { AddSampleDialog } from './add-sample-dialog';
 import { useState } from 'react';
 import type { Sample, Result } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
 import { differenceInMinutes, parse } from 'date-fns';
+import { SamplesDataTable } from './samples-data-table';
+import { columns } from './columns';
 
 export default function SamplesPage() {
     const [samples, setSamples] = useState(initialSamples);
@@ -113,20 +111,9 @@ export default function SamplesPage() {
     <div className="flex min-h-screen w-full flex-col">
       <Header title="Samples" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-headline font-bold tracking-tight">
-                Manage Samples
-            </h2>
-            <AddSampleDialog onSave={handleSaveSample} sample={null}>
-                 <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Sample
-                </Button>
-            </AddSampleDialog>
-        </div>
         <Card>
-            <CardContent className="p-0">
-                <SamplesList samples={samplesWithDetails} onSave={handleSaveSample} onDelete={handleDeleteSample}/>
+            <CardContent className="p-4">
+                <SamplesDataTable columns={columns} data={samplesWithDetails} />
             </CardContent>
         </Card>
       </main>

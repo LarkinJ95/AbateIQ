@@ -22,6 +22,20 @@ import { useToast } from '@/hooks/use-toast';
 import { AddEditSurveyDialog } from '../add-edit-survey-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { generateSurveyReport, GenerateSurveyReportOutput } from '@/ai/flows/generate-survey-report';
+import { useUser } from '@/firebase';
+
+// Helper to convert an image URL to a data URI
+async function toDataUri(url: string): Promise<string> {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
 
 export default function SurveyDetailsPage() {
   const params = useParams();
@@ -48,8 +62,8 @@ export default function SurveyDetailsPage() {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [generatedReport, setGeneratedReport] = useState<GenerateSurveyReportOutput | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-
-
+  
+  const { user } = useUser();
   const { toast } = useToast();
 
   // Sync state if initial survey changes (e.g. on navigation)
@@ -137,9 +151,27 @@ export default function SurveyDetailsPage() {
     setIsGeneratingReport(true);
     setGeneratedReport(null);
     try {
-        const serializableFAs = functionalAreas.map(fa => ({ id: fa.id, faId: fa.faId, faUse: fa.faUse }));
+        const [
+            mainPhotoDataUri, 
+            floorPlanDataUri,
+            exteriorPhotoUri,
+            interiorPhotoUri,
+            samplePhotoUri,
+            logoDataUri
+        ] = await Promise.all([
+            mainPhoto ? toDataUri(mainPhoto) : Promise.resolve(undefined),
+            floorPlan ? toDataUri(floorPlan) : Promise.resolve(undefined),
+            exteriorPhoto ? toDataUri(exteriorPhoto) : Promise.resolve(undefined),
+            interiorPhoto ? toDataUri(interiorPhoto) : Promise.resolve(undefined),
+            samplePhoto ? toDataUri(samplePhoto) : Promise.resolve(undefined),
+            user?.photoURL ? toDataUri(user.photoURL) : Promise.resolve(undefined),
+        ]);
+
+        const positiveMaterialPhotoDataUris = [exteriorPhotoUri, interiorPhotoUri, samplePhotoUri].filter(Boolean) as string[];
+
+        const serializableFAs = functionalAreas.map(fa => ({ id: fa.id, faId: fa.faId, faUse: fa.faUse, length: fa.length, width: fa.width, height: fa.height }));
         const serializableHAs = homogeneousAreas.map(ha => ({ id: ha.id, haId: ha.haId, description: ha.description, functionalAreaIds: ha.functionalAreaIds }));
-        const serializableAsbestos = asbestosSamples.map(s => ({ id: s.id, sampleNumber: s.sampleNumber, location: s.location, material: s.material, asbestosType: s.asbestosType, asbestosPercentage: s.asbestosPercentage }));
+        const serializableAsbestos = asbestosSamples.map(s => ({ id: s.id, sampleNumber: s.sampleNumber, homogeneousAreaId: s.homogeneousAreaId, location: s.location, material: s.material, asbestosType: s.asbestosType, asbestosPercentage: s.asbestosPercentage }));
         const serializablePaint = paintSamples.map(s => ({id: s.id, location: s.location, paintColor: s.paintColor, analyte: s.analyte, resultMgKg: s.resultMgKg}));
         
         const reportInput = {
@@ -153,6 +185,11 @@ export default function SurveyDetailsPage() {
             homogeneousAreas: serializableHAs,
             asbestosSamples: serializableAsbestos,
             paintSamples: serializablePaint,
+            companyName: 'Bierlein', // This should be dynamic in a real app
+            logoDataUri,
+            mainPhotoDataUri,
+            floorPlanDataUri,
+            positiveMaterialPhotoDataUris,
         };
 
         const result = await generateSurveyReport(reportInput);
@@ -162,7 +199,7 @@ export default function SurveyDetailsPage() {
         console.error("Report generation failed:", error);
         toast({
             title: 'Report Generation Failed',
-            description: 'An unexpected error occurred while generating the report.',
+            description: 'An unexpected error occurred while generating the report. Check the console for details.',
             variant: 'destructive',
         });
     } finally {
@@ -376,3 +413,5 @@ export default function SurveyDetailsPage() {
     </div>
   );
 }
+
+    

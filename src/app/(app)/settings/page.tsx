@@ -13,8 +13,10 @@ import { useRouter } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
-import { Shield } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Shield, Upload, User } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function SettingsPage() {
     const { user } = useUser();
@@ -23,11 +25,16 @@ export default function SettingsPage() {
     const router = useRouter();
 
     const [displayName, setDisplayName] = useState('');
+    const [photoURL, setPhotoURL] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const userAvatarPlaceholder = PlaceHolderImages.find(img => img.id === 'user-avatar-1');
+
 
     useEffect(() => {
-        if (user?.displayName) {
-            setDisplayName(user.displayName);
+        if (user) {
+            setDisplayName(user.displayName || '');
+            setPhotoURL(user.photoURL);
         }
     }, [user]);
 
@@ -35,10 +42,10 @@ export default function SettingsPage() {
         if (!user) return;
         setIsSaving(true);
         try {
-            await updateProfile(user, { displayName });
+            await updateProfile(user, { displayName, photoURL });
             toast({
                 title: 'Profile Updated',
-                description: 'Your name has been successfully updated.',
+                description: 'Your profile has been successfully updated.',
             });
         } catch (error: any) {
              toast({
@@ -67,6 +74,17 @@ export default function SettingsPage() {
             });
         }
     };
+    
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setPhotoURL(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     return (
         <div className="flex min-h-screen w-full flex-col">
@@ -93,15 +111,42 @@ export default function SettingsPage() {
                         <CardDescription>Manage your account details.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input 
-                                id="name" 
-                                value={displayName} 
-                                onChange={(e) => setDisplayName(e.target.value)}
-                                disabled={isSaving}
-                            />
+                        <div className="flex items-center gap-6">
+                            <div className="space-y-2">
+                                <Label>Profile Picture</Label>
+                                <div className="relative group">
+                                     <Avatar className="h-20 w-20">
+                                        <AvatarImage src={photoURL ?? userAvatarPlaceholder?.imageUrl} alt="User avatar" />
+                                        <AvatarFallback>
+                                            <User className="text-muted-foreground h-10 w-10" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div 
+                                        className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <Upload className="h-6 w-6 text-white" />
+                                    </div>
+                                    <Input 
+                                        type="file" 
+                                        className="hidden" 
+                                        ref={fileInputRef}
+                                        onChange={handleImageChange}
+                                        accept="image/png, image/jpeg, image/gif"
+                                    />
+                                </div>
+                            </div>
+                             <div className="space-y-2 flex-1">
+                                <Label htmlFor="name">Name</Label>
+                                <Input 
+                                    id="name" 
+                                    value={displayName} 
+                                    onChange={(e) => setDisplayName(e.target.value)}
+                                    disabled={isSaving}
+                                />
+                            </div>
                         </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" value={user?.email || 'Not set'} disabled />

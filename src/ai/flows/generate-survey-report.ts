@@ -60,6 +60,15 @@ const GenerateSurveyReportInputSchema = z.object({
 
 export type GenerateSurveyReportInput = z.infer<typeof GenerateSurveyReportInputSchema>;
 
+// Define a schema for the data being passed to the prompt itself, including stringified fields
+const PromptInputSchema = GenerateSurveyReportInputSchema.extend({
+  stringifiedFunctionalAreas: z.string(),
+  stringifiedHomogeneousAreas: z.string(),
+  stringifiedAsbestosSamples: z.string(),
+  stringifiedPaintSamples: z.string(),
+});
+
+
 const GenerateSurveyReportOutputSchema = z.object({
   reportHtml: z.string().describe('The full survey report formatted as a single HTML string.'),
 });
@@ -72,7 +81,7 @@ export async function generateSurveyReport(input: GenerateSurveyReportInput): Pr
 
 const prompt = ai.definePrompt({
   name: 'generateSurveyReportPrompt',
-  input: { schema: GenerateSurveyReportInputSchema },
+  input: { schema: PromptInputSchema }, // Use the extended schema
   output: { schema: GenerateSurveyReportOutputSchema },
   model: 'googleai/gemini-1.5-pro',
   prompt: `
@@ -108,22 +117,13 @@ const prompt = ai.definePrompt({
     - Inspector: {{{inspector}}}
     - Job Number: {{{jobNumber}}}
     - Survey Type: {{#each surveyType}}{{{this}}}{{/each}}
-    - Functional Areas: {{{JSONstringify functionalAreas}}}
-    - Homogeneous Areas: {{{JSONstringify homogeneousAreas}}}
-    - Asbestos Samples: {{{JSONstringify asbestosSamples}}}
-    - Paint Samples: {{{JSONstringify paintSamples}}}
+    - Functional Areas: {{{stringifiedFunctionalAreas}}}
+    - Homogeneous Areas: {{{stringifiedHomogeneousAreas}}}
+    - Asbestos Samples: {{{stringifiedAsbestosSamples}}}
+    - Paint Samples: {{{stringifiedPaintSamples}}}
 
     Now, generate the complete HTML report.
   `,
-  customizers: [
-    (model, request) => {
-      // Add a Handlebars helper to stringify JSON
-      request.config!.template!.helpers = {
-        JSONstringify: (obj: any) => JSON.stringify(obj),
-      };
-      return request;
-    },
-  ],
 });
 
 
@@ -134,7 +134,16 @@ const generateSurveyReportFlow = ai.defineFlow(
     outputSchema: GenerateSurveyReportOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+     // Manually stringify the complex data before passing it to the prompt
+    const promptInput = {
+      ...input,
+      stringifiedFunctionalAreas: JSON.stringify(input.functionalAreas),
+      stringifiedHomogeneousAreas: JSON.stringify(input.homogeneousAreas),
+      stringifiedAsbestosSamples: JSON.stringify(input.asbestosSamples),
+      stringifiedPaintSamples: JSON.stringify(input.paintSamples),
+    };
+
+    const { output } = await prompt(promptInput);
     return output!;
   }
 );

@@ -1,4 +1,5 @@
 
+
 import type { LucideIcon } from "lucide-react";
 
 export type Project = {
@@ -103,17 +104,24 @@ export type Survey = {
   jobNumber?: string;
   sitePhotoUrl?: string;
   sitePhotoHint?: string;
+  homogeneousAreas?: HomogeneousArea[];
   asbestosSamples?: AsbestosSample[];
   paintSamples?: PaintSample[];
   functionalAreas?: FunctionalArea[];
   checklistTemplates?: string[];
 };
 
+export type HomogeneousArea = {
+    id: string;
+    haId: string; // User-defined ID, e.g., "HA-01"
+    description: string;
+}
+
 export type AsbestosSample = {
     id: string;
     sampleNumber: string;
+    homogeneousAreaId: string;
     location: string;
-    homogeneousArea: string;
     material: string;
     estimatedQuantity: string;
     friable: boolean;
@@ -122,7 +130,7 @@ export type AsbestosSample = {
 }
 
 export type PaintSample = {
-    id: string;
+    id:string;
     location: string;
     paintColor: string;
     analyte: 'Lead' | 'Cadmium' | '';

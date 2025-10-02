@@ -1,5 +1,6 @@
 
-import { Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit, Survey, AsbestosSample, PaintSample, ChecklistTemplate, FunctionalArea } from './types';
+
+import { Project, PersonnelExposure, Exceedance, Document, ExistingNea, Sample, Result, Location, Task, Personnel, ExposureLimit, Survey, AsbestosSample, PaintSample, ChecklistTemplate, FunctionalArea, HomogeneousArea } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const findImage = (id: string) => PlaceHolderImages.find(img => img.id === id);
@@ -59,9 +60,15 @@ export const exceedances: Exceedance[] = [
   { id: 'e2', resultId: 'res-2-placeholder', analyte: 'Silica', concentration: '0.06 mg/m³', limit: '0.05 mg/m³ (PEL)', personnel: 'J. Doe', location: 'Downtown Tower, 10th Floor', correctiveAction: 'Increase ventilation and require respiratory protection.', exceedanceDate: '2024-06-20' },
 ];
 
+const initialHomogeneousAreas: HomogeneousArea[] = [
+    { id: 'ha-1', haId: 'HA-01', description: '1st Floor Ceiling Tiles' },
+    { id: 'ha-2', haId: 'HA-02', description: 'Lobby 9x9 Floor Tiles' },
+];
+
+
 const initialAsbestosSamples: AsbestosSample[] = [
-    { id: 'asb-1', sampleNumber: 'MS-ASB-01', location: '10th Floor - Ceiling Tiles', material: 'Acoustic Tile', friable: true, homogeneousArea: 'HA-01', estimatedQuantity: '1000 sqft', asbestosType: 'Chrysotile', asbestosPercentage: 5 },
-    { id: 'asb-2', sampleNumber: 'MS-ASB-02', location: 'Lobby - Floor Tiles', material: '9x9 Vinyl Tile', friable: false, homogeneousArea: 'HA-02', estimatedQuantity: '500 sqft', asbestosType: 'ND', asbestosPercentage: null },
+    { id: 'asb-1', sampleNumber: 'MS-ASB-01', homogeneousAreaId: 'ha-1', location: '10th Floor - Ceiling Tiles', material: 'Acoustic Tile', friable: true, estimatedQuantity: '1000 sqft', asbestosType: 'Chrysotile', asbestosPercentage: 5 },
+    { id: 'asb-2', sampleNumber: 'MS-ASB-02', homogeneousAreaId: 'ha-2', location: 'Lobby - Floor Tiles', material: '9x9 Vinyl Tile', friable: false, estimatedQuantity: '500 sqft', asbestosType: 'ND', asbestosPercentage: null },
 ];
 
 const initialPaintSamples: PaintSample[] = [
@@ -75,7 +82,7 @@ const initialFunctionalAreas: FunctionalArea[] = [
 ];
 
 export const surveys: Survey[] = [
-    { id: 'surv-1', siteName: 'Metro High School', address: '123 Education Ln, Metro City', inspector: 'John Doe', surveyDate: '2024-07-15', status: 'Completed', surveyType: ['Asbestos'], jobNumber: '24-1003', sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, sitePhotoHint: findImage('doc-thumb-2')?.imageHint, asbestosSamples: initialAsbestosSamples, functionalAreas: initialFunctionalAreas, checklistTemplates: ['pre-survey', 'safety'] },
+    { id: 'surv-1', siteName: 'Metro High School', address: '123 Education Ln, Metro City', inspector: 'John Doe', surveyDate: '2024-07-15', status: 'Completed', surveyType: ['Asbestos'], jobNumber: '24-1003', sitePhotoUrl: findImage('doc-thumb-2')?.imageUrl, sitePhotoHint: findImage('doc-thumb-2')?.imageHint, homogeneousAreas: initialHomogeneousAreas, asbestosSamples: initialAsbestosSamples, functionalAreas: initialFunctionalAreas, checklistTemplates: ['pre-survey', 'safety'] },
     { id: 'surv-2', siteName: 'Coastal Power Plant', address: '789 Power Rd, Seaside', inspector: 'Laura Smith', surveyDate: '2024-07-20', status: 'In Progress', surveyType: ['Lead', 'Cadmium'], jobNumber: '24-2005', paintSamples: initialPaintSamples, checklistTemplates: ['pre-survey', 'safety', 'equipment'] },
     { id: 'surv-3', siteName: 'Old City Hall', address: '210 Government Ave, Old Town', inspector: 'John Doe', surveyDate: '2024-08-01', status: 'Scheduled', surveyType: ['Asbestos', 'Lead'], jobNumber: '24-3005' },
     { id: 'surv-4', siteName: 'Suburbia Shopping Mall', address: '456 Market St, Suburbia', inspector: 'Ming Chen', surveyDate: '2024-07-25', status: 'Draft', surveyType: ['Cadmium'] },

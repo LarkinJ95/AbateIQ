@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation';
 import { surveys as allSurveys } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Survey, AsbestosSample, PaintSample, FunctionalArea } from '@/lib/types';
+import type { Survey, AsbestosSample, PaintSample, FunctionalArea, HomogeneousArea } from '@/lib/types';
 import Image from 'next/image';
 import { MapPin, Calendar, User, FileText, CheckSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,9 +16,11 @@ import { SurveyChecklist } from '../survey-checklist';
 import { AsbestosTable } from '../asbestos-table';
 import { PaintTable } from '../paint-table';
 import { FunctionalAreasTable } from '../functional-areas-table';
+import { HomogeneousAreasTable } from '../homogeneous-areas-table';
 
 export default function SurveyDetailsPage({ params }: { params: { id: string } }) {
   const survey = allSurveys.find(s => s.id === params.id);
+  const [homogeneousAreas, setHomogeneousAreas] = useState<HomogeneousArea[]>(survey?.homogeneousAreas || []);
   const [asbestosSamples, setAsbestosSamples] = useState<AsbestosSample[]>(survey?.asbestosSamples || []);
   const [paintSamples, setPaintSamples] = useState<PaintSample[]>(survey?.paintSamples || []);
   const [functionalAreas, setFunctionalAreas] = useState<FunctionalArea[]>(survey?.functionalAreas || []);
@@ -36,6 +38,10 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
       }
   }
   
+  const handleHaSave = (areas: HomogeneousArea[]) => {
+      setHomogeneousAreas(areas);
+  }
+
   const handleAsbestosSave = (samples: AsbestosSample[]) => {
       setAsbestosSamples(samples);
   }
@@ -63,14 +69,18 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue="homogeneous-areas">
-                        <TabsList className="grid w-full grid-cols-4">
+                        <TabsList className="grid w-full grid-cols-5">
                             <TabsTrigger value="homogeneous-areas">Homogeneous Areas</TabsTrigger>
+                            <TabsTrigger value="asbestos-samples">Asbestos Samples</TabsTrigger>
                             <TabsTrigger value="functional-areas">Functional Areas</TabsTrigger>
                             <TabsTrigger value="paint-samples">Paint Samples</TabsTrigger>
                             <TabsTrigger value="checklist">Checklist</TabsTrigger>
                         </TabsList>
                         <TabsContent value="homogeneous-areas" className="mt-4">
-                            <AsbestosTable samples={asbestosSamples} onSave={handleAsbestosSave} />
+                            <HomogeneousAreasTable areas={homogeneousAreas} onSave={handleHaSave} />
+                        </TabsContent>
+                         <TabsContent value="asbestos-samples" className="mt-4">
+                            <AsbestosTable samples={asbestosSamples} homogeneousAreas={homogeneousAreas} onSave={handleAsbestosSave} />
                         </TabsContent>
                         <TabsContent value="functional-areas" className="mt-4">
                             <FunctionalAreasTable areas={functionalAreas} onSave={handleFunctionalAreasSave} />

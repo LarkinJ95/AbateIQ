@@ -1,30 +1,33 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AsbestosSample } from '@/lib/types';
+import type { AsbestosSample, HomogeneousArea } from '@/lib/types';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Combobox, ComboboxOption } from '@/components/ui/combobox';
 
 interface AsbestosTableProps {
   samples: AsbestosSample[];
+  homogeneousAreas: HomogeneousArea[];
   onSave: (samples: AsbestosSample[]) => void;
 }
 
 const asbestosTypes: AsbestosSample['asbestosType'][] = ['ND', 'Chrysotile', 'Amosite', 'Crocidolite', 'Trace'];
 
 
-export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTableProps) {
+export function AsbestosTable({ samples: initialSamples, homogeneousAreas, onSave }: AsbestosTableProps) {
   const [samples, setSamples] = useState<AsbestosSample[]>(initialSamples);
   const [newRow, setNewRow] = useState<Partial<AsbestosSample>>({
       sampleNumber: '',
       location: '',
-      homogeneousArea: '',
+      homogeneousAreaId: '',
       material: '',
       estimatedQuantity: '',
       friable: false,
@@ -33,13 +36,20 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
   });
   const { toast } = useToast();
 
+    const haOptions = useMemo<ComboboxOption[]>(() => 
+        homogeneousAreas.map(ha => ({ value: ha.id, label: `${ha.haId} - ${ha.description}` })),
+    [homogeneousAreas]);
+
+  const [haComboBoxOptions, setHaComboBoxOptions] = useState<ComboboxOption[]>(haOptions);
+
+
   const handleAddRow = () => {
-    if (newRow.sampleNumber && newRow.location && newRow.material) {
+    if (newRow.sampleNumber && newRow.location && newRow.material && newRow.homogeneousAreaId) {
         const newSample: AsbestosSample = {
             id: `asb-${Date.now()}`,
             sampleNumber: newRow.sampleNumber,
             location: newRow.location,
-            homogeneousArea: newRow.homogeneousArea || '',
+            homogeneousAreaId: newRow.homogeneousAreaId,
             material: newRow.material,
             estimatedQuantity: newRow.estimatedQuantity || '',
             friable: newRow.friable ?? false,
@@ -52,7 +62,7 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
         setNewRow({
             sampleNumber: '',
             location: '',
-            homogeneousArea: '',
+            homogeneousAreaId: '',
             material: '',
             estimatedQuantity: '',
             friable: false,
@@ -61,7 +71,7 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
         });
         toast({ title: 'Sample Added', description: 'Asbestos sample has been logged.' });
     } else {
-        toast({ title: 'Missing Data', description: 'Please fill out Sample #, Location, and Material.', variant: 'destructive'});
+        toast({ title: 'Missing Data', description: 'Please fill out Sample #, HA, Location, and Material.', variant: 'destructive'});
     }
   };
   
@@ -82,14 +92,18 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
       return sample.asbestosType;
   }
 
+  const getHaDescription = (haId: string) => {
+      return haOptions.find(ha => ha.value === haId)?.label || haId;
+  }
+
   return (
     <div className="space-y-4">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Sample #</TableHead>
+            <TableHead>HA</TableHead>
             <TableHead>Location</TableHead>
-            <TableHead>Homogeneous Area</TableHead>
             <TableHead>Material</TableHead>
             <TableHead>Est. Qty</TableHead>
             <TableHead>Friable</TableHead>
@@ -101,8 +115,8 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
           {samples.map((sample) => (
             <TableRow key={sample.id}>
               <TableCell>{sample.sampleNumber}</TableCell>
+              <TableCell>{getHaDescription(sample.homogeneousAreaId)}</TableCell>
               <TableCell>{sample.location}</TableCell>
-              <TableCell>{sample.homogeneousArea}</TableCell>
               <TableCell>{sample.material}</TableCell>
               <TableCell>{sample.estimatedQuantity}</TableCell>
               <TableCell>{sample.friable ? 'Yes' : 'No'}</TableCell>
@@ -125,18 +139,22 @@ export function AsbestosTable({ samples: initialSamples, onSave }: AsbestosTable
               />
             </TableCell>
             <TableCell>
+                <Combobox
+                    options={haComboBoxOptions}
+                    setOptions={setHaComboBoxOptions}
+                    value={newRow.homogeneousAreaId || ''}
+                    onValueChange={(value) => setNewRow({...newRow, homogeneousAreaId: value})}
+                    placeholder="Select HA"
+                    searchPlaceholder="Search HAs..."
+                    emptyPlaceholder="No HA found. Create one in the HA tab."
+                />
+            </TableCell>
+            <TableCell>
               <Input
                 placeholder="e.g., Kitchen floor"
                 value={newRow.location || ''}
                 onChange={(e) => setNewRow({ ...newRow, location: e.target.value })}
               />
-            </TableCell>
-            <TableCell>
-                <Input 
-                    placeholder="e.g., HA-01"
-                    value={newRow.homogeneousArea || ''}
-                    onChange={(e) => setNewRow({ ...newRow, homogeneousArea: e.target.value })}
-                />
             </TableCell>
             <TableCell>
               <Input

@@ -1,21 +1,29 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FunctionalArea } from '@/lib/types';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Combobox, ComboboxOption } from '@/components/ui/combobox';
 
 interface FunctionalAreasTableProps {
   areas: FunctionalArea[];
   onSave: (areas: FunctionalArea[]) => void;
 }
 
-const faUseOptions = ['Office', 'Restroom', 'Corridor', 'Mechanical', 'Storage', 'Classroom'];
+const defaultFaUseOptions: ComboboxOption[] = [
+    { value: 'office', label: 'Office' },
+    { value: 'restroom', label: 'Restroom' },
+    { value: 'corridor', label: 'Corridor' },
+    { value: 'mechanical', label: 'Mechanical' },
+    { value: 'storage', label: 'Storage' },
+    { value: 'classroom', label: 'Classroom' },
+];
 
 export function FunctionalAreasTable({ areas: initialAreas, onSave }: FunctionalAreasTableProps) {
   const [areas, setAreas] = useState<FunctionalArea[]>(initialAreas);
@@ -27,13 +35,16 @@ export function FunctionalAreasTable({ areas: initialAreas, onSave }: Functional
     height: null,
   });
   const { toast } = useToast();
+  const [faUseOptions, setFaUseOptions] = useState<ComboboxOption[]>(defaultFaUseOptions);
+
 
   const handleAddRow = () => {
-    if (newRow.faId && newRow.faUse) {
+    const selectedLabel = faUseOptions.find(opt => opt.value === newRow.faUse)?.label || newRow.faUse;
+    if (newRow.faId && selectedLabel) {
       const newArea: FunctionalArea = {
         id: `fa-${Date.now()}`,
         faId: newRow.faId,
-        faUse: newRow.faUse,
+        faUse: selectedLabel,
         length: newRow.length ?? null,
         width: newRow.width ?? null,
         height: newRow.height ?? null,
@@ -121,16 +132,15 @@ export function FunctionalAreasTable({ areas: initialAreas, onSave }: Functional
               />
             </TableCell>
             <TableCell>
-              <Select onValueChange={(value) => setNewRow({ ...newRow, faUse: value })} value={newRow.faUse}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Select Use" />
-                </SelectTrigger>
-                <SelectContent>
-                  {faUseOptions.map(use => (
-                    <SelectItem key={use} value={use}>{use}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Combobox
+                    options={faUseOptions}
+                    setOptions={setFaUseOptions}
+                    value={newRow.faUse || ''}
+                    onValueChange={(value) => setNewRow({...newRow, faUse: value})}
+                    placeholder="Select or create..."
+                    searchPlaceholder="Search uses..."
+                    emptyPlaceholder="No use found."
+                />
             </TableCell>
             <TableCell>
               <Input

@@ -8,18 +8,48 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { signOut } from 'firebase/auth';
+import { signOut, updateProfile } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { Shield } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function SettingsPage() {
     const { user } = useUser();
     const auth = useAuth();
     const { toast } = useToast();
     const router = useRouter();
+
+    const [displayName, setDisplayName] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (user?.displayName) {
+            setDisplayName(user.displayName);
+        }
+    }, [user]);
+
+    const handleProfileUpdate = async () => {
+        if (!user) return;
+        setIsSaving(true);
+        try {
+            await updateProfile(user, { displayName });
+            toast({
+                title: 'Profile Updated',
+                description: 'Your name has been successfully updated.',
+            });
+        } catch (error: any) {
+             toast({
+                title: 'Update Failed',
+                description: error.message || 'An error occurred while updating your profile.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleLogout = async () => {
         try {
@@ -65,12 +95,20 @@ export default function SettingsPage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Name</Label>
-                            <Input id="name" value={user?.displayName || 'Not set'} disabled />
+                            <Input 
+                                id="name" 
+                                value={displayName} 
+                                onChange={(e) => setDisplayName(e.target.value)}
+                                disabled={isSaving}
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" value={user?.email || 'Not set'} disabled />
                         </div>
+                        <Button onClick={handleProfileUpdate} disabled={isSaving}>
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                        </Button>
                     </CardContent>
                 </Card>
 

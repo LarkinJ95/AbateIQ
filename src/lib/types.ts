@@ -36,8 +36,10 @@ export type Personnel = {
 export type Sample = {
     id: string;
     projectId: string;
+    description: string;
     taskId: string;
     personnelId: string;
+    sampleType: "Area" | "Personal" | "Blank" | "Excursion" | "Clearance";
     startTime: string;
     stopTime: string;
     flowRate: number; 

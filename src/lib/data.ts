@@ -37,9 +37,9 @@ export const results: Result[] = [
 ];
 
 export const samples: Sample[] = [
-    { id: 'samp-1', projectId: 'p1', taskId: 'task-1', personnelId: 'per-1', startTime: '2024-07-21 08:00', stopTime: '2024-07-21 12:00', flowRate: 2.45, duration: 240, volume: 588, result: results.find(r => r.sampleId === 'samp-1')},
-    { id: 'samp-2', projectId: 'p2', taskId: 'task-2', personnelId: 'per-2', startTime: '2024-07-22 09:00', stopTime: '2024-07-22 13:00', flowRate: 2.5, duration: 240, volume: 600, result: { id: 'res-2', sampleId: 'samp-2', status: 'Pending', analyte: 'Asbestos', method: 'NIOSH 7400', units: 'f/cc', concentration: 0, reportingLimit: 0.01, lab: 'FutureLabs' }},
-    { id: 'samp-3', projectId: 'p1', taskId: 'task-1', personnelId: 'per-3', startTime: '2024-07-23 08:30', stopTime: '2024-07-23 12:30', flowRate: 2.4, duration: 240, volume: 576, result: { id: 'res-3', sampleId: 'samp-3', status: 'Pending', analyte: 'Silica', method: 'NIOSH 7500', units: 'mg/m³', concentration: 0, reportingLimit: 0.005, lab: 'AccuLabs' }},
+    { id: 'samp-1', projectId: 'p1', taskId: 'task-1', personnelId: 'per-1', description: 'Personal sample for drywall sander in Zone A.', sampleType: 'Personal', startTime: '2024-07-21 08:00', stopTime: '2024-07-21 12:00', flowRate: 2.45, duration: 240, volume: 588, result: results.find(r => r.sampleId === 'samp-1')},
+    { id: 'samp-2', projectId: 'p2', taskId: 'task-2', personnelId: 'per-2', description: 'Asbestos abatement area sample near containment.', sampleType: 'Area', startTime: '2024-07-22 09:00', stopTime: '2024-07-22 13:00', flowRate: 2.5, duration: 240, volume: 600, result: { id: 'res-2', sampleId: 'samp-2', status: 'Pending', analyte: 'Asbestos', method: 'NIOSH 7400', units: 'f/cc', concentration: 0, reportingLimit: 0.01, lab: 'FutureLabs' }},
+    { id: 'samp-3', projectId: 'p1', taskId: 'task-1', personnelId: 'per-3', description: 'General area background sample for silica.', sampleType: 'Area', startTime: '2024-07-23 08:30', stopTime: '2024-07-23 12:30', flowRate: 2.4, duration: 240, volume: 576, result: { id: 'res-3', sampleId: 'samp-3', status: 'Pending', analyte: 'Silica', method: 'NIOSH 7500', units: 'mg/m³', concentration: 0, reportingLimit: 0.005, lab: 'AccuLabs' }},
 ];
 
 export const exposureLimits: ExposureLimit[] = [

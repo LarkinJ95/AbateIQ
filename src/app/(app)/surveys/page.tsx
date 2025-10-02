@@ -12,18 +12,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { surveys as initialSurveys } from "@/lib/data";
+import { surveys as initialSurveys, personnel as allPersonnel } from "@/lib/data";
 import { Search, Plus, MapPin, Calendar, User, Edit, FileText, Filter, Download, Trash2, X, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import type { Survey } from "@/lib/types";
 import Link from "next/link";
 import Image from 'next/image';
+import { AddEditSurveyDialog } from "./add-edit-survey-dialog";
 
 export default function SurveysPage() {
   const [surveys, setSurveys] = useState<Survey[]>(initialSurveys);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editSurvey, setEditSurvey] = useState<Survey | null>(null);
   const [selectedSurveys, setSelectedSurveys] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -32,6 +31,21 @@ export default function SurveysPage() {
   const [sortBy, setSortBy] = useState<string>("date-desc");
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false); // Simulate loading
+
+  const handleSaveSurvey = (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
+    if (surveyData.id) {
+        // Edit existing survey
+        setSurveys(prev => prev.map(s => s.id === surveyData.id ? { ...s, ...surveyData } as Survey : s));
+    } else {
+        // Add new survey
+        const newSurvey: Survey = {
+            ...surveyData,
+            id: `surv-${Date.now()}`,
+        };
+        setSurveys(prev => [newSurvey, ...prev]);
+    }
+  };
+
 
   const handleBulkAction = (action: 'download' | 'delete') => {
     if (selectedSurveys.length === 0) {
@@ -159,10 +173,12 @@ export default function SurveysPage() {
        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-headline font-bold" data-testid="surveys-title">All Surveys</h1>
-                <Button onClick={() => toast({ title: 'Coming Soon!', description: 'Creating new surveys will be available soon.'})} data-testid="button-create-survey">
-                <Plus className="h-4 w-4 mr-2" />
-                New Survey
-                </Button>
+                <AddEditSurveyDialog onSave={handleSaveSurvey} survey={null}>
+                    <Button data-testid="button-create-survey">
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Survey
+                    </Button>
+                </AddEditSurveyDialog>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -321,14 +337,15 @@ export default function SurveysPage() {
                     {searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || dateRange ? "No surveys found matching your filters." : "No surveys created yet."}
                     </p>
                     {!searchQuery && statusFilter === 'all' && typeFilter === 'all' && !dateRange && (
-                    <Button 
-                        onClick={() => toast({ title: 'Coming Soon!' })} 
-                        className="mt-4"
-                        data-testid="button-create-first-survey"
-                    >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Your First Survey
-                    </Button>
+                    <AddEditSurveyDialog onSave={handleSaveSurvey} survey={null}>
+                        <Button 
+                            className="mt-4"
+                            data-testid="button-create-first-survey"
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create Your First Survey
+                        </Button>
+                    </AddEditSurveyDialog>
                     )}
                 </CardContent>
                 </Card>
@@ -349,8 +366,8 @@ export default function SurveysPage() {
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredSurveys.map((survey) => (
-                    <Link href={`/surveys/${survey.id}`} key={survey.id} className="block">
-                    <Card className="hover:shadow-lg transition-shadow relative group/survey-card" data-testid={`card-survey-${survey.id}`}>
+                    
+                    <Card key={survey.id} className="hover:shadow-lg transition-shadow relative group/survey-card" data-testid={`card-survey-${survey.id}`}>
                         <div className="absolute top-3 left-3 z-10">
                             <Checkbox
                             checked={selectedSurveys.includes(survey.id)}
@@ -361,7 +378,7 @@ export default function SurveysPage() {
                         </div>
                         
                         <div className="p-4">
-                          <div className="pl-8">
+                          <Link href={`/surveys/${survey.id}`} className="block pl-8">
                             <div className="flex justify-between items-start">
                               <CardTitle className="text-lg truncate pr-2 font-headline">{survey.siteName}</CardTitle>
                               <Badge variant={getStatusVariant(survey.status)} data-testid={`status-${survey.status}`}>
@@ -369,10 +386,11 @@ export default function SurveysPage() {
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground capitalize">{survey.surveyType}</p>
-                          </div>
+                          </Link>
 
                           {survey.sitePhotoUrl && (
-                              <div className="mt-4 aspect-video relative rounded-md overflow-hidden">
+                            <Link href={`/surveys/${survey.id}`} className="block pl-8 mt-4">
+                              <div className="aspect-video relative rounded-md overflow-hidden">
                                   <Image
                                       src={survey.sitePhotoUrl}
                                       alt={`Site photo for ${survey.siteName}`}
@@ -381,8 +399,9 @@ export default function SurveysPage() {
                                       data-ai-hint={survey.sitePhotoHint}
                                   />
                               </div>
+                             </Link>
                           )}
-                          <CardContent className="pt-4 px-0 pb-0 space-y-2">
+                          <CardContent className="pt-4 px-0 pb-0 space-y-2 pl-8">
                               {survey.address && (
                                 <div className="flex items-center text-sm text-muted-foreground">
                                   <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
@@ -404,24 +423,25 @@ export default function SurveysPage() {
                                 <span>{new Date(survey.surveyDate).toLocaleDateString()}</span>
                               </div>
                               <div className="flex justify-end pt-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    toast({title: 'Coming soon!'});
-                                  }}
-                                  className="h-8 w-8 p-0"
-                                  data-testid={`button-edit-${survey.id}`}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
+                                <AddEditSurveyDialog onSave={handleSaveSurvey} survey={survey}>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                        }}
+                                        className="h-8 w-8 p-0"
+                                        data-testid={`button-edit-${survey.id}`}
+                                        >
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                </AddEditSurveyDialog>
                               </div>
                           </CardContent>
                         </div>
                     </Card>
-                    </Link>
+                   
                     ))}
                 </div>
                 </div>

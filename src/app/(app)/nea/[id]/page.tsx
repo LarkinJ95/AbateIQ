@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Header } from '@/components/header';
@@ -16,7 +15,8 @@ import { useRef, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LinkSamplesDialog } from '@/app/(app)/nea/link-samples-dialog';
 
-export default function NeaDetailsPage({ params: { id } }: { params: { id: string } }) {
+export default function NeaDetailsPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const nea = existingNeas.find(e => e.id === id);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);

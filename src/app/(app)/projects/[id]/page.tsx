@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Header } from '@/components/header';
@@ -31,7 +30,8 @@ type LinkedReport = {
   summaryResult: SummarizeLabReportOutput;
 }
 
-export default function ProjectDetailsPage({ params: { id } }: { params: { id: string } }) {
+export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const project = projects.find(p => p.id === id);
   
   if (!project) {

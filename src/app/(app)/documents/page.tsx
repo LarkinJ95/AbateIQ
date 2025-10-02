@@ -62,18 +62,6 @@ export default function DocumentsPage() {
     }
 
     const file = fileInputRef.current.files[0];
-    
-    // For this prototype, we'll check if the selected document is one of the mock reports.
-    // In a real app, you would handle the file upload and processing.
-    const mockReport = documents.find(d => d.name.includes('Lab Report'));
-    if (!file.name.includes('Lab Report') || !mockReport) {
-        toast({
-            variant: 'destructive',
-            title: 'Invalid File',
-            description: 'AI summarization is currently only available for mock "Lab Report" documents.',
-        });
-        return;
-    }
 
     setIsSummarizing(true);
     setSummaryResult(null);

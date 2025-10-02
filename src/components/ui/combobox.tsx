@@ -27,28 +27,33 @@ export type ComboboxOption = {
 
 interface ComboboxProps {
     options: ComboboxOption[];
-    setOptions: React.Dispatch<React.SetStateAction<ComboboxOption[]>>;
+    setOptions?: React.Dispatch<React.SetStateAction<ComboboxOption[]>>;
     value: string;
     onValueChange: (value: string) => void;
     placeholder: string;
     searchPlaceholder: string;
     emptyPlaceholder: string;
+    onNewCreated?: (label: string) => void;
 }
 
-export function Combobox({ options, setOptions, value, onValueChange, placeholder, searchPlaceholder, emptyPlaceholder }: ComboboxProps) {
+export function Combobox({ options, setOptions, value, onValueChange, placeholder, searchPlaceholder, emptyPlaceholder, onNewCreated }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [inputValue, setInputValue] = React.useState('');
 
   const handleCreateNew = () => {
-    if (inputValue && !options.some(option => option.label.toLowerCase() === inputValue.toLowerCase())) {
+    if (!inputValue) return;
+
+    if (onNewCreated) {
+        onNewCreated(inputValue);
+    } else if (setOptions && !options.some(option => option.label.toLowerCase() === inputValue.toLowerCase())) {
         const newOption = {
             value: `new-${inputValue.toLowerCase().replace(/\s+/g, '-')}`,
             label: inputValue
         };
         setOptions(prev => [...prev, newOption]);
         onValueChange(newOption.value);
-        setOpen(false);
     }
+    setOpen(false);
   }
 
   return (
@@ -70,6 +75,7 @@ export function Combobox({ options, setOptions, value, onValueChange, placeholde
         <Command>
           <CommandInput 
             placeholder={searchPlaceholder}
+            value={inputValue}
             onValueChange={setInputValue}
            />
           <CommandList>

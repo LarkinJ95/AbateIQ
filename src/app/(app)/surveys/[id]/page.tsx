@@ -77,10 +77,21 @@ export default function SurveyDetailsPage({ params }: { params: { id: string } }
                             <TabsTrigger value="checklist">Checklist</TabsTrigger>
                         </TabsList>
                         <TabsContent value="homogeneous-areas" className="mt-4">
-                            <HomogeneousAreasTable areas={homogeneousAreas} onSave={handleHaSave} />
+                            <HomogeneousAreasTable 
+                                areas={homogeneousAreas} 
+                                functionalAreas={functionalAreas}
+                                asbestosSamples={asbestosSamples}
+                                onSave={handleHaSave} 
+                            />
                         </TabsContent>
                          <TabsContent value="asbestos-samples" className="mt-4">
-                            <AsbestosTable samples={asbestosSamples} homogeneousAreas={homogeneousAreas} onSave={handleAsbestosSave} />
+                            <AsbestosTable 
+                                samples={asbestosSamples} 
+                                homogeneousAreas={homogeneousAreas} 
+                                functionalAreas={functionalAreas}
+                                onSave={handleAsbestosSave}
+                                onHaCreated={setHomogeneousAreas} 
+                            />
                         </TabsContent>
                         <TabsContent value="functional-areas" className="mt-4">
                             <FunctionalAreasTable areas={functionalAreas} onSave={handleFunctionalAreasSave} />

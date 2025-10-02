@@ -115,6 +115,7 @@ export type HomogeneousArea = {
     id: string;
     haId: string; // User-defined ID, e.g., "HA-01"
     description: string;
+    functionalAreaId?: string | null;
 }
 
 export type AsbestosSample = {

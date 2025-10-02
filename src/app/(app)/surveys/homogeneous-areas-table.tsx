@@ -1,22 +1,26 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { HomogeneousArea } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { HomogeneousArea, FunctionalArea, AsbestosSample } from '@/lib/types';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface HomogeneousAreasTableProps {
   areas: HomogeneousArea[];
+  functionalAreas: FunctionalArea[];
+  asbestosSamples: AsbestosSample[];
   onSave: (areas: HomogeneousArea[]) => void;
 }
 
-export function HomogeneousAreasTable({ areas: initialAreas, onSave }: HomogeneousAreasTableProps) {
+export function HomogeneousAreasTable({ areas: initialAreas, functionalAreas, asbestosSamples, onSave }: HomogeneousAreasTableProps) {
   const [areas, setAreas] = useState<HomogeneousArea[]>(initialAreas);
-  const [newRow, setNewRow] = useState<Partial<HomogeneousArea>>({ haId: '', description: '' });
+  const [newRow, setNewRow] = useState<Partial<HomogeneousArea>>({ haId: '', description: '', functionalAreaId: '' });
   const { toast } = useToast();
 
   const handleAddRow = () => {
@@ -25,11 +29,12 @@ export function HomogeneousAreasTable({ areas: initialAreas, onSave }: Homogeneo
         id: `ha-${Date.now()}`,
         haId: newRow.haId,
         description: newRow.description,
+        functionalAreaId: newRow.functionalAreaId || null,
       };
       const updatedAreas = [...areas, newArea];
       setAreas(updatedAreas);
       onSave(updatedAreas);
-      setNewRow({ haId: '', description: '' });
+      setNewRow({ haId: '', description: '', functionalAreaId: '' });
       toast({ title: 'Homogeneous Area Added' });
     } else {
       toast({ title: 'Missing Data', description: 'Please fill out both HA ID and Description.', variant: 'destructive' });
@@ -42,6 +47,39 @@ export function HomogeneousAreasTable({ areas: initialAreas, onSave }: Homogeneo
     onSave(updatedAreas);
     toast({ title: 'Homogeneous Area Removed', variant: 'destructive' });
   };
+  
+  const handleFALinkChange = (haId: string, faId: string) => {
+      const updatedAreas = areas.map(area => 
+          area.id === haId ? { ...area, functionalAreaId: faId } : area
+      );
+      setAreas(updatedAreas);
+      onSave(updatedAreas);
+  }
+
+  const getLinkedSamplesCount = (haId: string) => {
+      return asbestosSamples.filter(s => s.homogeneousAreaId === haId).length;
+  }
+  
+  const getTotalEstQuantity = (haId: string) => {
+      const linkedSamples = asbestosSamples.filter(s => s.homogeneousAreaId === haId);
+      // This is a naive sum, assuming all quantities are compatible strings like "100 sqft".
+      // A more robust implementation would parse units and numbers.
+      let total = 0;
+      let unit = '';
+      for (const sample of linkedSamples) {
+          const qty = sample.estimatedQuantity;
+          if (qty) {
+              const num = parseFloat(qty);
+              if (!isNaN(num)) {
+                  total += num;
+                  if (!unit) {
+                    unit = qty.replace(/[0-9.,\s]/g, ''); // Extract unit
+                  }
+              }
+          }
+      }
+      return total > 0 ? `${total} ${unit}` : '-';
+  }
 
   return (
     <div className="space-y-4">
@@ -50,6 +88,9 @@ export function HomogeneousAreasTable({ areas: initialAreas, onSave }: Homogeneo
           <TableRow>
             <TableHead className="w-[150px]">HA ID</TableHead>
             <TableHead>Description</TableHead>
+            <TableHead>Linked FS</TableHead>
+            <TableHead>Linked Samples</TableHead>
+            <TableHead>Total Est. Qty</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -58,6 +99,24 @@ export function HomogeneousAreasTable({ areas: initialAreas, onSave }: Homogeneo
             <TableRow key={area.id}>
               <TableCell className="font-medium">{area.haId}</TableCell>
               <TableCell>{area.description}</TableCell>
+              <TableCell>
+                  <Select 
+                      value={area.functionalAreaId || ''} 
+                      onValueChange={(value) => handleFALinkChange(area.id, value)}
+                  >
+                    <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Link FS" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {functionalAreas.map(fa => (
+                            <SelectItem key={fa.id} value={fa.id}>{fa.faId}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+              </TableCell>
+              <TableCell>{getLinkedSamplesCount(area.id)}</TableCell>
+              <TableCell>{getTotalEstQuantity(area.id)}</TableCell>
               <TableCell>
                 <Button variant="ghost" size="icon" onClick={() => handleDeleteRow(area.id)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
@@ -81,6 +140,24 @@ export function HomogeneousAreasTable({ areas: initialAreas, onSave }: Homogeneo
                 onChange={(e) => setNewRow({ ...newRow, description: e.target.value })}
               />
             </TableCell>
+            <TableCell>
+                <Select 
+                    value={newRow.functionalAreaId || ''}
+                    onValueChange={(value) => setNewRow({ ...newRow, functionalAreaId: value })}
+                >
+                    <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Link FS" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {functionalAreas.map(fa => (
+                            <SelectItem key={fa.id} value={fa.id}>{fa.faId}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </TableCell>
+            <TableCell></TableCell>
+            <TableCell></TableCell>
             <TableCell>
               <Button size="sm" onClick={handleAddRow}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add

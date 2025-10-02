@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { AsbestosSample, HomogeneousArea } from '@/lib/types';
+import type { AsbestosSample, HomogeneousArea, FunctionalArea } from '@/lib/types';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Combobox, ComboboxOption } from '@/components/ui/combobox';
@@ -16,13 +16,15 @@ import { Combobox, ComboboxOption } from '@/components/ui/combobox';
 interface AsbestosTableProps {
   samples: AsbestosSample[];
   homogeneousAreas: HomogeneousArea[];
+  functionalAreas: FunctionalArea[];
   onSave: (samples: AsbestosSample[]) => void;
+  onHaCreated: (areas: HomogeneousArea[]) => void;
 }
 
 const asbestosTypes: AsbestosSample['asbestosType'][] = ['ND', 'Chrysotile', 'Amosite', 'Crocidolite', 'Trace'];
 
 
-export function AsbestosTable({ samples: initialSamples, homogeneousAreas, onSave }: AsbestosTableProps) {
+export function AsbestosTable({ samples: initialSamples, homogeneousAreas, functionalAreas, onSave, onHaCreated }: AsbestosTableProps) {
   const [samples, setSamples] = useState<AsbestosSample[]>(initialSamples);
   const [newRow, setNewRow] = useState<Partial<AsbestosSample>>({
       sampleNumber: '',
@@ -41,6 +43,11 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, onSav
     [homogeneousAreas]);
 
   const [haComboBoxOptions, setHaComboBoxOptions] = useState<ComboboxOption[]>(haOptions);
+  
+  // Keep combobox options in sync with parent HA state
+  React.useEffect(() => {
+    setHaComboBoxOptions(homogeneousAreas.map(ha => ({ value: ha.id, label: `${ha.haId} - ${ha.description}` })))
+  }, [homogeneousAreas])
 
 
   const handleAddRow = () => {
@@ -91,9 +98,25 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, onSav
       }
       return sample.asbestosType;
   }
+  
+  const getLinkedFsDisplay = (haId: string) => {
+    const ha = homogeneousAreas.find(h => h.id === haId);
+    if (ha && ha.functionalAreaId) {
+        const fa = functionalAreas.find(f => f.id === ha.functionalAreaId);
+        return fa?.faId || 'N/A';
+    }
+    return '-';
+  }
 
-  const getHaDescription = (haId: string) => {
-      return haOptions.find(ha => ha.value === haId)?.label || haId;
+  const handleHaCreation = (newHaLabel: string) => {
+    const newHa: HomogeneousArea = {
+        id: `ha-${Date.now()}`,
+        haId: newHaLabel,
+        description: 'New HA (edit in HA tab)',
+    };
+    onHaCreated([...homogeneousAreas, newHa]);
+    setNewRow(prev => ({...prev, homogeneousAreaId: newHa.id }));
+    toast({ title: 'New HA Created', description: `"${newHaLabel}" was added to the Homogeneous Areas list.`})
   }
 
   return (
@@ -103,6 +126,7 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, onSav
           <TableRow>
             <TableHead>Sample #</TableHead>
             <TableHead>HA</TableHead>
+            <TableHead>Linked FS</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Material</TableHead>
             <TableHead>Est. Qty</TableHead>
@@ -115,7 +139,8 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, onSav
           {samples.map((sample) => (
             <TableRow key={sample.id}>
               <TableCell>{sample.sampleNumber}</TableCell>
-              <TableCell>{getHaDescription(sample.homogeneousAreaId)}</TableCell>
+              <TableCell>{haComboBoxOptions.find(opt => opt.value === sample.homogeneousAreaId)?.label || ''}</TableCell>
+              <TableCell>{getLinkedFsDisplay(sample.homogeneousAreaId)}</TableCell>
               <TableCell>{sample.location}</TableCell>
               <TableCell>{sample.material}</TableCell>
               <TableCell>{sample.estimatedQuantity}</TableCell>
@@ -144,10 +169,14 @@ export function AsbestosTable({ samples: initialSamples, homogeneousAreas, onSav
                     setOptions={setHaComboBoxOptions}
                     value={newRow.homogeneousAreaId || ''}
                     onValueChange={(value) => setNewRow({...newRow, homogeneousAreaId: value})}
+                    onNewCreated={handleHaCreation}
                     placeholder="Select HA"
                     searchPlaceholder="Search HAs..."
-                    emptyPlaceholder="No HA found. Create one in the HA tab."
+                    emptyPlaceholder="No HA found. Create one."
                 />
+            </TableCell>
+            <TableCell>
+                 <Input value={getLinkedFsDisplay(newRow.homogeneousAreaId || '')} readOnly disabled className="w-24 bg-muted" />
             </TableCell>
             <TableCell>
               <Input

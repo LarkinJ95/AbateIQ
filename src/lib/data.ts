@@ -60,25 +60,26 @@ export const exceedances: Exceedance[] = [
   { id: 'e2', resultId: 'res-2-placeholder', analyte: 'Silica', concentration: '0.06 mg/m³', limit: '0.05 mg/m³ (PEL)', personnel: 'J. Doe', location: 'Downtown Tower, 10th Floor', correctiveAction: 'Increase ventilation and require respiratory protection.', exceedanceDate: '2024-06-20' },
 ];
 
+const initialFunctionalAreas: FunctionalArea[] = [
+    { id: 'fa-1', faId: 'FA-01', faUse: 'Office', length: 20, width: 15, height: 8 },
+    { id: 'fa-2', faId: 'FA-02', faUse: 'Corridor', length: 50, width: 8, height: 8 },
+];
+
 const initialHomogeneousAreas: HomogeneousArea[] = [
-    { id: 'ha-1', haId: 'HA-01', description: '1st Floor Ceiling Tiles' },
-    { id: 'ha-2', haId: 'HA-02', description: 'Lobby 9x9 Floor Tiles' },
+    { id: 'ha-1', haId: 'HA-01', description: '1st Floor Ceiling Tiles', functionalAreaId: 'fa-1' },
+    { id: 'ha-2', haId: 'HA-02', description: 'Lobby 9x9 Floor Tiles', functionalAreaId: 'fa-2' },
 ];
 
 
 const initialAsbestosSamples: AsbestosSample[] = [
     { id: 'asb-1', sampleNumber: 'MS-ASB-01', homogeneousAreaId: 'ha-1', location: '10th Floor - Ceiling Tiles', material: 'Acoustic Tile', friable: true, estimatedQuantity: '1000 sqft', asbestosType: 'Chrysotile', asbestosPercentage: 5 },
     { id: 'asb-2', sampleNumber: 'MS-ASB-02', homogeneousAreaId: 'ha-2', location: 'Lobby - Floor Tiles', material: '9x9 Vinyl Tile', friable: false, estimatedQuantity: '500 sqft', asbestosType: 'ND', asbestosPercentage: null },
+    { id: 'asb-3', sampleNumber: 'MS-ASB-03', homogeneousAreaId: 'ha-1', location: '10th Floor - Damaged Tiles', material: 'Acoustic Tile', friable: true, estimatedQuantity: '50 sqft', asbestosType: 'Chrysotile', asbestosPercentage: 5 },
 ];
 
 const initialPaintSamples: PaintSample[] = [
     { id: 'paint-1', location: 'Exterior Window Sills', paintColor: 'White', analyte: 'Lead', resultMgKg: 1200 },
     { id: 'paint-2', location: 'Interior Door Frames', paintColor: 'Brown', analyte: 'Lead', resultMgKg: null },
-];
-
-const initialFunctionalAreas: FunctionalArea[] = [
-    { id: 'fa-1', faId: 'FA-01', faUse: 'Office', length: 20, width: 15, height: 8 },
-    { id: 'fa-2', faId: 'FA-02', faUse: 'Corridor', length: 50, width: 8, height: 8 },
 ];
 
 export const surveys: Survey[] = [

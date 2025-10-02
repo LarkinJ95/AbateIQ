@@ -131,6 +131,23 @@ export default function DocumentsPage() {
     }
   };
 
+  const handleAction = (action: string, docName: string) => {
+    toast({
+      title: 'Action Triggered',
+      description: `You triggered "${action}" on ${docName}. This feature is not yet implemented.`,
+    });
+  }
+
+  const handleDelete = (docId: string, docName: string) => {
+    setDocuments(prevDocs => prevDocs.filter(d => d.id !== docId));
+    toast({
+      title: 'Document Deleted',
+      description: `${docName} has been removed from Project Files.`,
+      variant: 'destructive',
+    });
+  }
+
+
   return (
     <div className="flex min-h-screen w-full flex-col">
       <Header title="Documents" />
@@ -193,15 +210,15 @@ export default function DocumentsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleAction('View', doc.name)}>
                         <Eye className="mr-2 h-4 w-4" />
                         View
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleAction('Download', doc.name)}>
                         <Download className="mr-2 h-4 w-4" />
                         Download
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem className="text-destructive" onSelect={() => handleDelete(doc.id, doc.name)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>

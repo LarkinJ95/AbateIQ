@@ -83,7 +83,7 @@ const prompt = ai.definePrompt({
   name: 'generateSurveyReportPrompt',
   input: { schema: PromptInputSchema }, // Use the extended schema
   output: { schema: GenerateSurveyReportOutputSchema },
-  model: 'googleai/gemini-1.5-pro',
+  model: 'googleai/gemini-2.5-flash',
   prompt: `
     You are an expert environmental consultant specializing in generating regulatory-compliant survey reports for asbestos, lead, and other hazardous materials.
     Your task is to generate a complete, professional, and well-formatted HTML report based on the provided survey data.

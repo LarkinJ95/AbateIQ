@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
-import { Shield, Upload, User } from 'lucide-react';
+import { Shield, Upload, User, CreditCard } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -151,6 +151,20 @@ export default function SettingsPage() {
                         </div>
                         <Button onClick={handleProfileUpdate} disabled={isSaving}>
                             {isSaving ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline">Billing</CardTitle>
+                        <CardDescription>Manage your subscription and view billing history.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild variant="outline">
+                            <Link href="/settings/billing">
+                                <CreditCard className="mr-2 h-4 w-4" /> Go to Billing Center
+                            </Link>
                         </Button>
                     </CardContent>
                 </Card>

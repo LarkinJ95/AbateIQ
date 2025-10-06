@@ -3,26 +3,61 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { exceedances, personnel, projects, samples, surveys, existingNeas } from '@/lib/data';
 import { RecentExceedances } from '@/components/dashboard/recent-exceedances';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
 import Link from 'next/link';
 import { Users, Briefcase, AlertTriangle, FlaskConical, FileText, CheckCircle } from 'lucide-react';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, isPast } from 'date-fns';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Exceedance, Project, Sample, Survey, ExistingNea } from '@/lib/types';
+import { useMemo } from 'react';
 
 export default function DashboardPage() {
-    const recentExceedances = exceedances.filter(e => {
-        const exceedanceDate = new Date(e.exceedanceDate);
-        return differenceInDays(new Date(), exceedanceDate) <= 30;
-    });
+    const firestore = useFirestore();
 
-    const activeProjectsCount = projects.filter(p => p.status === 'Active').length;
-    const surveysInProgressCount = surveys.filter(s => s.status === 'In Progress').length;
-    const activeNeasCount = existingNeas.filter(nea => {
-        const effDate = new Date(nea.effectiveDate);
-        const reviewDate = new Date(effDate.setFullYear(effDate.getFullYear() + 1));
-        return new Date() < reviewDate;
-    }).length;
+    const projectsQuery = useMemoFirebase(() => collection(firestore, 'projects'), [firestore]);
+    const { data: projectsData } = useCollection<Project>(projectsQuery);
+
+    const samplesQuery = useMemoFirebase(() => collection(firestore, 'samples'), [firestore]);
+    const { data: samplesData } = useCollection<Sample>(samplesQuery);
+
+    const surveysQuery = useMemoFirebase(() => collection(firestore, 'surveys'), [firestore]);
+    const { data: surveysData } = useCollection<Survey>(surveysQuery);
+
+    const neasQuery = useMemoFirebase(() => collection(firestore, 'neas'), [firestore]);
+    const { data: neasData } = useCollection<ExistingNea>(neasQuery);
+    
+    const exceedancesQuery = useMemoFirebase(() => collection(firestore, 'exceedances'), [firestore]);
+    const { data: exceedancesData } = useCollection<Exceedance>(exceedancesQuery);
+
+
+    const recentExceedances = useMemo(() => {
+        if (!exceedancesData) return [];
+        return exceedancesData.filter(e => {
+            const exceedanceDate = new Date(e.exceedanceDate);
+            return differenceInDays(new Date(), exceedanceDate) <= 30;
+        });
+    }, [exceedancesData]);
+
+    const activeProjectsCount = useMemo(() => {
+        if (!projectsData) return 0;
+        return projectsData.filter(p => p.status === 'Active').length;
+    }, [projectsData]);
+
+    const surveysInProgressCount = useMemo(() => {
+        if (!surveysData) return 0;
+        return surveysData.filter(s => s.status === 'In Progress').length;
+    }, [surveysData]);
+
+    const activeNeasCount = useMemo(() => {
+        if (!neasData) return 0;
+        return neasData.filter(nea => {
+            const effDate = new Date(nea.effectiveDate);
+            const reviewDate = new Date(effDate.setFullYear(effDate.getFullYear() + 1));
+            return new Date() < reviewDate;
+        }).length;
+    }, [neasData]);
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -35,7 +70,7 @@ export default function DashboardPage() {
               <CardTitle className="font-headline">Average Results (Last 90 Days)</CardTitle>
             </CardHeader>
             <CardContent className="pl-2">
-              <OverviewChart />
+              <OverviewChart samples={samplesData || []} />
             </CardContent>
           </Card>
           
@@ -66,7 +101,7 @@ export default function DashboardPage() {
                       <FlaskConical className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">{samples.length}</div>
+                      <div className="text-2xl font-bold">{samplesData?.length || 0}</div>
                       <p className="text-xs text-muted-foreground">
                         Manage all logged air samples.
                       </p>

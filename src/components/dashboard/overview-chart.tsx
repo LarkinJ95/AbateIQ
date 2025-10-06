@@ -1,12 +1,14 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
   ChartTooltipContent,
   ChartContainer,
 } from '@/components/ui/chart';
-import { averageResultsData } from '@/lib/data';
+import type { Sample } from '@/lib/types';
+import { exposureLimits } from '@/lib/data';
 
 const chartConfig = {
   average: {
@@ -15,7 +17,41 @@ const chartConfig = {
   },
 };
 
-export function OverviewChart() {
+interface OverviewChartProps {
+  samples: Sample[];
+}
+
+export function OverviewChart({ samples }: OverviewChartProps) {
+  const averageResultsData = useMemo(() => {
+    if (!samples || samples.length === 0) {
+      // Find the first 4 exposure limits to show as example data
+      return exposureLimits.slice(0, 4).map(limit => ({
+        analyte: limit.analyte,
+        average: 0,
+        units: limit.units,
+      }));
+    }
+
+    const resultsByAnalyte: { [key: string]: { total: number; count: number, units: string } } = {};
+
+    samples.forEach(sample => {
+      if (sample.result && sample.result.concentration !== null && sample.result.status !== 'Pending') {
+        const analyte = sample.result.analyte;
+        if (!resultsByAnalyte[analyte]) {
+          resultsByAnalyte[analyte] = { total: 0, count: 0, units: sample.result.units || '' };
+        }
+        resultsByAnalyte[analyte].total += sample.result.concentration;
+        resultsByAnalyte[analyte].count += 1;
+      }
+    });
+
+    return Object.keys(resultsByAnalyte).map(analyte => ({
+      analyte,
+      average: resultsByAnalyte[analyte].total / resultsByAnalyte[analyte].count,
+      units: resultsByAnalyte[analyte].units,
+    }));
+  }, [samples]);
+
   return (
     <ChartContainer
       config={chartConfig}
@@ -30,6 +66,10 @@ export function OverviewChart() {
             fontSize={12}
             tickLine={false}
             axisLine={false}
+            interval={0}
+            angle={-30}
+            textAnchor="end"
+            height={70}
           />
           <YAxis
             stroke="hsl(var(--foreground))"
@@ -43,7 +83,8 @@ export function OverviewChart() {
             content={<ChartTooltipContent
               indicator="dot"
               formatter={(value, name, props) => {
-                return `${props.payload.analyte}: ${value} ${props.payload.units}`;
+                const avg = typeof value === 'number' ? value.toFixed(3) : value;
+                return `${props.payload.analyte}: ${avg} ${props.payload.units}`;
               }}
               />}
           />

@@ -23,15 +23,17 @@ import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 
 
 interface AddProjectDialogProps {
   project?: Project | null;
-  onSave: (projectData: Omit<Project, 'id'> & { id?: string }) => void;
   children: React.ReactNode;
 }
 
-export function AddProjectDialog({ project, onSave, children }: AddProjectDialogProps) {
+export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
+    const firestore = useFirestore();
     const [name, setName] = useState('');
     const [jobNumber, setJobNumber] = useState('');
     const [location, setLocation] = useState('');
@@ -62,7 +64,8 @@ export function AddProjectDialog({ project, onSave, children }: AddProjectDialog
     }, [project, isEditMode, isOpen]);
 
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (!firestore) return;
         if (!name || !location || !status || !startDate || !endDate) {
             toast({
                 title: 'Missing Information',
@@ -81,18 +84,25 @@ export function AddProjectDialog({ project, onSave, children }: AddProjectDialog
             endDate: format(endDate, 'yyyy-MM-dd'),
         };
 
-        if (isEditMode && project) {
-            onSave({ id: project.id, ...projectData });
-        } else {
-            onSave(projectData as any);
+        try {
+            if (isEditMode && project) {
+                const projectRef = doc(firestore, 'projects', project.id);
+                await updateDoc(projectRef, projectData);
+            } else {
+                await addDoc(collection(firestore, 'projects'), projectData);
+            }
+            toast({
+                title: isEditMode ? 'Project Updated' : 'Project Added',
+                description: `${name} has been ${isEditMode ? 'updated' : 'saved'}.`,
+            });
+            setIsOpen(false);
+        } catch (error) {
+            toast({
+                title: 'Error Saving Project',
+                description: 'An error occurred while saving the project.',
+                variant: 'destructive',
+            });
         }
-
-
-        toast({
-            title: isEditMode ? 'Project Updated' : 'Project Added',
-            description: `${name} has been ${isEditMode ? 'updated' : 'saved'}.`,
-        });
-        setIsOpen(false);
     }
 
   return (

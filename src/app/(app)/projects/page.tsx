@@ -2,7 +2,6 @@
 'use client';
 
 import { Header } from '@/components/header';
-import { projects as initialProjects } from '@/lib/data';
 import {
   Table,
   TableBody,
@@ -24,13 +23,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AddProjectDialog } from './add-project-dialog';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { Project } from '@/lib/types';
-import { DialogTrigger } from '@/components/ui/dialog';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 export default function ProjectsPage() {
   const { toast } = useToast();
-  const [projects, setProjects] = useState<Project[]>(initialProjects.sort((a, b) => (a.jobNumber || '').localeCompare(b.jobNumber || '')));
+  const firestore = useFirestore();
+
+  const projectsQuery = useMemoFirebase(() => collection(firestore, 'projects'), [firestore]);
+  const { data: projectsData, isLoading } = useCollection<Project>(projectsQuery);
+
+  const projects = useMemo(() => {
+    if (!projectsData) return [];
+    return projectsData.sort((a, b) => (a.jobNumber || '').localeCompare(b.jobNumber || ''));
+  }, [projectsData]);
 
 
   const getStatusVariant = (status: 'Active' | 'Completed' | 'On Hold') => {
@@ -46,28 +54,22 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleSaveProject = (projectData: Omit<Project, 'id'> & { id?: string }) => {
-    if (projectData.id) {
-        // Edit existing project
-        setProjects(prev => prev.map(p => p.id === projectData.id ? { ...p, ...projectData } as Project : p));
-    } else {
-        // Add new project
-        const newProject: Project = {
-            ...projectData,
-            id: `proj-${Date.now()}`
-        };
-        setProjects(prev => [newProject, ...prev]);
+  const handleDelete = async (projectToDelete: Project) => {
+    if (!firestore) return;
+    try {
+        await deleteDoc(doc(firestore, 'projects', projectToDelete.id));
+        toast({
+            title: 'Project Deleted',
+            description: `${projectToDelete.name} has been deleted.`,
+            variant: 'destructive',
+        });
+    } catch (error) {
+        toast({
+            title: 'Error Deleting Project',
+            description: 'There was an error deleting the project.',
+            variant: 'destructive',
+        });
     }
-  };
-
-
-  const handleDelete = (projectToDelete: Project) => {
-    setProjects(prevProjects => prevProjects.filter(p => p.id !== projectToDelete.id));
-    toast({
-      title: 'Project Deleted',
-      description: `${projectToDelete.name} has been deleted.`,
-      variant: 'destructive',
-    });
   };
 
   return (
@@ -78,7 +80,7 @@ export default function ProjectsPage() {
           <h2 className="text-2xl font-headline font-bold tracking-tight">
             Manage Projects
           </h2>
-          <AddProjectDialog project={null} onSave={handleSaveProject}>
+          <AddProjectDialog project={null}>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Project
@@ -100,7 +102,14 @@ export default function ProjectsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {projects.map((project) => (
+                  {isLoading && (
+                    <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                            Loading projects...
+                        </TableCell>
+                    </TableRow>
+                  )}
+                  {!isLoading && projects.map((project) => (
                       <TableRow key={project.id}>
                         <TableCell className="font-medium">
                            <Link href={`/projects/${project.id}`} className="hover:underline">
@@ -133,7 +142,7 @@ export default function ProjectsPage() {
                                   View Details
                                 </Link>
                               </DropdownMenuItem>
-                              <AddProjectDialog project={project} onSave={handleSaveProject}>
+                              <AddProjectDialog project={project}>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <Pencil className="mr-2 h-4 w-4" />
                                     Edit
@@ -148,6 +157,13 @@ export default function ProjectsPage() {
                         </TableCell>
                       </TableRow>
                     ))}
+                    {!isLoading && projects.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={5} className="h-24 text-center">
+                                No projects found.
+                            </TableCell>
+                        </TableRow>
+                    )}
                 </TableBody>
               </Table>
           </CardContent>

@@ -23,12 +23,14 @@ import { format } from 'date-fns';
 import { useState } from 'react';
 import type { ExistingNea } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
 
 interface AddNeaDialogProps {
-  onNeaAdded: (nea: ExistingNea) => void;
+  onNeaAdded: (nea: Omit<ExistingNea, 'id'> & { ownerId: string }) => void;
 }
 
 export function AddNeaDialog({ onNeaAdded }: AddNeaDialogProps) {
+  const { user } = useUser();
   const [project, setProject] = useState('');
   const [task, setTask] = useState('');
   const [analyte, setAnalyte] = useState('');
@@ -45,12 +47,20 @@ export function AddNeaDialog({ onNeaAdded }: AddNeaDialogProps) {
       });
       return;
     }
-    const newNea: ExistingNea = {
-        id: `nea-${Math.floor(Math.random() * 1000)}`,
+    if (!user) {
+        toast({
+            title: 'Not Authenticated',
+            description: 'You must be logged in to add an NEA.',
+            variant: 'destructive',
+        });
+        return;
+    }
+    const newNea: Omit<ExistingNea, 'id'> & { ownerId: string } = {
         project,
         task,
         analyte,
         effectiveDate: format(effectiveDate, 'yyyy-MM-dd'),
+        ownerId: user.uid,
     };
     onNeaAdded(newNea);
     toast({

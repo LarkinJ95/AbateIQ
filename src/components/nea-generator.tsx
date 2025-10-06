@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Bot, Save, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ExistingNea } from '@/lib/types';
+import { useUser } from '@/firebase';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -30,7 +31,7 @@ function SubmitButton() {
   );
 }
 
-export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: ExistingNea) => void }) {
+export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: Omit<ExistingNea, 'id'> & { ownerId: string }) => void }) {
   const initialState: NeaFormState = {
     message: '',
     assessment: '',
@@ -39,6 +40,7 @@ export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: ExistingNea)
   };
   const [state, formAction] = useActionState(generateNeaAction, initialState);
   const { toast } = useToast();
+  const { user } = useUser();
 
   useEffect(() => {
     if (state.message && state.isError) {
@@ -51,19 +53,25 @@ export function NeaGenerator({ onNeaSaved }: { onNeaSaved: (newNea: ExistingNea)
   }, [state.message, state.isError, toast]);
 
   const handleSaveNea = () => {
-    if (state.inputs) {
-      const newNea: ExistingNea = {
-          id: `nea-${Math.floor(Math.random() * 1000)}`,
+    if (state.inputs && user) {
+      const newNea: Omit<ExistingNea, 'id'> & { ownerId: string } = {
           project: state.inputs.projectDescription.substring(0,30) + '...', // Simple truncate
           task: state.inputs.taskDescription.substring(0,30) + '...',
           analyte: state.inputs.analyte,
           effectiveDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+          ownerId: user.uid,
       };
       onNeaSaved(newNea);
       toast({
         title: 'NEA Saved',
         description: 'The new Negative Exposure Assessment has been added to the list.',
       });
+    } else {
+        toast({
+            title: 'Error Saving NEA',
+            description: 'Could not save the NEA. User not found.',
+            variant: 'destructive',
+        });
     }
   };
 

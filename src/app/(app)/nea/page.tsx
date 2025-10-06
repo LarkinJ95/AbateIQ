@@ -5,16 +5,26 @@ import { Header } from '@/components/header';
 import { NeaGenerator } from '@/components/nea-generator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { existingNeas as initialNeas } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { ExistingNea } from '@/lib/types';
 import { AddNeaDialog } from './add-nea-dialog';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, addDoc, query, where } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function NeaPage() {
     const router = useRouter();
-    const [existingNeas, setExistingNeas] = useState<ExistingNea[]>(initialNeas);
+    const firestore = useFirestore();
+    const { user } = useUser();
+    const { toast } = useToast();
+
+    const neasQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return query(collection(firestore, 'neas'), where('ownerId', '==', user.uid));
+    }, [firestore, user]);
+    const { data: existingNeas, isLoading } = useCollection<ExistingNea>(neasQuery);
 
     const getStatus = (effectiveDate: string) => {
         const effDate = new Date(effectiveDate);
@@ -37,8 +47,17 @@ export default function NeaPage() {
         router.push(`/nea/${neaId}`);
     }
 
-    const handleNeaSaved = (newNea: ExistingNea) => {
-        setExistingNeas(prevNeas => [newNea, ...prevNeas]);
+    const handleNeaSaved = async (newNea: Omit<ExistingNea, 'id'> & { ownerId: string }) => {
+        if (!firestore) return;
+        try {
+            await addDoc(collection(firestore, 'neas'), newNea);
+        } catch (error) {
+            toast({
+                title: 'Error Saving NEA',
+                description: 'An error occurred while saving the NEA.',
+                variant: 'destructive',
+            });
+        }
     }
 
 
@@ -79,7 +98,12 @@ export default function NeaPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {existingNeas.map((nea) => {
+                        {isLoading && (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center h-24">Loading assessments...</TableCell>
+                            </TableRow>
+                        )}
+                        {!isLoading && existingNeas && existingNeas.map((nea) => {
                             const status = getStatus(nea.effectiveDate);
                             return (
                                 <TableRow key={nea.id} onClick={() => handleRowClick(nea.id)} className="cursor-pointer">
@@ -94,6 +118,11 @@ export default function NeaPage() {
                                 </TableRow>
                             )
                         })}
+                         {!isLoading && (!existingNeas || existingNeas.length === 0) && (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center h-24">No assessments found.</TableCell>
+                            </TableRow>
+                         )}
                     </TableBody>
                 </Table>
             </CardContent>

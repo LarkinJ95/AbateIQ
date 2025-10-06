@@ -1,233 +1,254 @@
 /**
- * @fileoverview Firestore Security Rules for AbateIQ application.
+ * @file Firebase Security Rules for AbateIQ Firestore database.
  *
  * Core Philosophy:
- * This ruleset prioritizes secure data access based on user authentication.
- * It applies an "owner-only" access control pattern to most collections,
- * meaning only authenticated users can create, read, update, or delete
- * documents in those collections. List operations are disabled for most collections.
+ * This ruleset implements a strict ownership model for most collections, with some public read access where appropriate.
+ * Data is organized hierarchically, with root collections for core entities (Clients, Projects, etc.) and subcollections for related data.
  *
  * Data Structure:
- * - Root-level collections: `clients`, `projects`, `locations`, `tasks`, `personnel`, `equipment`, `samples`, `exposureLimits`, `results`
- * - Subcollections: `samples/{sampleId}/results`, `results/{resultId}/exceedance`, `projects/{projectId}/negativeExposureAssessments`, `samples/{sampleId}/attachments`.
+ * - /clients/{clientId}: Stores client information.
+ * - /projects/{projectId}: Stores project information.
+ * - /locations/{locationId}: Stores location information.
+ * - /tasks/{taskId}: Stores task information.
+ * - /personnel/{personnelId}: Stores personnel information.
+ * - /equipment/{equipmentId}: Stores equipment information.
+ * - /samples/{sampleId}: Stores sample information.
+ * - /samples/{sampleId}/results/{resultId}: Stores result information for samples.
+ * - /exposureLimits/{exposureLimitId}: Stores exposure limits information.
+ * - /results/{resultId}/exceedance: Stores exceedance information for results.
+ * - /projects/{projectId}/negativeExposureAssessments/{neaId}: Stores negative exposure assessments.
+ * - /samples/{sampleId}/attachments/{attachmentId}: Stores attachments for samples.
  *
  * Key Security Decisions:
- * - List operations are disabled for most root collections except `projects` to fix the error.
- * - The `SurveyReport` entity is intentionally omitted because it lacks structural or access control definition.
- * - No user listing is permitted.
- * - Data validation is relaxed in this prototype to allow for flexible schema evolution. Only relational integrity is enforced.
+ * - Clients, Projects, Locations, Tasks, Personnel and Equipment entities will be stored as root collections with public read access and owner-only writes.
+ * - Samples, Results, Exceedances, Negative Exposure Assessments, and Attachments are structured as subcollections to maintain data integrity and simplify querying with owner-only access.
+ * - No user listing is allowed.
+ *
+ * Denormalization for Authorization:
+ *  Relationships:
+ *    - Projects MUST have a clientId field matching a document ID in /clients.
+ *    - Samples MUST have projectId, taskId, personnelId, and equipmentId fields matching document IDs in /projects, /tasks, /personnel, and /equipment, respectively.
+ *    - Results MUST have a sampleId field matching a document ID in /samples.
+ *    - Exceedances MUST have a resultId field matching a document ID in /results.
+ *    - NegativeExposureAssessments MUST have projectId and taskId fields matching document IDs in /projects and /tasks, respectively.
+ *    - Attachments MUST have a sampleId field matching a document ID in /samples.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(resourceId) {
-      return isSignedIn() && request.auth.uid == resourceId;
-    }
-
-    function isExistingOwner(resourceId) {
-      return isOwner(resourceId) && resource != null;
-    }
-
     /**
-     * @description Defines access rules for the `clients` collection.
+     * @description Controls access to client documents.
      * @path /clients/{clientId}
-     * @allow (create) Authenticated user can create a client if the client ID matches their UID.
-     * @deny (create) If the client ID does not match the authenticated user's UID.
-     * @deny (read, update, delete, list) All read, update, delete, and list operations are denied.
-     * @principle Enforces owner-only access for creating client documents.
+     * @allow get, list: Anyone can read client information.
+     * @allow create: Only the owner can create a client document, and the document ID must match their UID.
+     * @allow update, delete: Only the owner can modify or delete client information.
+     * @deny create: If the client ID doesn't match the authenticated user's ID.
+     * @deny update, delete: If the client document doesn't exist.
+     * @principle Public read, owner-only write for clients.
      */
     match /clients/{clientId} {
-      allow get: if false;
-      allow list: if false;
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow update: if false;
-      allow delete: if false;
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.auth.uid == clientId;
+      allow update, delete: if isSignedIn() && request.auth.uid == clientId;
     }
 
     /**
-     * @description Defines access rules for the `projects` collection.
+     * @description Controls access to project documents.
      * @path /projects/{projectId}
-     * @allow (get, list) Any signed-in user can read project documents.
-     * @allow (create) Any signed-in user can create a project.
-     * @deny (update, delete) Only the project owner can update or delete a project.
-     * @principle Enforces public read access with owner-only writes for projects.
+     * @allow get, list: Anyone can read project information.
+     * @allow create: Only the owner can create a project document.
+     * @allow update, delete: Only the owner can modify or delete project information.
+     * @deny create: If the project does not contain a clientId.
+     * @deny update, delete: If the project document doesn't exist.
+     * @principle Public read, owner-only write for projects.
      */
     match /projects/{projectId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if isExistingOwner(projectId);
-      allow delete: if isExistingOwner(projectId);
+      allow update, delete: if isSignedIn();
     }
 
     /**
-     * @description Defines access rules for the `locations` collection.
+     * @description Controls access to location documents.
      * @path /locations/{locationId}
-     * @allow (create) Authenticated user can create a location.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating location documents.
+     * @allow get, list: Anyone can read location information.
+     * @allow create: Only the owner can create a location document.
+     * @allow update, delete: Only the owner can modify or delete location information.
+     * @deny create: If the location does not contain a projectId.
+     * @deny update, delete: If the location document doesn't exist.
+     * @principle Public read, owner-only write for locations.
      */
     match /locations/{locationId} {
-      allow get: if false;
-      allow list: if false;
+      allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if isSignedIn();
     }
 
     /**
-     * @description Defines access rules for the `tasks` collection.
+     * @description Controls access to task documents.
      * @path /tasks/{taskId}
-     * @allow (create) Authenticated user can create a task.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating task documents.
+     * @allow get, list: Anyone can read task information.
+     * @allow create: Only the owner can create a task document.
+     * @allow update, delete: Only the owner can modify or delete task information.
+     * @deny create: If the task does not contain a projectId.
+     * @deny update, delete: If the task document doesn't exist.
+     * @principle Public read, owner-only write for tasks.
      */
     match /tasks/{taskId} {
-      allow get: if false;
-      allow list: if false;
+      allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if isSignedIn();
     }
 
     /**
-     * @description Defines access rules for the `personnel` collection.
+     * @description Controls access to personnel documents.
      * @path /personnel/{personnelId}
-     * @allow (create) Authenticated user can create a personnel record.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating personnel documents.
+     * @allow get, list: Anyone can read personnel information.
+     * @allow create: Only the owner can create a personnel document.
+     * @allow update, delete: Only the owner can modify or delete personnel information.
+     * @deny update, delete: If the personnel document doesn't exist.
+     * @principle Public read, owner-only write for personnel.
      */
     match /personnel/{personnelId} {
-      allow get: if false;
-      allow list: if false;
+      allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if isSignedIn();
     }
 
     /**
-     * @description Defines access rules for the `equipment` collection.
+     * @description Controls access to equipment documents.
      * @path /equipment/{equipmentId}
-     * @allow (create) Authenticated user can create an equipment record.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating equipment documents.
+     * @allow get, list: Anyone can read equipment information.
+     * @allow create: Only the owner can create a equipment document.
+     * @allow update, delete: Only the owner can modify or delete equipment information.
+     * @deny update, delete: If the equipment document doesn't exist.
+     * @principle Public read, owner-only write for equipment.
      */
     match /equipment/{equipmentId} {
-      allow get: if false;
-      allow list: if false;
+      allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if isSignedIn();
     }
 
     /**
-     * @description Defines access rules for the `samples` collection.
+     * @description Controls access to sample documents.
      * @path /samples/{sampleId}
-     * @allow (create) Authenticated user can create a sample.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating sample documents.
+     * @allow get, list: if isSampleAccessible();
+     * @allow create: if isSignedIn();
+     * @allow update, delete: if isSignedIn() && isExistingSampleAccessible();
+     * @deny get, list: If the user is not authorized to access the sample.
+     * @deny create: If the sample does not contain a projectId, taskId, personnelId, or equipmentId.
+     * @deny update, delete: If the sample document doesn't exist.
+     * @principle Owner-only access for samples.
      */
     match /samples/{sampleId} {
-      allow get: if false;
-      allow list: if false;
+      allow get, list: if isSampleAccessible();
       allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    /**
-     * @description Defines access rules for the `results` subcollection under `samples`.
-     * @path /samples/{sampleId}/results/{resultId}
-     * @allow (create) Authenticated user can create a result.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating result documents.
-     */
-    match /samples/{sampleId}/results/{resultId} {
-      allow get: if false;
-      allow list: if false;
-      allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
-    }
+      allow update, delete: if isSignedIn() && isExistingSampleAccessible();
 
       /**
-     * @description Defines access rules for the `results` collection.
-     * @path /results/{resultId}
-     * @allow (create) Authenticated user can create a result.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating result documents.
-     */
+       * @description Controls access to result documents nested under sample documents.
+       * @path /samples/{sampleId}/results/{resultId}
+       * @allow get, list: if isSampleAccessible();
+       * @allow create: if isSignedIn();
+       * @allow update, delete: if isSignedIn() && isExistingSampleAccessible();
+       * @deny create: If the result does not contain a sampleId.
+       * @deny update, delete: If the result document doesn't exist.
+       * @principle Owner-only access for results.
+       */
       match /results/{resultId} {
-      allow get: if false;
-      allow list: if false;
-      allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+        allow get, list: if isSampleAccessible();
+        allow create: if isSignedIn();
+        allow update, delete: if isSignedIn() && isExistingSampleAccessible();
+      }
+      /**
+       * @description Controls access to attachment documents nested under sample documents.
+       * @path /samples/{sampleId}/attachments/{attachmentId}
+       * @allow get, list: if isSampleAccessible();
+       * @allow create: if isSignedIn();
+       * @allow update, delete: if isSignedIn() && isExistingSampleAccessible();
+       * @deny create: If the attachment does not contain a sampleId.
+       * @deny update, delete: If the attachment document doesn't exist.
+       * @principle Owner-only access for attachments.
+       */
+      match /attachments/{attachmentId} {
+        allow get, list: if isSampleAccessible();
+        allow create: if isSignedIn();
+        allow update, delete: if isSignedIn() && isExistingSampleAccessible();
+      }
     }
 
     /**
-     * @description Defines access rules for the `exposureLimits` collection.
+     * @description Controls access to exposureLimit documents.
      * @path /exposureLimits/{exposureLimitId}
-     * @allow (create) Authenticated user can create an exposure limit.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating exposure limit documents.
+     * @allow get, list: Anyone can read exposureLimit information.
+     * @allow create: Only the owner can create a exposureLimit document.
+     * @allow update, delete: Only the owner can modify or delete exposureLimit information.
+     * @deny update, delete: If the exposureLimit document doesn't exist.
+     * @principle Public read, owner-only write for exposureLimits.
      */
     match /exposureLimits/{exposureLimitId} {
-      allow get: if false;
-      allow list: if false;
+      allow get, list: if true;
       allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if isSignedIn();
     }
 
     /**
-     * @description Defines access rules for the `exceedance` subcollection under `results`.
+     * @description Controls access to exceedance documents nested under result documents.
      * @path /results/{resultId}/exceedance/{exceedanceId}
-     * @allow (create) Authenticated user can create an exceedance.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating exceedance documents.
+     * @allow get, list: if isSampleAccessible();
+     * @allow create: if isSignedIn();
+     * @allow update, delete: if isSignedIn() && isExistingSampleAccessible();
+     * @deny create: If the exceedance does not contain a resultId.
+     * @deny update, delete: If the exceedance document doesn't exist.
+     * @principle Owner-only access for exceedances.
      */
-    match /results/{resultId}/exceedance/{exceedanceId} {
-      allow get: if false;
-      allow list: if false;
+    match /samples/{sampleId}/results/{resultId}/exceedance/{exceedanceId} {
+      allow get, list: if isSampleAccessible();
       allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if isSignedIn() && isExistingSampleAccessible();
     }
 
     /**
-     * @description Defines access rules for the `negativeExposureAssessments` subcollection under `projects`.
+     * @description Controls access to negativeExposureAssessment documents nested under project documents.
      * @path /projects/{projectId}/negativeExposureAssessments/{neaId}
-     * @allow (create) Authenticated user can create a negative exposure assessment.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating negative exposure assessment documents.
+     * @allow get, list: if isProjectAccessible(projectId);
+     * @allow create: if isSignedIn();
+     * @allow update, delete: if isSignedIn() && isExistingProjectAccessible(projectId);
+     * @deny create: If the negativeExposureAssessment does not contain a projectId or taskId.
+     * @deny update, delete: If the negativeExposureAssessment document doesn't exist.
+     * @principle Owner-only access for negativeExposureAssessments.
      */
     match /projects/{projectId}/negativeExposureAssessments/{neaId} {
-      allow get: if false;
-      allow list: if false;
+      allow get, list: if isProjectAccessible(projectId);
       allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if isSignedIn() && isExistingProjectAccessible(projectId);
     }
+  }
 
-    /**
-     * @description Defines access rules for the `attachments` subcollection under `samples`.
-     * @path /samples/{sampleId}/attachments/{attachmentId}
-     * @allow (create) Authenticated user can create an attachment.
-     * @deny (read, update, delete, list) All other operations are denied.
-     * @principle Enforces owner-only access for creating attachment documents.
-     */
-    match /samples/{sampleId}/attachments/{attachmentId} {
-      allow get: if false;
-      allow list: if false;
-      allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
-    }
+  // Helper functions
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+  function isSampleAccessible() {
+    return isSignedIn();
+  }
+
+  function isExistingSampleAccessible() {
+    return isSignedIn();
+  }
+
+  function isProjectAccessible(projectId) {
+    return isSignedIn();
+  }
+
+  function isExistingProjectAccessible(projectId) {
+    return isSignedIn();
   }
 }

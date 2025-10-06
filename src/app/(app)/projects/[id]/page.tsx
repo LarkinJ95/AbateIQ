@@ -3,12 +3,12 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { projects, samples as initialSamples, tasks, personnel, exposureLimits, surveys as allSurveys } from '@/lib/data';
+import { projects, samples as initialSamples, tasks, personnel, exposureLimits } from '@/lib/data';
 import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import type { Sample, Result, Survey } from '@/lib/types';
 import { AddSampleDialog } from '@/app/(app)/samples/add-sample-dialog';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 
 type LinkedReport = {
@@ -34,6 +36,7 @@ export default function ProjectDetailsPage() {
   const params = useParams();
   const id = params.id as string;
   const project = projects.find(p => p.id === id);
+  const firestore = useFirestore();
   
   if (!project) {
     notFound();
@@ -62,7 +65,13 @@ export default function ProjectDetailsPage() {
     });
 
   // Filter surveys related to this project (matching by name for this example)
-  const linkedSurveys = allSurveys.filter(survey => survey.siteName.includes(project.name));
+  const surveysQuery = useMemoFirebase(() => {
+      if (!firestore) return null;
+      // This is a simple query, in a real app you might have a projectId on the survey
+      return query(collection(firestore, 'surveys'), where('siteName', '>=', project.name), where('siteName', '<=', project.name + '\uf8ff'));
+  }, [firestore, project.name]);
+  const { data: linkedSurveys } = useCollection<Survey>(surveysQuery);
+
 
   const getStatusVariant = (status: "Active" | "Completed" | "On Hold") => {
     switch (status) {
@@ -308,7 +317,7 @@ export default function ProjectDetailsPage() {
                                 Link Survey
                             </Button>
                         </div>
-                        {linkedSurveys.length > 0 ? (
+                        {linkedSurveys && linkedSurveys.length > 0 ? (
                             <Table>
                                 <TableHeader>
                                     <TableRow>

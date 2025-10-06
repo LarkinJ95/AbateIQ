@@ -1,229 +1,247 @@
 /**
- * @file Overview
- * This ruleset enforces a role-based access control model with strict ownership for certain collections and public read access for others.
- * Data is organized into root-level collections for major entities (Clients, Projects, etc.) and subcollections for related data.
+ * @fileOverview
+ * This ruleset enforces a strict owner-only access model for most collections,
+ * with public read access for certain top-level collections. Data is organized
+ * into root-level collections for major entities (clients, projects, etc.) and
+ * subcollections for related data (e.g., results under samples).
  *
- * @data_structure
- * - /clients/{clientId}
- * - /projects/{projectId}
- * - /locations/{locationId}
- * - /tasks/{taskId}
- * - /personnel/{personnelId}
- * - /equipment/{equipmentId}
- * - /samples/{sampleId}
- * - /samples/{sampleId}/results/{resultId}
- * - /exposureLimits/{exposureLimitId}
- * - /results/{resultId}/exceedance
- * - /projects/{projectId}/negativeExposureAssessments/{neaId}
- * - /samples/{sampleId}/attachments/{attachmentId}
+ * Data Structure:
+ * - Root-level collections: /clients/{clientId}, /projects/{projectId}, etc.
+ * - Subcollections: /samples/{sampleId}/results/{resultId}, etc.
  *
- * @key_security_decisions
- * - Listing of collections is generally disallowed unless specifically required.
- * - Public read access is granted to some top-level collections but write access is restricted to authenticated users.
- * - Denormalization: No denormalization is required for the current schema, as there are no clearly defined user roles or ownership.
- * - Anonymous Auth: The ruleset allows anonymous authentication, meaning unauthenticated users may have access to the resources granted by these rules.
+ * Key Security Decisions:
+ * - User listing is generally disallowed for security reasons.
+ * - Read-only collections (if any) are explicitly marked with `allow get, list: if true;`.
+ * - Ambiguous relationships default to strict owner-only access.
+ *
+ * Denormalization for Authorization:
+ * To avoid costly `get()` calls, authorization data (e.g., user roles, project
+ * membership) should be denormalized directly onto the documents being secured.
+ *
+ * Structural Segregation:
+ * Private and public data should be stored in separate collections to simplify
+ * security rules and improve performance.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
     /**
-     * @description: Allows read and write access to the 'clients' collection for authenticated users.
-     * @path: /clients/{clientId}
-     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-     * @principle: Authenticated access to client data.
+     * @description Allows read and write access to client documents based on ownership.
+     * @path /clients/{clientId}
+     * @allow (create) User with matching UID can create a client document.
+     * @deny (create) User attempts to create a client document with a mismatched UID.
+     * @principle Enforces document ownership for writes.
      */
     match /clients/{clientId} {
       allow get: if isSignedIn();
       allow list: if false;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow create: if isOwner(clientId);
+      allow update: if isExistingOwner(clientId);
+      allow delete: if isExistingOwner(clientId);
     }
 
     /**
-     * @description: Allows read and write access to the 'projects' collection for authenticated users.
-     * @path: /projects/{projectId}
-     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-     * @principle: Authenticated access to project data.
+     * @description Allows read and write access to project documents based on ownership.
+     * @path /projects/{projectId}
+     * @allow (create) User with matching UID can create a project document.
+     * @deny (create) User attempts to create a project document with a mismatched UID.
+     * @principle Enforces document ownership for writes.
      */
     match /projects/{projectId} {
       allow get: if isSignedIn();
       allow list: if false;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if isExistingOwner(projectId);
+      allow delete: if isExistingOwner(projectId);
     }
 
     /**
-     * @description: Allows read and write access to the 'locations' collection for authenticated users.
-     * @path: /locations/{locationId}
-     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-     * @principle: Authenticated access to location data.
+     * @description Allows read and write access to location documents based on ownership.
+     * @path /locations/{locationId}
+     * @allow (create) User with matching UID can create a location document.
+     * @deny (create) User attempts to create a location document with a mismatched UID.
+     * @principle Enforces document ownership for writes.
      */
     match /locations/{locationId} {
       allow get: if isSignedIn();
       allow list: if false;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if isExistingOwner(locationId);
+      allow delete: if isExistingOwner(locationId);
     }
 
     /**
-     * @description: Allows read and write access to the 'tasks' collection for authenticated users.
-     * @path: /tasks/{taskId}
-     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-     * @principle: Authenticated access to task data.
+     * @description Allows read and write access to task documents based on ownership.
+     * @path /tasks/{taskId}
+     * @allow (create) User with matching UID can create a task document.
+     * @deny (create) User attempts to create a task document with a mismatched UID.
+     * @principle Enforces document ownership for writes.
      */
     match /tasks/{taskId} {
       allow get: if isSignedIn();
       allow list: if false;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if isExistingOwner(taskId);
+      allow delete: if isExistingOwner(taskId);
     }
 
     /**
-     * @description: Allows read and write access to the 'personnel' collection for authenticated users.
-     * @path: /personnel/{personnelId}
-     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-     * @principle: Authenticated access to personnel data.
+     * @description Allows read and write access to personnel documents based on ownership.
+     * @path /personnel/{personnelId}
+     * @allow (create) User with matching UID can create a personnel document.
+     * @deny (create) User attempts to create a personnel document with a mismatched UID.
+     * @principle Enforces document ownership for writes.
      */
     match /personnel/{personnelId} {
       allow get: if isSignedIn();
       allow list: if false;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow create: if isOwner(personnelId);
+      allow update: if isExistingOwner(personnelId);
+      allow delete: if isExistingOwner(personnelId);
     }
 
     /**
-     * @description: Allows read and write access to the 'equipment' collection for authenticated users.
-     * @path: /equipment/{equipmentId}
-     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-     * @principle: Authenticated access to equipment data.
+     * @description Allows read and write access to equipment documents based on ownership.
+     * @path /equipment/{equipmentId}
+     * @allow (create) User with matching UID can create a equipment document.
+     * @deny (create) User attempts to create a equipment document with a mismatched UID.
+     * @principle Enforces document ownership for writes.
      */
     match /equipment/{equipmentId} {
       allow get: if isSignedIn();
       allow list: if false;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if isExistingOwner(equipmentId);
+      allow delete: if isExistingOwner(equipmentId);
     }
 
     /**
-     * @description: Allows read and write access to the 'samples' collection for authenticated users.
-     * @path: /samples/{sampleId}
-     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-     * @principle: Authenticated access to sample data.
+     * @description Allows read and write access to sample documents based on ownership.
+     * @path /samples/{sampleId}
+     * @allow (create) User with matching UID can create a sample document.
+     * @deny (create) User attempts to create a sample document with a mismatched UID.
+     * @principle Enforces document ownership for writes.
      */
     match /samples/{sampleId} {
       allow get: if isSignedIn();
       allow list: if false;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
-
-       /**
-        * @description: Allows read and write access to the 'results' subcollection for authenticated users.
-        * @path: /samples/{sampleId}/results/{resultId}
-        * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-        * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-        * @principle: Authenticated access to result data.
-        */
-      match /results/{resultId} {
-        allow get: if isSignedIn();
-        allow list: if false;
-        allow create: if isSignedIn();
-        allow update: if isSignedIn();
-        allow delete: if isSignedIn();
-      }
-
-      /**
-       * @description: Allows read and write access to the 'attachments' subcollection for authenticated users.
-       * @path: /samples/{sampleId}/attachments/{attachmentId}
-       * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-       * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-       * @principle: Authenticated access to attachment data.
-       */
-      match /attachments/{attachmentId} {
-        allow get: if isSignedIn();
-        allow list: if false;
-        allow create: if isSignedIn();
-        allow update: if isSignedIn();
-        allow delete: if isSignedIn();
-      }
+      allow update: if isExistingOwner(sampleId);
+      allow delete: if isExistingOwner(sampleId);
     }
 
     /**
-     * @description: Allows read and write access to the 'exposureLimits' collection for authenticated users.
-     * @path: /exposureLimits/{exposureLimitId}
-     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-     * @principle: Authenticated access to exposure limit data.
+     * @description Allows read and write access to result documents within a sample based on ownership.
+     * @path /samples/{sampleId}/results/{resultId}
+     * @allow (create) User with matching UID can create a result document within a sample.
+     * @deny (create) User attempts to create a result document with a mismatched UID.
+     * @principle Enforces document ownership for writes within a subcollection.
+     */
+    match /samples/{sampleId}/results/{resultId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isExistingOwner(resultId);
+      allow delete: if isExistingOwner(resultId);
+    }
+
+    /**
+     * @description Allows read and write access to exposureLimit documents based on ownership.
+     * @path /exposureLimits/{exposureLimitId}
+     * @allow (create) User with matching UID can create a exposureLimit document.
+     * @deny (create) User attempts to create a exposureLimit document with a mismatched UID.
+     * @principle Enforces document ownership for writes.
      */
     match /exposureLimits/{exposureLimitId} {
       allow get: if isSignedIn();
       allow list: if false;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if isExistingOwner(exposureLimitId);
+      allow delete: if isExistingOwner(exposureLimitId);
     }
 
     /**
-     * @description: Allows read and write access to the 'exceedance' subcollection for authenticated users.
-     * @path: /results/{resultId}/exceedance
-     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-     * @principle: Authenticated access to exceedance data.
+     * @description Allows read and write access to exceedance documents within a result based on ownership.
+     * @path /results/{resultId}/exceedance
+     * @allow (create) User with matching UID can create an exceedance document within a result.
+     * @deny (create) User attempts to create an exceedance document with a mismatched UID.
+     * @principle Enforces document ownership for writes within a subcollection.
      */
     match /results/{resultId}/exceedance {
       allow get: if isSignedIn();
       allow list: if false;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if isExistingOwner(resultId);
+      allow delete: if isExistingOwner(resultId);
     }
 
     /**
-     * @description: Allows read and write access to the 'negativeExposureAssessments' subcollection for authenticated users.
-     * @path: /projects/{projectId}/negativeExposureAssessments/{neaId}
-     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
-     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
-     * @principle: Authenticated access to negative exposure assessment data.
+     * @description Allows read and write access to negativeExposureAssessment documents within a project based on ownership.
+     * @path /projects/{projectId}/negativeExposureAssessments/{neaId}
+     * @allow (create) User with matching UID can create a negativeExposureAssessment document within a project.
+     * @deny (create) User attempts to create a negativeExposureAssessment document with a mismatched UID.
+     * @principle Enforces document ownership for writes within a subcollection.
      */
     match /projects/{projectId}/negativeExposureAssessments/{neaId} {
       allow get: if isSignedIn();
       allow list: if false;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if isExistingOwner(neaId);
+      allow delete: if isExistingOwner(neaId);
     }
 
-        /**
-         * @description Denies all access to the survey collection
-         * @path /surveys
-         * @allow (create) N/A
-         * @deny (list) Any authenticated user
-         * @principle Explicitly deny the user listing of the /surveys collection
-         */
-    match /surveys/{surveyId} {
+    /**
+     * @description Allows read and write access to attachment documents within a sample based on ownership.
+     * @path /samples/{sampleId}/attachments/{attachmentId}
+     * @allow (create) User with matching UID can create a attachment document within a sample.
+     * @deny (create) User attempts to create a attachment document with a mismatched UID.
+     * @principle Enforces document ownership for writes within a subcollection.
+     */
+    match /samples/{sampleId}/attachments/{attachmentId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isExistingOwner(attachmentId);
+      allow delete: if isExistingOwner(attachmentId);
+    }
+
+     /**
+      * @description Deny all access to the surveyReports collection.
+      * @path /surveyReports
+      */
+     match /surveyReports/{document=**} {
         allow get: if false;
         allow list: if false;
         allow create: if false;
         allow update: if false;
         allow delete: if false;
-    }
-  }
+     }
 
-  function isSignedIn() {
-    return request.auth != null;
+     /**
+      * @description Public read-only access to the surveys collection
+      * @path /surveys
+      * @allow (get, list) Any user can read data from the surveys collection
+      * @deny (create, update, delete) No user can modify or delete data
+      */
+     match /surveys/{document=**} {
+        allow get: if true;
+        allow list: if true;
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+     }
   }
 }

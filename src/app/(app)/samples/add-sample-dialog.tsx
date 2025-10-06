@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Combobox, ComboboxOption } from '@/components/ui/combobox';
 import { useEffect, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import type { Sample, Project, Task, Personnel, ExposureLimit } from '@/lib/types';
+import type { Sample, Project, Site, Personnel, Analyte } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { differenceInMinutes, parse } from 'date-fns';
@@ -39,26 +39,26 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
     const orgId = user?.orgId;
     const firestore = useFirestore();
 
-    const { data: projects } = useCollection<Project>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'projects')) : null, [firestore, orgId]));
-    const { data: tasks } = useCollection<Task>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'tasks')) : null, [firestore, orgId]));
-    const { data: personnel } = useCollection<Personnel>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'personnel')) : null, [firestore, orgId]));
-    const { data: exposureLimits } = useCollection<ExposureLimit>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'exposureLimits')) : null, [firestore, orgId]));
+    const { data: projects } = useCollection<Project>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'jobs')) : null, [firestore, orgId]));
+    const { data: sites } = useCollection<Site>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'sites')) : null, [firestore, orgId]));
+    const { data: personnel } = useCollection<Personnel>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'people')) : null, [firestore, orgId]));
+    const { data: analytes } = useCollection<Analyte>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'analytes')) : null, [firestore, orgId]));
 
-    const projectOptions = useMemo(() => projects?.map(p => ({ value: p.id, label: p.name })) || [], [projects]);
-    const taskOptions = useMemo(() => tasks?.map(t => ({ value: t.id, label: t.name })) || [], [tasks]);
-    const personnelOptions = useMemo(() => personnel?.map(p => ({ value: p.id, label: p.name })) || [], [personnel]);
-    const analyteOptions = useMemo(() => exposureLimits?.map(l => ({ value: l.analyte.toLowerCase(), label: l.analyte })) || [], [exposureLimits]);
+    const projectOptions = useMemo(() => projects?.map(p => ({ value: p.id, label: p.clientName })) || [], [projects]);
+    const siteOptions = useMemo(() => sites?.map(s => ({ value: s.id, label: s.address })) || [], [sites]);
+    const personnelOptions = useMemo(() => personnel?.map(p => ({ value: p.id, label: p.displayName })) || [], [personnel]);
+    const analyteOptions = useMemo(() => analytes?.map(l => ({ value: l.id, label: l.name })) || [], [analytes]);
 
   
-  const [projectId, setProjectId] = useState('');
-  const [taskId, setTaskId] = useState('');
+  const [jobId, setJobId] = useState('');
+  const [siteId, setSiteId] = useState('');
   const [personnelId, setPersonnelId] = useState('');
   const [description, setDescription] = useState('');
-  const [sampleType, setSampleType] = useState<Sample['sampleType'] | ''>('');
+  const [sampleType, setSampleType] = useState<Sample['mediaType'] | ''>('');
   const [startTime, setStartTime] = useState('');
   const [stopTime, setStopTime] = useState('');
   const [flowRate, setFlowRate] = useState(2.5);
-  const [analyte, setAnalyte] = useState('');
+  const [analyteId, setAnalyteId] = useState('');
   const [concentration, setConcentration] = useState<number | ''>('');
   const [units, setUnits] = useState('');
 
@@ -84,38 +84,39 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
 
   useEffect(() => {
     if (isEditMode && sample) {
-        setProjectId(sample.projectId);
-        setTaskId(sample.taskId);
-        setPersonnelId(sample.personnelId);
-        setDescription(sample.description);
-        setSampleType(sample.sampleType);
-        setStartTime(sample.startTime.split(' ')[1] || '');
-        setStopTime(sample.stopTime.split(' ')[1] || '');
-        setFlowRate(sample.flowRate);
+        setJobId(sample.jobId);
+        setSiteId(sample.siteId || '');
+        setPersonnelId((sample as any).personnelId || '');
+        setDescription(sample.description || '');
+        setSampleType(sample.mediaType);
+        setStartTime(sample.startTime.split('T')[1]?.substring(0,5) || '');
+        setStopTime(sample.stopTime.split('T')[1]?.substring(0,5) || '');
+        setFlowRate(sample.preFlow || 2.5);
         
-        const currentAnalyte = sample.result?.analyte || '';
-        setAnalyte(currentAnalyte ? currentAnalyte.toLowerCase() : '');
-        setConcentration(sample.result?.concentration ?? '');
-        setUnits(sample.result?.units || '');
+        const currentAnalyte = (sample as any).result?.analyte || '';
+        const foundAnalyte = analytes?.find(a => a.name.toLowerCase() === currentAnalyte.toLowerCase());
+        setAnalyteId(foundAnalyte?.id || '');
+        setConcentration((sample as any).result?.concentration ?? '');
+        setUnits((sample as any).result?.units || '');
 
     } else {
-        setProjectId('');
-        setTaskId('');
+        setJobId('');
+        setSiteId('');
         setPersonnelId('');
         setDescription('');
         setSampleType('');
         setStartTime('');
         setStopTime('');
         setFlowRate(2.5);
-        setAnalyte('');
+        setAnalyteId('');
         setConcentration('');
         setUnits('');
     }
-  }, [sample, isEditMode, isOpen]);
+  }, [sample, isEditMode, isOpen, analytes]);
 
 
   const handleSave = () => {
-    if (!projectId || !taskId || !sampleType || !startTime || !stopTime) {
+    if (!jobId || !siteId || !sampleType || !startTime || !stopTime) {
       toast({
         title: 'Missing Information',
         description: 'Please fill out all required fields before saving.',
@@ -125,28 +126,30 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
     }
 
     const today = new Date().toISOString().split('T')[0];
-    const selectedAnalyteLabel = analyteOptions.find(opt => opt.value === analyte)?.label;
+    const selectedAnalyte = analytes?.find(opt => opt.id === analyteId);
 
-    const sampleData = {
-      projectId,
-      taskId,
+    const sampleData: any = {
+      jobId,
+      siteId,
       personnelId,
       description,
-      sampleType,
-      startTime: `${today} ${startTime}`,
-      stopTime: `${today} ${stopTime}`,
-      flowRate: Number(flowRate),
-      result: selectedAnalyteLabel ? {
-          analyte: selectedAnalyteLabel,
+      mediaType: sampleType,
+      startTime: `${today}T${startTime}:00.000Z`,
+      stopTime: `${today}T${stopTime}:00.000Z`,
+      preFlow: Number(flowRate),
+      analyteId: analyteId,
+      result: selectedAnalyte ? {
+          analyte: selectedAnalyte.name,
           concentration: Number(concentration),
-          units: units
+          units: units || selectedAnalyte.unit,
+          status: concentration === '' ? 'Pending' : 'OK'
       } : undefined
     };
 
     if (isEditMode && sample) {
       onSave({ id: sample.id, ...sampleData });
     } else {
-      onSave(sampleData as any);
+      onSave(sampleData);
     }
 
     toast({
@@ -173,22 +176,22 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
             <Label htmlFor="project">Project</Label>
             <Combobox 
               options={projectOptions}
-              value={projectId}
-              onValueChange={setProjectId}
+              value={jobId}
+              onValueChange={setJobId}
               placeholder="Select a project"
               searchPlaceholder="Search projects..."
               emptyPlaceholder="No project found."
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="task">Task</Label>
+            <Label htmlFor="site">Site</Label>
             <Combobox 
-              options={taskOptions}
-              value={taskId}
-              onValueChange={setTaskId}
-              placeholder="Select a task"
-              searchPlaceholder="Search tasks..."
-              emptyPlaceholder="No task found."
+              options={siteOptions}
+              value={siteId}
+              onValueChange={setSiteId}
+              placeholder="Select a site"
+              searchPlaceholder="Search sites..."
+              emptyPlaceholder="No site found."
             />
           </div>
           <div className="space-y-2 md:col-span-2">
@@ -197,7 +200,7 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
           </div>
            <div className="space-y-2">
             <Label htmlFor="sample-type">Sample Type</Label>
-            <Select onValueChange={(value) => setSampleType(value as Sample['sampleType'])} value={sampleType}>
+            <Select onValueChange={(value) => setSampleType(value as Sample['mediaType'])} value={sampleType}>
               <SelectTrigger id="sample-type">
                 <SelectValue placeholder="Select a type" />
               </SelectTrigger>
@@ -246,8 +249,8 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
                     <Label htmlFor="analyte">Analyte</Label>
                     <Combobox
                         options={analyteOptions}
-                        value={analyte}
-                        onValueChange={setAnalyte}
+                        value={analyteId}
+                        onValueChange={setAnalyteId}
                         placeholder="Select analyte"
                         searchPlaceholder="Search analytes..."
                         emptyPlaceholder="No analyte found."

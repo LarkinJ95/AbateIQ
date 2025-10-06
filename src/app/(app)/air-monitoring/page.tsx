@@ -31,23 +31,23 @@ export default function AirMonitoringPage() {
 
   const samplesQuery = useMemoFirebase(() => {
       if (!orgId) return null;
-      return query(collection(firestore, 'orgs', orgId, 'samples'), where('ownerId', '==', user.uid));
+      return query(collection(firestore, 'orgs', orgId, 'samples'), where('createdByUid', '==', user.uid));
   }, [firestore, orgId, user?.uid]);
   const { data: samples, isLoading: samplesLoading } = useCollection<Sample>(samplesQuery);
 
   const personnelQuery = useMemoFirebase(() => {
       if (!orgId) return null;
-      return query(collection(firestore, 'orgs', orgId, 'personnel'));
+      return query(collection(firestore, 'orgs', orgId, 'people'));
   }, [firestore, orgId]);
   const { data: personnel, isLoading: personnelLoading } = useCollection<Personnel>(personnelQuery);
 
-  const projectsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'projects')) : null, [firestore, orgId]);
+  const projectsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'jobs')) : null, [firestore, orgId]);
   const { data: projectsData } = useCollection<Project>(projectsQuery);
 
   const tasksQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'tasks')) : null, [firestore, orgId]);
   const { data: tasksData } = useCollection<TaskType>(tasksQuery);
   
-  const limitsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'exposureLimits')) : null, [firestore, orgId]);
+  const limitsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'analytes')) : null, [firestore, orgId]);
   const { data: exposureLimits } = useCollection<ExposureLimit>(limitsQuery);
 
   const [activeTab, setActiveTab] = useState<string>("samples");
@@ -72,7 +72,8 @@ export default function AirMonitoringPage() {
     }
 
     const duration = getMinutes(newSampleData.startTime, newSampleData.stopTime);
-    const volume = duration * newSampleData.flowRate;
+    const flowRate = (newSampleData as any).flowRate || 0;
+    const volume = duration * flowRate;
     
     let resultPayload: Result | undefined = undefined;
     const resultData = (newSampleData as any).result || (newSampleData as any).resultData;
@@ -82,34 +83,30 @@ export default function AirMonitoringPage() {
         let status: Result['status'] = 'Pending';
         const concentration = resultData.concentration;
         if(concentration !== undefined && concentration !== null) {
-            const limit = exposureLimits?.find(l => l.analyte.toLowerCase() === resultData!.analyte!.toLowerCase());
-            if(limit) {
+            const limit = exposureLimits?.find(l => l.name.toLowerCase() === resultData!.analyte!.toLowerCase());
+            if(limit && limit.pel) {
               if (concentration > limit.pel) {
                 status = '>PEL';
                 
-                // Create a secure exceedance record
-                const project = projectsData?.find(p => p.id === newSampleData.projectId);
-                const person = personnel?.find(p => p.id === newSampleData.personnelId);
+                const project = projectsData?.find(p => p.id === newSampleData.jobId);
+                const person = personnel?.find(p => p.id === newSampleData.id);
 
-                if (project && person && user && orgId) {
+                if (project && person && user && orgId && newSampleData.id) {
                     await createExceedance({
-                        resultId: existingResult?.id || `res-${Date.now()}`,
-                        analyte: limit.analyte,
-                        concentration: `${concentration} ${limit.units}`,
-                        limit: `${limit.pel} ${limit.units} (PEL)`,
-                        personnel: person.name,
-                        location: project.location,
-                        correctiveAction: 'Immediate action required. Review exposure controls and implement corrective measures.',
+                        jobId: newSampleData.jobId,
+                        sampleId: newSampleData.id,
+                        analyteId: limit.id,
+                        exceeded: true,
                     });
                      toast({
                         title: 'Exceedance Detected!',
-                        description: `A new exceedance for ${limit.analyte} has been logged.`,
+                        description: `A new exceedance for ${limit.name} has been logged.`,
                         variant: 'destructive',
                     });
                 }
 
               }
-              else if (concentration >= limit.al) status = '≥AL';
+              else if (limit.al && concentration >= limit.al) status = '≥AL';
               else status = 'OK';
             } else {
               status = 'OK'; // Default if no limit is found
@@ -123,7 +120,7 @@ export default function AirMonitoringPage() {
             concentration: resultData.concentration ?? 0,
             status: status,
             method: existingResult?.method || '',
-            units: existingResult?.units || exposureLimits?.find(l => l.analyte.toLowerCase() === resultData!.analyte!.toLowerCase())?.units || '',
+            units: existingResult?.units || exposureLimits?.find(l => l.name.toLowerCase() === resultData!.analyte!.toLowerCase())?.unit || '',
             reportingLimit: existingResult?.reportingLimit || 0,
             lab: existingResult?.lab || '',
         }
@@ -134,7 +131,7 @@ export default function AirMonitoringPage() {
       duration,
       volume,
       result: resultPayload
-    };
+    } as Omit<Sample, 'id'>;
 
     // remove temporary property
     delete (finalSample as any).resultData;
@@ -154,7 +151,7 @@ export default function AirMonitoringPage() {
             await updateDoc(sampleRef, finalSample);
             toast({ title: 'Sample Updated', description: 'The sample has been updated.' });
         } else {
-            await addDoc(collection(firestore, 'orgs', orgId, 'samples'), { ...finalSample, ownerId: user.uid });
+            await addDoc(collection(firestore, 'orgs', orgId, 'samples'), { ...finalSample, createdByUid: user.uid });
             toast({ title: 'Sample Added', description: 'A new sample has been created.' });
         }
       } catch (error) {
@@ -172,7 +169,7 @@ export default function AirMonitoringPage() {
       try {
         for (const sampleData of importedSamples) {
           const finalSample = await processNewSample(sampleData);
-          await addDoc(collection(firestore, 'orgs', orgId, 'samples'), { ...finalSample, ownerId: user.uid });
+          await addDoc(collection(firestore, 'orgs', orgId, 'samples'), { ...finalSample, createdByUid: user.uid });
         }
         toast({ title: 'Import Successful', description: `${importedSamples.length} samples imported.` });
       } catch (error) {
@@ -197,14 +194,14 @@ export default function AirMonitoringPage() {
   const samplesWithDetails = useMemo(() => {
     if (!samples || !personnel || !projectsData || !tasksData) return [];
     return samples.map(sample => {
-      const project = projectsData.find(p => p.id === sample.projectId);
-      const task = tasksData.find(t => t.id === sample.taskId);
-      const person = personnel.find(p => p.id === sample.personnelId);
+      const project = projectsData.find(p => p.id === sample.jobId);
+      const task = tasksData.find(t => t.id === sample.siteId); // Assuming siteId is used for task for now
+      const person = personnel.find(p => p.id === (sample as any).personnelId);
       return {
         ...sample,
-        projectName: project?.name,
+        projectName: project?.clientName,
         taskName: task?.name,
-        personnelName: person?.name,
+        personnelName: person?.displayName,
         status: sample.result?.status || 'Pending',
         analyte: sample.result?.analyte,
         concentration: sample.result?.concentration,
@@ -223,7 +220,7 @@ export default function AirMonitoringPage() {
 
       const matchesStatus = statusFilter === "all" || (sample.status?.toLowerCase() ?? 'pending') === statusFilter;
       const matchesAnalyte = analyteFilter === "all" || (sample.analyte?.toLowerCase() ?? '') === analyteFilter;
-      const matchesSampleType = sampleTypeFilter === "all" || sample.sampleType.toLowerCase() === sampleTypeFilter;
+      const matchesSampleType = sampleTypeFilter === "all" || (sample.mediaType || '').toLowerCase() === sampleTypeFilter;
 
       return matchesSearch && matchesStatus && matchesAnalyte && matchesSampleType;
     });
@@ -234,7 +231,7 @@ export default function AirMonitoringPage() {
     return personnel.filter((person: Personnel) => {
       const sQuery = searchQuery.toLowerCase();
       const matchesSearch = sQuery === "" ||
-        person.name.toLowerCase().includes(sQuery) ||
+        person.displayName.toLowerCase().includes(sQuery) ||
         (person.employeeId && person.employeeId.toLowerCase().includes(sQuery));
       return matchesSearch;
     });

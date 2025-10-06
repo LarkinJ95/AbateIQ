@@ -8,7 +8,8 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import type { Exceedance } from '@/lib/types';
+import type { Exceedance, Project, Sample, Personnel, Analyte } from '@/lib/types';
+import { useMemo } from 'react';
 
 export default function ExceedanceDetailsPage() {
   const params = useParams();
@@ -23,6 +24,12 @@ export default function ExceedanceDetailsPage() {
   }, [firestore, id, orgId]);
   const { data: exceedance, isLoading } = useDoc<Exceedance>(exceedanceRef);
 
+  const { data: project } = useDoc<Project>(useMemoFirebase(() => (orgId && exceedance?.jobId) ? doc(firestore, 'orgs', orgId, 'jobs', exceedance.jobId) : null, [orgId, exceedance?.jobId]));
+  const { data: sample } = useDoc<Sample>(useMemoFirebase(() => (orgId && exceedance?.sampleId) ? doc(firestore, 'orgs', orgId, 'samples', exceedance.sampleId) : null, [orgId, exceedance?.sampleId]));
+  const { data: analyte } = useDoc<Analyte>(useMemoFirebase(() => (orgId && exceedance?.analyteId) ? doc(firestore, 'orgs', orgId, 'analytes', exceedance.analyteId) : null, [orgId, exceedance?.analyteId]));
+  const { data: person } = useDoc<Personnel>(useMemoFirebase(() => (orgId && (sample as any)?.personnelId) ? doc(firestore, 'orgs', orgId, 'people', (sample as any).personnelId) : null, [orgId, sample]));
+
+
   const evidenceImage = PlaceHolderImages.find(img => img.id === 'doc-thumb-2');
 
   if (isLoading) {
@@ -35,7 +42,7 @@ export default function ExceedanceDetailsPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <Header title={`Exceedance: ${exceedance.analyte}`} />
+      <Header title={`Exceedance: ${analyte?.name || exceedance.id}`} />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
           <CardHeader>
@@ -48,23 +55,23 @@ export default function ExceedanceDetailsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Analyte</p>
-                <p className="text-lg font-semibold">{exceedance.analyte}</p>
+                <p className="text-lg font-semibold">{analyte?.name || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Concentration</p>
-                <p className="text-lg font-semibold text-destructive">{exceedance.concentration}</p>
+                <p className="text-lg font-semibold text-destructive">{exceedance.calculatedTWAorConc} {analyte?.unit}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Limit</p>
-                <p className="text-lg font-semibold">{exceedance.limit}</p>
+                <p className="text-lg font-semibold">{exceedance.thresholdValue} {analyte?.unit} ({exceedance.standardRef})</p>
               </div>
                <div>
                 <p className="text-sm font-medium text-muted-foreground">Personnel</p>
-                <p className="text-lg font-semibold">{exceedance.personnel}</p>
+                <p className="text-lg font-semibold">{person?.displayName || 'Loading...'}</p>
               </div>
               <div className="col-span-2">
                 <p className="text-sm font-medium text-muted-foreground">Location</p>
-                <p className="text-lg font-semibold">{exceedance.location}</p>
+                <p className="text-lg font-semibold">{project?.location || 'Loading...'}</p>
               </div>
             </div>
           </CardContent>
@@ -75,11 +82,11 @@ export default function ExceedanceDetailsPage() {
                 <CardTitle className="font-headline">Corrective Action</CardTitle>
             </CardHeader>
             <CardContent>
-                <p>{exceedance.correctiveAction}</p>
+                <p>Corrective action details would be displayed here.</p>
             </CardContent>
         </Card>
 
-        {exceedance.evidence && evidenceImage && (
+        {evidenceImage && (
              <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Evidence</CardTitle>

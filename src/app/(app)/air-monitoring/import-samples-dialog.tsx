@@ -34,13 +34,13 @@ export function ImportSamplesDialog({ onImport }: ImportSamplesDialogProps) {
   const orgId = user?.orgId;
   const firestore = useFirestore();
 
-  const projectsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'projects')) : null, [firestore, orgId]);
+  const projectsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'jobs')) : null, [firestore, orgId]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
-  const tasksQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'tasks')) : null, [firestore, orgId]);
-  const { data: tasks } = useCollection<Task>(tasksQuery);
+  const tasksQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'sites')) : null, [firestore, orgId]);
+  const { data: tasks } = useCollection<Task>(tasksQuery); // Assuming sites are tasks for now
 
-  const personnelQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'personnel')) : null, [firestore, orgId]);
+  const personnelQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'people')) : null, [firestore, orgId]);
   const { data: personnel } = useCollection<Personnel>(personnelQuery);
 
 
@@ -91,9 +91,9 @@ export function ImportSamplesDialog({ onImport }: ImportSamplesDialogProps) {
             concentrationStr
         ] = columns;
 
-        const project = projects.find(p => p.name.toLowerCase() === projectName.toLowerCase());
-        const task = tasks.find(t => t.name.toLowerCase() === taskName.toLowerCase());
-        const person = personnel.find(p => p.name.toLowerCase() === personnelName.toLowerCase());
+        const project = projects.find(p => p.clientName.toLowerCase() === projectName.toLowerCase());
+        const task = tasks.find(t => t.address.toLowerCase() === taskName.toLowerCase()); // Using address for task name
+        const person = personnel.find(p => p.displayName.toLowerCase() === personnelName.toLowerCase());
 
         if (!project) throw new Error(`Row ${i+1}: Project "${projectName}" not found.`);
         if (!task) throw new Error(`Row ${i+1}: Task "${taskName}" not found.`);
@@ -105,15 +105,14 @@ export function ImportSamplesDialog({ onImport }: ImportSamplesDialogProps) {
         const today = new Date().toISOString().split('T')[0];
 
         return {
-          projectId: project.id,
-          taskId: task.id,
+          jobId: project.id,
+          siteId: task.id,
           personnelId: person.id,
           description,
-          sampleType: sampleType as Sample['sampleType'],
-          startTime: `${today} ${startTime}`,
-          stopTime: `${today} ${stopTime}`,
-          flowRate: parseFloat(flowRateStr),
-          // We will create the result object in the parent component
+          mediaType: sampleType as Sample['mediaType'],
+          startTime: `${today}T${startTime}:00.000Z`,
+          stopTime: `${today}T${stopTime}:00.000Z`,
+          preFlow: parseFloat(flowRateStr),
           resultData: {
             analyte: analyte,
             concentration: concentrationStr ? parseFloat(concentrationStr) : 0,

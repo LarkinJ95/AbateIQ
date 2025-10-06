@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -878,7 +877,7 @@ function PpeCalculator() {
     const orgId = user?.orgId;
     const firestore = useFirestore();
 
-    const limitsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'exposureLimits')) : null, [firestore, orgId]);
+    const limitsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'analytes')) : null, [firestore, orgId]);
     const { data: exposureLimits } = useCollection<ExposureLimit>(limitsQuery);
 
     const handleAddSample = () => {
@@ -952,21 +951,21 @@ function PpeCalculator() {
                     const twa = (effectiveExposure * dur) / 480;
                     
                     let status = { text: 'Below AL', className: 'status-ok' };
-                    if (twa > analyte.pel) {
+                    if (analyte.pel && twa > analyte.pel) {
                         status = { text: 'Above PEL', className: 'status-danger' };
-                    } else if (twa > analyte.al) {
+                    } else if (analyte.al && twa > analyte.al) {
                         status = { text: 'Above AL', className: 'status-warning' };
                     }
 
                     return `
                     <tr>
-                      <td>${analyte.analyte}</td>
-                      <td>${conc} ${analyte.units}</td>
+                      <td>${analyte.name}</td>
+                      <td>${conc} ${analyte.unit}</td>
                       <td>${protectionFactor}</td>
-                      <td>${effectiveExposure.toFixed(4)} ${analyte.units}</td>
+                      <td>${effectiveExposure.toFixed(4)} ${analyte.unit}</td>
                       <td>${dur}</td>
-                      <td>${twa.toFixed(4)} ${analyte.units}</td>
-                      <td>${analyte.pel} ${analyte.units}</td>
+                      <td>${twa.toFixed(4)} ${analyte.unit}</td>
+                      <td>${analyte.pel} ${analyte.unit}</td>
                       <td class="${status.className}">${status.text}</td>
                     </tr>
                   `;
@@ -1006,7 +1005,7 @@ function PpeCalculator() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {exposureLimits?.map((limit) => (
-                                                <SelectItem key={limit.id} value={limit.id}>{limit.analyte}</SelectItem>
+                                                <SelectItem key={limit.id} value={limit.id}>{limit.name}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>

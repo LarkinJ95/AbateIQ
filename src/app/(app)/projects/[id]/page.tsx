@@ -23,7 +23,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, query, where, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { exposureLimits } from '@/lib/data';
 import { createExceedance } from '@/ai/flows/create-exceedance';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -37,7 +36,7 @@ export default function ProjectDetailsPage() {
   
   const projectRef = useMemoFirebase(() => {
     if (!orgId) return null;
-    return doc(firestore, 'orgs', orgId, 'projects', id)
+    return doc(firestore, 'orgs', orgId, 'jobs', id)
   }, [firestore, id, orgId]);
   const { data: project, isLoading: projectLoading } = useDoc<Project>(projectRef);
   
@@ -50,7 +49,7 @@ export default function ProjectDetailsPage() {
   // Samples for this project
   const projectSamplesQuery = useMemoFirebase(() => {
     if (!orgId) return null;
-    return query(collection(firestore, 'orgs', orgId, 'samples'), where('projectId', '==', id));
+    return query(collection(firestore, 'orgs', orgId, 'samples'), where('jobId', '==', id));
   }, [firestore, id, orgId]);
   const { data: samples, isLoading: samplesLoading } = useCollection<Sample>(projectSamplesQuery);
   
@@ -64,32 +63,32 @@ export default function ProjectDetailsPage() {
   // Personnel data (to resolve names)
   const personnelQuery = useMemoFirebase(() => {
       if (!orgId) return null;
-      return query(collection(firestore, 'orgs', orgId, 'personnel'));
+      return query(collection(firestore, 'orgs', orgId, 'people'));
   }, [firestore, orgId]);
   const { data: personnel } = useCollection<any>(personnelQuery);
 
-   // Task data (to resolve names)
-   const tasksQuery = useMemoFirebase(() => {
+   // Site data (to resolve names)
+   const sitesQuery = useMemoFirebase(() => {
     if (!orgId) return null;
-    return query(collection(firestore, 'orgs', orgId, 'tasks'));
+    return query(collection(firestore, 'orgs', orgId, 'sites'));
 }, [firestore, orgId]);
-const { data: tasks } = useCollection<any>(tasksQuery);
+const { data: sites } = useCollection<any>(sitesQuery);
 
 
   const projectSamplesWithDetails = useMemo(() => {
-    if (!samples || !personnel || !tasks) return [];
+    if (!samples || !personnel || !sites) return [];
     return samples
         .map(sample => {
-            const task = tasks.find(t => t.id === sample.taskId);
-            const person = personnel.find(p => p.id === sample.personnelId);
+            const site = sites.find(s => s.id === sample.siteId);
+            const person = personnel.find(p => p.id === (sample as any).personnelId);
             return {
                 ...sample,
-                taskName: task?.name || 'N/A',
-                personnelName: person?.name || 'N/A',
+                siteName: site?.address || 'N/A',
+                personnelName: person?.displayName || 'N/A',
                 status: sample.result?.status || 'Pending',
             }
         });
-  }, [samples, personnel, tasks]);
+  }, [samples, personnel, sites]);
     
 
   // Filter surveys related to this project
@@ -97,7 +96,7 @@ const { data: tasks } = useCollection<any>(tasksQuery);
       if (!firestore || !project || !orgId) return null;
       return query(
           collection(firestore, 'orgs', orgId, 'surveys'), 
-          where('jobNumber', '==', project.jobNumber),
+          where('jobId', '==', project.id),
       );
   }, [firestore, project, orgId]);
   const { data: linkedSurveys } = useCollection<Survey>(surveysQuery);
@@ -131,7 +130,7 @@ const { data: tasks } = useCollection<any>(tasksQuery);
   };
   
  const handleSaveSample = async (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
-      if (!orgId) return;
+      if (!orgId || !user) return;
       
       const getMinutes = (start: string, stop: string) => {
         if (start && stop) {
@@ -147,59 +146,17 @@ const { data: tasks } = useCollection<any>(tasksQuery);
       }
 
       const duration = getMinutes(newSampleData.startTime, newSampleData.stopTime);
-      const volume = duration * newSampleData.flowRate;
+      const volume = duration * (newSampleData.preFlow || 0);
       
-      let resultPayload: Result | undefined = undefined;
-      if(newSampleData.result?.analyte) {
-          const existingResult = newSampleData.id ? samples?.find(s => s.id === newSampleData.id)?.result : undefined;
-          
-          let status: Result['status'] = 'Pending';
-          const concentration = newSampleData.result.concentration;
-          if(concentration !== undefined && concentration !== null) {
-              const limit = exposureLimits.find(l => l.analyte.toLowerCase() === newSampleData.result!.analyte!.toLowerCase());
-              if(limit) {
-                if (concentration > limit.pel) {
-                    status = '>PEL';
-                    const person = personnel?.find(p => p.id === newSampleData.personnelId);
-                    if (project && person && user && orgId) {
-                        createExceedance({
-                            resultId: existingResult?.id || `res-${Date.now()}`,
-                            analyte: limit.analyte,
-                            concentration: `${concentration} ${limit.units}`,
-                            limit: `${limit.pel} ${limit.units} (PEL)`,
-                            personnel: person.name,
-                            location: project.location,
-                            correctiveAction: 'Immediate action required. Review exposure controls and implement corrective measures.',
-                        });
-                    }
-                }
-                else if (concentration >= limit.al) status = '≥AL';
-                else status = 'OK';
-              } else {
-                status = 'OK'; // Default if no limit is found
-              }
-          }
-
-          resultPayload = {
-              id: existingResult?.id || `res-${Math.random()}`,
-              sampleId: newSampleData.id || '',
-              analyte: newSampleData.result.analyte,
-              concentration: newSampleData.result.concentration ?? 0,
-              status: status,
-              method: existingResult?.method || '',
-              units: existingResult?.units || exposureLimits.find(l => l.analyte.toLowerCase() === newSampleData.result!.analyte!.toLowerCase())?.units || '',
-              reportingLimit: existingResult?.reportingLimit || 0,
-              lab: existingResult?.lab || '',
-          }
-      }
-
-      const finalSample = {
+      const finalSample: Omit<Sample, 'id'> = {
           ...newSampleData,
-          projectId: id, // Ensure it's for the current project
+          jobId: id, // Ensure it's for the current project
+          orgId: orgId,
+          createdByUid: user.uid,
+          createdAt: new Date().toISOString(),
           duration,
           volume,
-          result: resultPayload,
-      };
+      } as Omit<Sample, 'id'>;
 
       try {
         if (newSampleData.id) {
@@ -313,7 +270,7 @@ const { data: tasks } = useCollection<any>(tasksQuery);
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <Header title={`Project: ${project.name}`} />
+      <Header title={`Project: ${project.clientName}`} />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
           <CardHeader>
@@ -325,12 +282,12 @@ const { data: tasks } = useCollection<any>(tasksQuery);
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Project Name</p>
-                <p className="text-lg font-semibold">{project.name}</p>
+                <p className="text-sm font-medium text-muted-foreground">Client Name</p>
+                <p className="text-lg font-semibold">{project.clientName}</p>
               </div>
                <div>
                 <p className="text-sm font-medium text-muted-foreground">Job Number</p>
-                <p className="text-lg font-semibold">{project.jobNumber}</p>
+                <p className="text-lg font-semibold">{project.id}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Status</p>
@@ -418,7 +375,7 @@ const { data: tasks } = useCollection<any>(tasksQuery);
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Sample ID</TableHead>
-                                        <TableHead>Task</TableHead>
+                                        <TableHead>Site</TableHead>
                                         <TableHead>Personnel</TableHead>
                                         <TableHead>Analyte</TableHead>
                                         <TableHead>Result</TableHead>
@@ -436,7 +393,7 @@ const { data: tasks } = useCollection<any>(tasksQuery);
                                                     {sample.id}
                                                 </Link>
                                             </TableCell>
-                                            <TableCell>{sample.taskName}</TableCell>
+                                            <TableCell>{sample.siteName}</TableCell>
                                             <TableCell>{sample.personnelName}</TableCell>
                                             <TableCell>{sample.result?.analyte || 'N/A'}</TableCell>
                                             <TableCell>

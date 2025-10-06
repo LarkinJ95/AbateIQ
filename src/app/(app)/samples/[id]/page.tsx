@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { notFound, useParams } from 'next/navigation';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import type { Sample, Project, Task, Personnel } from '@/lib/types';
+import type { Sample, Project, Site, Personnel } from '@/lib/types';
 import { useMemo } from 'react';
 
 export default function SampleDetailsPage() {
@@ -22,17 +22,17 @@ export default function SampleDetailsPage() {
   }, [firestore, id, orgId]);
   const { data: sample, isLoading: sampleLoading } = useDoc<Sample>(sampleRef);
 
-  const projectId = sample?.projectId;
-  const taskId = sample?.taskId;
-  const personnelId = sample?.personnelId;
+  const projectId = sample?.jobId;
+  const siteId = sample?.siteId;
+  const personnelId = (sample as any)?.personnelId;
 
-  const projectRef = useMemoFirebase(() => (projectId && orgId) ? doc(firestore, 'orgs', orgId, 'projects', projectId) : null, [firestore, projectId, orgId]);
+  const projectRef = useMemoFirebase(() => (projectId && orgId) ? doc(firestore, 'orgs', orgId, 'jobs', projectId) : null, [firestore, projectId, orgId]);
   const { data: project } = useDoc<Project>(projectRef);
 
-  const taskRef = useMemoFirebase(() => (taskId && orgId) ? doc(firestore, 'orgs', orgId, 'tasks', taskId) : null, [firestore, taskId, orgId]);
-  const { data: task } = useDoc<Task>(taskRef);
+  const siteRef = useMemoFirebase(() => (siteId && orgId) ? doc(firestore, 'orgs', orgId, 'sites', siteId) : null, [firestore, siteId, orgId]);
+  const { data: site } = useDoc<Site>(siteRef);
 
-  const personnelRef = useMemoFirebase(() => (personnelId && orgId) ? doc(firestore, 'orgs', orgId, 'personnel', personnelId) : null, [firestore, personnelId, orgId]);
+  const personnelRef = useMemoFirebase(() => (personnelId && orgId) ? doc(firestore, 'orgs', orgId, 'people', personnelId) : null, [firestore, personnelId, orgId]);
   const { data: person } = useDoc<Personnel>(personnelRef);
 
   if (sampleLoading) {
@@ -43,7 +43,7 @@ export default function SampleDetailsPage() {
     notFound();
   }
 
-  const result = sample.result;
+  const result = (sample as any).result;
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -60,15 +60,15 @@ export default function SampleDetailsPage() {
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Project</p>
-                <p className="text-lg font-semibold">{project?.name || 'Loading...'}</p>
+                <p className="text-lg font-semibold">{project?.clientName || 'Loading...'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Task</p>
-                <p className="text-lg font-semibold">{task?.name || 'Loading...'}</p>
+                <p className="text-sm font-medium text-muted-foreground">Site</p>
+                <p className="text-lg font-semibold">{site?.address || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Personnel</p>
-                <p className="text-lg font-semibold">{person?.name || 'Loading...'}</p>
+                <p className="text-lg font-semibold">{person?.displayName || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Start Time</p>
@@ -80,15 +80,15 @@ export default function SampleDetailsPage() {
               </div>
                <div>
                 <p className="text-sm font-medium text-muted-foreground">Duration</p>
-                <p className="text-lg font-semibold">{sample.duration} min</p>
+                <p className="text-lg font-semibold">{(sample as any).duration} min</p>
               </div>
                <div>
                 <p className="text-sm font-medium text-muted-foreground">Flow Rate</p>
-                <p className="text-lg font-semibold">{sample.flowRate} L/min</p>
+                <p className="text-lg font-semibold">{sample.preFlow} L/min</p>
               </div>
                <div>
                 <p className="text-sm font-medium text-muted-foreground">Volume</p>
-                <p className="text-lg font-semibold">{sample.volume} L</p>
+                <p className="text-lg font-semibold">{(sample as any).volume} L</p>
               </div>
             </div>
           </CardContent>

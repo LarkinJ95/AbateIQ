@@ -66,15 +66,18 @@ export function ImportPersonnelDialog() {
         }
 
         return {
-          name: columns[0],
+          displayName: columns[0],
           employeeId: columns[1],
           fitTestDueDate: fitTestDate.toISOString().split('T')[0],
           medicalClearanceDueDate: medClearanceDate.toISOString().split('T')[0],
+          orgId: orgId,
+          email: `${columns[0].toLowerCase().replace(' ', '.')}@example.com`,
+          role: 'viewer'
         };
       });
 
       for (const person of newPersonnel) {
-        await addDoc(collection(firestore, 'orgs', orgId, 'personnel'), person);
+        await addDoc(collection(firestore, 'orgs', orgId, 'people'), person);
       }
 
       toast({

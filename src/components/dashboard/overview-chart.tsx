@@ -28,30 +28,34 @@ export function OverviewChart({ samples }: OverviewChartProps) {
   const orgId = user?.orgId;
   const firestore = useFirestore();
 
-  const limitsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'exposureLimits')) : null, [firestore, orgId]);
+  const limitsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'analytes')) : null, [firestore, orgId]);
   const { data: exposureLimits } = useCollection<ExposureLimit>(limitsQuery);
 
   const averageResultsData = useMemo(() => {
+    const limits = exposureLimits || [];
     if (!samples || samples.length === 0) {
-      if (!exposureLimits) return [];
+      if (!limits) return [];
       // Find the first 4 exposure limits to show as example data
-      return exposureLimits.slice(0, 4).map(limit => ({
-        analyte: limit.analyte,
+      return limits.slice(0, 4).map(limit => ({
+        analyte: limit.name,
         average: 0,
-        units: limit.units,
+        units: limit.unit,
       }));
     }
 
     const resultsByAnalyte: { [key: string]: { total: number; count: number, units: string } } = {};
 
     samples.forEach(sample => {
-      if (sample.result && sample.result.concentration !== null && sample.result.status !== 'Pending') {
-        const analyte = sample.result.analyte;
-        if (!resultsByAnalyte[analyte]) {
-          resultsByAnalyte[analyte] = { total: 0, count: 0, units: sample.result.units || '' };
+      if (sample.resultValue !== null && sample.resultValue !== undefined) {
+        const analyteInfo = limits.find(l => l.id === sample.analyteId);
+        if (analyteInfo) {
+          const analyteName = analyteInfo.name;
+          if (!resultsByAnalyte[analyteName]) {
+            resultsByAnalyte[analyteName] = { total: 0, count: 0, units: analyteInfo.unit || '' };
+          }
+          resultsByAnalyte[analyteName].total += sample.resultValue;
+          resultsByAnalyte[analyteName].count += 1;
         }
-        resultsByAnalyte[analyte].total += sample.result.concentration;
-        resultsByAnalyte[analyte].count += 1;
       }
     });
 

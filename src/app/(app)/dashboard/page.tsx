@@ -21,7 +21,7 @@ export default function DashboardPage() {
 
     const projectsQuery = useMemoFirebase(() => {
         if (!orgId) return null;
-        return query(collection(firestore, 'orgs', orgId, 'projects'));
+        return query(collection(firestore, 'orgs', orgId, 'jobs'));
     }, [firestore, orgId]);
     const { data: projectsData } = useCollection<Project>(projectsQuery);
 
@@ -45,13 +45,13 @@ export default function DashboardPage() {
     
     const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
     const exceedancesQuery = useMemoFirebase(() => {
-        if (!orgId) return null;
+        if (!orgId || !user?.uid) return null;
         return query(
             collection(firestore, 'orgs', orgId, 'exceedances'),
             where('exceedanceDate', '>=', thirtyDaysAgo),
             orderBy('exceedanceDate', 'desc')
         );
-    }, [firestore, orgId, thirtyDaysAgo]);
+    }, [firestore, orgId, thirtyDaysAgo, user?.uid]);
     const { data: recentExceedances } = useCollection<Exceedance>(exceedancesQuery);
 
 

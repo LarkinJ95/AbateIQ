@@ -36,7 +36,7 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
   const orgId = user?.orgId;
   const [fitTestDate, setFitTestDate] = useState<Date>();
   const [medClearanceDate, setMedClearanceDate] = useState<Date>();
-  const [name, setName] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [isInspector, setIsInspector] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -46,13 +46,13 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
 
   useEffect(() => {
     if (isEditMode && person && isOpen) {
-      setName(person.name);
-      setEmployeeId(person.employeeId);
-      setFitTestDate(new Date(person.fitTestDueDate));
-      setMedClearanceDate(new Date(person.medicalClearanceDueDate));
+      setDisplayName(person.displayName);
+      setEmployeeId(person.employeeId || '');
+      if (person.fitTestDueDate) setFitTestDate(new Date(person.fitTestDueDate));
+      if (person.medicalClearanceDueDate) setMedClearanceDate(new Date(person.medicalClearanceDueDate));
       setIsInspector(person.isInspector ?? false);
     } else {
-      setName('');
+      setDisplayName('');
       setEmployeeId('');
       setFitTestDate(undefined);
       setMedClearanceDate(undefined);
@@ -62,7 +62,7 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
   
   const handleSave = async () => {
     if (!firestore || !orgId) return;
-    if (!name || !employeeId || !fitTestDate || !medClearanceDate) {
+    if (!displayName || !employeeId || !fitTestDate || !medClearanceDate) {
         toast({
             title: 'Missing Fields',
             description: 'Please fill out all fields.',
@@ -72,24 +72,26 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
     }
 
     const personData: Partial<Personnel> = {
-        name,
+        displayName,
         employeeId,
         fitTestDueDate: format(fitTestDate, 'yyyy-MM-dd'),
         medicalClearanceDueDate: format(medClearanceDate, 'yyyy-MM-dd'),
         isInspector,
+        orgId,
+        email: person?.email || `${displayName.toLowerCase().replace(' ', '.')}@example.com`
     };
 
     try {
       if (isEditMode && person) {
-          const personRef = doc(firestore, 'orgs', orgId, 'personnel', person.id);
+          const personRef = doc(firestore, 'orgs', orgId, 'people', person.id);
           await updateDoc(personRef, personData);
       } else {
-          await addDoc(collection(firestore, 'orgs', orgId, 'personnel'), personData);
+          await addDoc(collection(firestore, 'orgs', orgId, 'people'), personData);
       }
       
       toast({
           title: isEditMode ? "Personnel Updated" : "Personnel Added",
-          description: `${name} has been ${isEditMode ? 'updated' : 'saved'}.`,
+          description: `${displayName} has been ${isEditMode ? 'updated' : 'saved'}.`,
         });
       setIsOpen(false);
     } catch (error) {
@@ -118,7 +120,7 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
             <Label htmlFor="name" className="text-right">
               Name
             </Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
+            <Input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="col-span-3" />
           </div>
            <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="employeeId" className="text-right">

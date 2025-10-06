@@ -20,13 +20,13 @@ export default function PersonnelPage() {
 
   const personnelQuery = useMemoFirebase(() => {
     if (!orgId) return null;
-    return query(collection(firestore, 'orgs', orgId, 'personnel'));
+    return query(collection(firestore, 'orgs', orgId, 'people'));
   }, [firestore, orgId]);
   const { data: personnel, isLoading } = useCollection<Personnel>(personnelQuery);
 
   const sortedPersonnel = useMemo(() => {
     if (!personnel) return [];
-    return [...personnel].sort((a, b) => a.name.localeCompare(b.name));
+    return [...personnel].sort((a, b) => a.displayName.localeCompare(b.displayName));
   }, [personnel]);
 
 

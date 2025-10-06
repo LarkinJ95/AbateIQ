@@ -72,8 +72,10 @@ export const columns = (options: { onEdit: (sample: Sample) => void; onDelete: (
     header: "Personnel",
     cell: ({ row }) => {
       const sample = row.original;
+      const personnelId = (sample as any).personnelId;
+      if (!personnelId) return sample.personnelName;
       return (
-        <Link href={`/personnel/${sample.personnelId}`} className="hover:underline">
+        <Link href={`/personnel/${personnelId}`} className="hover:underline">
           {sample.personnelName}
         </Link>
       )
@@ -87,7 +89,7 @@ export const columns = (options: { onEdit: (sample: Sample) => void; onDelete: (
     accessorKey: "concentration",
     header: "Result",
     cell: ({ row }) => {
-      const sample = row.original
+      const sample = row.original as any;
       const resultText = sample.concentration !== undefined && sample.result?.status !== 'Pending'
         ? `${sample.concentration} ${sample.units}`
         : 'Pending';

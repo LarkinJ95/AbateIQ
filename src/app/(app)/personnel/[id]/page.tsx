@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import Link from 'next/link';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
-import type { Personnel, Sample, Project, Task } from '@/lib/types';
+import type { Personnel, Sample, Project, Site } from '@/lib/types';
 import { useMemo } from 'react';
 
 export default function PersonnelDetailsPage() {
@@ -26,7 +26,7 @@ export default function PersonnelDetailsPage() {
 
   const personRef = useMemoFirebase(() => {
     if(!orgId) return null;
-    return doc(firestore, 'orgs', orgId, 'personnel', id)
+    return doc(firestore, 'orgs', orgId, 'people', id)
   }, [firestore, id, orgId]);
   const { data: person, isLoading: personLoading } = useDoc<Personnel>(personRef);
 
@@ -36,26 +36,26 @@ export default function PersonnelDetailsPage() {
   }, [firestore, id, orgId]);
   const { data: personSamples, isLoading: samplesLoading } = useCollection<Sample>(personSamplesQuery);
 
-  const projectsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'projects')) : null, [firestore, orgId]);
+  const projectsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'jobs')) : null, [firestore, orgId]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
-  const tasksQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'tasks')) : null, [firestore, orgId]);
-  const { data: tasks } = useCollection<Task>(tasksQuery);
+  const sitesQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'sites')) : null, [firestore, orgId]);
+  const { data: sites } = useCollection<Site>(sitesQuery);
 
 
   const personSamplesWithDetails = useMemo(() => {
-    if (!personSamples || !projects || !tasks) return [];
+    if (!personSamples || !projects || !sites) return [];
     return personSamples
       .map(sample => {
-        const project = projects.find(p => p.id === sample.projectId);
-        const task = tasks.find(t => t.id === sample.taskId);
+        const project = projects.find(p => p.id === sample.jobId);
+        const site = sites.find(s => s.id === sample.siteId);
         return {
           ...sample,
-          projectName: project?.name || 'N/A',
-          taskName: task?.name || 'N/A',
+          projectName: project?.clientName || 'N/A',
+          siteName: site?.address || 'N/A',
         };
       });
-  }, [personSamples, projects, tasks]);
+  }, [personSamples, projects, sites]);
 
   if (personLoading) {
     return <div>Loading...</div>
@@ -65,7 +65,8 @@ export default function PersonnelDetailsPage() {
     notFound();
   }
 
-  const getStatus = (dateString: string) => {
+  const getStatus = (dateString?: string) => {
+    if (!dateString) return { text: 'Not Set', variant: 'outline' as const };
     const date = new Date(dateString);
     if (isPast(date)) {
       return { text: 'Expired', variant: 'destructive' as const };
@@ -82,14 +83,14 @@ export default function PersonnelDetailsPage() {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <Header title={`Personnel: ${person.name}`} />
+      <Header title={`Personnel: ${person.displayName}`} />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="font-headline">Personnel Details</CardTitle>
               <CardDescription>
-                Certification and compliance status for {person.name}.
+                Certification and compliance status for {person.displayName}.
               </CardDescription>
             </div>
             <AddPersonnelDialog person={person}>
@@ -108,7 +109,7 @@ export default function PersonnelDetailsPage() {
               <div></div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Fit Test Due Date</p>
-                <p className="text-lg font-semibold">{format(new Date(person.fitTestDueDate), 'PPP')}</p>
+                <p className="text-lg font-semibold">{person.fitTestDueDate ? format(new Date(person.fitTestDueDate), 'PPP') : 'N/A'}</p>
               </div>
                <div>
                 <p className="text-sm font-medium text-muted-foreground">Fit Test Status</p>
@@ -116,7 +117,7 @@ export default function PersonnelDetailsPage() {
               </div>
                <div>
                 <p className="text-sm font-medium text-muted-foreground">Medical Clearance Due</p>
-                <p className="text-lg font-semibold">{format(new Date(person.medicalClearanceDueDate), 'PPP')}</p>
+                <p className="text-lg font-semibold">{person.medicalClearanceDueDate ? format(new Date(person.medicalClearanceDueDate), 'PPP') : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Medical Status</p>
@@ -162,7 +163,7 @@ export default function PersonnelDetailsPage() {
                                       </TableCell>
                                       <TableCell>{sample.projectName}</TableCell>
                                       <TableCell>
-                                          {sample.result?.concentration !== undefined ? `${sample.result.concentration} ${sample.result.units}` : 'Pending'}
+                                          {(sample as any).result?.concentration !== undefined ? `${(sample as any).result.concentration} ${(sample as any).result.units}` : 'Pending'}
                                       </TableCell>
                                   </TableRow>
                               ))}

@@ -22,7 +22,7 @@ export default function NeaPage() {
     const { toast } = useToast();
 
     const neasQuery = useMemoFirebase(() => {
-        if (!orgId) return null;
+        if (!orgId || !user?.uid) return null;
         return query(collection(firestore, 'orgs', orgId, 'neas'), where('ownerId', '==', user.uid));
     }, [firestore, orgId, user?.uid]);
     const { data: existingNeas, isLoading } = useCollection<ExistingNea>(neasQuery);
@@ -49,9 +49,9 @@ export default function NeaPage() {
     }
 
     const handleNeaSaved = async (newNea: Omit<ExistingNea, 'id'>) => {
-        if (!orgId) return;
+        if (!orgId || !user?.uid) return;
         try {
-            await addDoc(collection(firestore, 'orgs', orgId, 'neas'), newNea);
+            await addDoc(collection(firestore, 'orgs', orgId, 'neas'), { ...newNea, ownerId: user.uid });
         } catch (error) {
             toast({
                 title: 'Error Saving NEA',

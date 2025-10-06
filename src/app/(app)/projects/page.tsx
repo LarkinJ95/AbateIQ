@@ -36,13 +36,13 @@ export default function ProjectsPage() {
 
   const projectsQuery = useMemoFirebase(() => {
     if (!orgId) return null;
-    return query(collection(firestore, 'orgs', orgId, 'projects'));
+    return query(collection(firestore, 'orgs', orgId, 'jobs'));
   }, [firestore, orgId]);
   const { data: projectsData, isLoading } = useCollection<Project>(projectsQuery);
 
   const projects = useMemo(() => {
     if (!projectsData) return [];
-    return projectsData.sort((a, b) => (a.jobNumber || '').localeCompare(b.jobNumber || ''));
+    return projectsData.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
   }, [projectsData]);
 
   const handleSaveProject = async (projectData: Partial<Project>) => {
@@ -50,13 +50,15 @@ export default function ProjectsPage() {
         toast({ title: "Not authenticated", variant: 'destructive' });
         return;
     }
+    const dataToSave = { ...projectData, orgId };
+    
     try {
         if (projectData.id) {
-            const projectRef = doc(firestore, 'orgs', orgId, 'projects', projectData.id);
-            await updateDoc(projectRef, projectData);
+            const projectRef = doc(firestore, 'orgs', orgId, 'jobs', projectData.id);
+            await updateDoc(projectRef, dataToSave);
             toast({ title: 'Project Updated' });
         } else {
-            await addDoc(collection(firestore, 'orgs', orgId, 'projects'), projectData);
+            await addDoc(collection(firestore, 'orgs', orgId, 'jobs'), dataToSave);
             toast({ title: 'Project Added' });
         }
     } catch (error) {
@@ -82,10 +84,10 @@ export default function ProjectsPage() {
   const handleDelete = async (projectToDelete: Project) => {
     if (!firestore || !orgId) return;
     try {
-        await deleteDoc(doc(firestore, 'orgs', orgId, 'projects', projectToDelete.id));
+        await deleteDoc(doc(firestore, 'orgs', orgId, 'jobs', projectToDelete.id));
         toast({
             title: 'Project Deleted',
-            description: `${projectToDelete.name} has been deleted.`,
+            description: `${projectToDelete.clientName} has been deleted.`,
             variant: 'destructive',
         });
     } catch (error) {
@@ -138,10 +140,10 @@ export default function ProjectsPage() {
                       <TableRow key={project.id}>
                         <TableCell className="font-medium">
                            <Link href={`/projects/${project.id}`} className="hover:underline">
-                            {project.name}
+                            {project.clientName}
                            </Link>
                         </TableCell>
-                        <TableCell>{project.jobNumber}</TableCell>
+                        <TableCell>{project.id}</TableCell>
                         <TableCell>{project.location}</TableCell>
                         <TableCell>
                           <Badge variant={getStatusVariant(project.status)}>

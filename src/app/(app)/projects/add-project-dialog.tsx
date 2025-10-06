@@ -34,8 +34,7 @@ interface AddProjectDialogProps {
 }
 
 export function AddProjectDialog({ project, children, onSave }: AddProjectDialogProps) {
-    const [name, setName] = useState('');
-    const [jobNumber, setJobNumber] = useState('');
+    const [clientName, setClientName] = useState('');
     const [location, setLocation] = useState('');
     const [status, setStatus] = useState<Project['status'] | ''>('');
     const [startDate, setStartDate] = useState<Date>();
@@ -47,15 +46,13 @@ export function AddProjectDialog({ project, children, onSave }: AddProjectDialog
 
     useEffect(() => {
         if(isEditMode && project) {
-            setName(project.name);
-            setJobNumber(project.jobNumber || '');
+            setClientName(project.clientName);
             setLocation(project.location);
             setStatus(project.status);
             setStartDate(new Date(project.startDate));
             setEndDate(new Date(project.endDate));
         } else {
-            setName('');
-            setJobNumber('');
+            setClientName('');
             setLocation('');
             setStatus('Active');
             setStartDate(undefined);
@@ -65,7 +62,7 @@ export function AddProjectDialog({ project, children, onSave }: AddProjectDialog
 
 
     const handleSave = async () => {
-        if (!name || !location || !status || !startDate || !endDate) {
+        if (!clientName || !location || !status || !startDate || !endDate) {
             toast({
                 title: 'Missing Information',
                 description: 'Please fill out all required fields.',
@@ -75,8 +72,7 @@ export function AddProjectDialog({ project, children, onSave }: AddProjectDialog
         }
 
         const projectData: Partial<Project> = {
-            name,
-            jobNumber,
+            clientName,
             location,
             status,
             startDate: format(startDate, 'yyyy-MM-dd'),
@@ -106,23 +102,12 @@ export function AddProjectDialog({ project, children, onSave }: AddProjectDialog
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
-              Project Name
+              Client Name
             </Label>
             <Input
               id="name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="col-span-3"
-            />
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="jobNumber" className="text-right">
-              Job Number
-            </Label>
-            <Input
-              id="jobNumber"
-              value={jobNumber}
-              onChange={e => setJobNumber(e.target.value)}
+              value={clientName}
+              onChange={e => setClientName(e.target.value)}
               className="col-span-3"
             />
           </div>

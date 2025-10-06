@@ -36,7 +36,8 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
   const { user } = useUser();
   const orgId = user?.orgId;
 
-  const getStatus = (dateString: string) => {
+  const getStatus = (dateString?: string) => {
+    if (!dateString) return { text: 'Not Set', variant: 'outline' as const };
     const date = new Date(dateString);
     if (isPast(date)) {
       return { text: 'Expired', variant: 'destructive' as const };
@@ -51,10 +52,10 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
   const handleDelete = async (person: Personnel) => {
     if (!firestore || !orgId) return;
     try {
-        await deleteDoc(doc(firestore, 'orgs', orgId, 'personnel', person.id));
+        await deleteDoc(doc(firestore, 'orgs', orgId, 'people', person.id));
         toast({
             title: 'Personnel Deleted',
-            description: `${person.name} has been deleted.`,
+            description: `${person.displayName} has been deleted.`,
             variant: 'destructive',
         });
     } catch (error) {
@@ -85,7 +86,7 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
           return (
             <TableRow key={person.id}>
               <TableCell className="font-medium">
-                <Link href={`/personnel/${person.id}`} className="hover:underline">{person.name}</Link>
+                <Link href={`/personnel/${person.id}`} className="hover:underline">{person.displayName}</Link>
               </TableCell>
               <TableCell>
                 {person.isInspector && <Badge variant="outline"><UserCheck className="mr-1 h-3 w-3"/> Inspector</Badge>}

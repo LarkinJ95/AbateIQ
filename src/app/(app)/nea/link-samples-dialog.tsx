@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface LinkSamplesDialogProps {
-    allSamples: Sample[];
+    allSamples: (Sample & {result?: any})[];
     linkedSampleIds: string[];
     onSamplesLinked: (sampleIds: string[]) => void;
 }
@@ -84,10 +84,10 @@ export function LinkSamplesDialog({ allSamples, linkedSampleIds, onSamplesLinked
                             <TableCell>
                                 <label htmlFor={`sample-${sample.id}`} className="font-medium">{sample.id}</label>
                             </TableCell>
-                            <TableCell>{sample.result?.analyte || 'N/A'}</TableCell>
+                            <TableCell>{sample.analyteId || 'N/A'}</TableCell>
                             <TableCell>
-                                {sample.result?.concentration !== undefined && sample.result.status !== 'Pending'
-                                ? `${sample.result.concentration} ${sample.result.units}`
+                                {sample.resultValue !== undefined
+                                ? `${sample.resultValue} ${sample.resultUnit}`
                                 : 'Pending'}
                             </TableCell>
                         </TableRow>

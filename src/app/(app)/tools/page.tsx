@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, PlusCircle, Calculator } from 'lucide-react';
+import { Trash2, PlusCircle, Calculator, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -71,6 +71,14 @@ function TwaCalculator() {
         sum: sumOfConcentrationTimesDuration,
     };
   }, [samples, shiftDuration]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(twaResult.twa.toFixed(4));
+    toast({
+        title: "Copied to Clipboard",
+        description: `TWA value ${twaResult.twa.toFixed(4)} copied.`
+    });
+  }
 
   return (
     <Card>
@@ -151,7 +159,12 @@ function TwaCalculator() {
                 </div>
                 <div>
                     <p className="text-sm text-muted-foreground">{shiftDuration / 60}-Hour TWA</p>
-                    <p className="text-2xl font-bold text-primary">{twaResult.twa.toFixed(4)}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="text-2xl font-bold text-primary">{twaResult.twa.toFixed(4)}</p>
+                        <Button variant="outline" size="icon" onClick={handleCopy}>
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

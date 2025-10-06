@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Header } from "@/components/header";
 import { 
@@ -34,20 +35,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { Company } from "@/lib/types";
-
-interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: 'admin' | 'manager' | 'user';
-  status: 'active' | 'inactive' | 'pending';
-  organization: string;
-  jobTitle: string;
-  lastLogin?: string;
-  createdAt: string;
-}
+import { Company, User, AppFeature } from "@/lib/types";
 
 interface SystemStats {
   totalUsers: number;
@@ -81,6 +69,7 @@ const mockUsers: User[] = [
         jobTitle: 'Software Engineer',
         lastLogin: '2024-07-25T10:00:00Z',
         createdAt: '2024-01-01T10:00:00Z',
+        featureAccess: ['dashboard', 'projects', 'airMonitoring', 'surveys', 'nea', 'documents', 'tools', 'settings', 'admin']
     }
 ];
 
@@ -93,6 +82,18 @@ const mockCompany: Company = {
     createdAt: '2024-01-01T10:00:00Z', 
     weatherApiKey: '9567e2b1ebb94c4989c131321250610'
 };
+
+const availableFeatures: { id: AppFeature, label: string }[] = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'projects', label: 'Projects' },
+    { id: 'airMonitoring', label: 'Air Monitoring' },
+    { id: 'surveys', label: 'Surveys' },
+    { id: 'nea', label: 'NEA Tool' },
+    { id: 'documents', label: 'Documents' },
+    { id: 'tools', label: 'Tools' },
+    { id: 'settings', label: 'Settings' },
+    { id: 'admin', label: 'Admin' },
+]
 
 export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -115,7 +116,8 @@ export default function AdminDashboard() {
     organization: "",
     jobTitle: "",
     role: "user" as 'admin' | 'manager' | 'user',
-    status: "active" as 'active' | 'inactive' | 'pending'
+    status: "active" as 'active' | 'inactive' | 'pending',
+    featureAccess: [] as AppFeature[]
   });
 
   const [editUserData, setEditUserData] = useState({
@@ -126,7 +128,8 @@ export default function AdminDashboard() {
     organization: "",
     jobTitle: "",
     role: "user" as 'admin' | 'manager' | 'user',
-    status: "active" as 'active' | 'inactive' | 'pending'
+    status: "active" as 'active' | 'inactive' | 'pending',
+    featureAccess: [] as AppFeature[]
   });
 
 
@@ -147,7 +150,8 @@ export default function AdminDashboard() {
       organization: user.organization,
       jobTitle: user.jobTitle,
       role: user.role,
-      status: user.status
+      status: user.status,
+      featureAccess: user.featureAccess || []
     });
     setSelectedUser(user);
     setIsEditModalOpen(true);
@@ -183,7 +187,8 @@ export default function AdminDashboard() {
         organization: "",
         jobTitle: "",
         role: "user",
-        status: "active"
+        status: "active",
+        featureAccess: []
       });
   }
   
@@ -233,6 +238,20 @@ export default function AdminDashboard() {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const handleFeatureAccessChange = (feature: AppFeature, checked: boolean, mode: 'new' | 'edit') => {
+      if (mode === 'new') {
+        setNewUserData(prev => ({
+            ...prev,
+            featureAccess: checked ? [...prev.featureAccess, feature] : prev.featureAccess.filter(f => f !== feature)
+        }));
+      } else {
+        setEditUserData(prev => ({
+            ...prev,
+            featureAccess: checked ? [...prev.featureAccess, feature] : prev.featureAccess.filter(f => f !== feature)
+        }));
+      }
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -609,7 +628,7 @@ export default function AdminDashboard() {
 
       {/* Add New User Modal */}
       <Dialog open={isAddUserModalOpen} onOpenChange={setIsAddUserModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Add New User</DialogTitle>
             <DialogDescription>
@@ -617,7 +636,7 @@ export default function AdminDashboard() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="new-first-name">First Name</Label>
@@ -734,6 +753,23 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+             <div className="space-y-2">
+                <Label>Feature Access</Label>
+                <div className="grid grid-cols-2 gap-2 p-4 border rounded-md">
+                    {availableFeatures.map(feature => (
+                        <div key={feature.id} className="flex items-center space-x-2">
+                            <Checkbox 
+                                id={`new-${feature.id}`} 
+                                checked={newUserData.featureAccess.includes(feature.id)}
+                                onCheckedChange={(checked) => handleFeatureAccessChange(feature.id, !!checked, 'new')}
+                            />
+                            <Label htmlFor={`new-${feature.id}`} className="font-normal">{feature.label}</Label>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+
             <div className="flex justify-end gap-2 pt-4">
               <Button 
                 variant="outline" 
@@ -756,7 +792,7 @@ export default function AdminDashboard() {
 
       {/* Edit User Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
@@ -764,7 +800,7 @@ export default function AdminDashboard() {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="edit-first-name">First Name</Label>
@@ -852,6 +888,23 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+             <div className="space-y-2">
+                <Label>Feature Access</Label>
+                <div className="grid grid-cols-2 gap-2 p-4 border rounded-md">
+                    {availableFeatures.map(feature => (
+                        <div key={feature.id} className="flex items-center space-x-2">
+                            <Checkbox 
+                                id={`edit-${feature.id}`} 
+                                checked={editUserData.featureAccess.includes(feature.id)}
+                                onCheckedChange={(checked) => handleFeatureAccessChange(feature.id, !!checked, 'edit')}
+                            />
+                            <Label htmlFor={`edit-${feature.id}`} className="font-normal">{feature.label}</Label>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+
             <div className="flex justify-end gap-2 pt-4">
               <Button 
                 variant="outline" 
@@ -875,5 +928,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    

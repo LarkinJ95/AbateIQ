@@ -14,6 +14,22 @@ export type Company = {
   weatherApiKey?: string;
 };
 
+export type AppFeature = 'dashboard' | 'projects' | 'airMonitoring' | 'surveys' | 'nea' | 'documents' | 'tools' | 'settings' | 'admin';
+
+export type User = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: 'admin' | 'manager' | 'user';
+  status: 'active' | 'inactive' | 'pending';
+  organization: string;
+  jobTitle: string;
+  lastLogin?: string;
+  createdAt: string;
+  featureAccess?: AppFeature[];
+};
+
 export type Project = {
   id: string;
   name: string;

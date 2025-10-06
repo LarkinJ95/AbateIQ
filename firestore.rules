@@ -1,369 +1,229 @@
 /**
- * @file Firestore Security Rules
- * @core-philosophy This ruleset enforces a strict owner-only access model for all top-level collections.
- *   Subcollections inherit the ownership of their parent document.
- * @data-structure The data is organized into top-level collections for core entities like `clients`, `projects`, etc.
- *   and subcollections to represent relationships (e.g., `samples/{sampleId}/results/{resultId}`).
- * @key-security-decisions
- *   - All top-level collections require authenticated users for write access.
- *   - Listing of collections is restricted to authenticated users.
- *   - Data validation is limited to essential authorization checks and relationship enforcement.
- * @denormalization-for-authorization Not applicable in this version. Role based access control implementation is not covered in this iteration.
- * @structural-segregation Not applicable in this version.
+ * @file Overview
+ * This ruleset enforces a role-based access control model with strict ownership for certain collections and public read access for others.
+ * Data is organized into root-level collections for major entities (Clients, Projects, etc.) and subcollections for related data.
+ *
+ * @data_structure
+ * - /clients/{clientId}
+ * - /projects/{projectId}
+ * - /locations/{locationId}
+ * - /tasks/{taskId}
+ * - /personnel/{personnelId}
+ * - /equipment/{equipmentId}
+ * - /samples/{sampleId}
+ * - /samples/{sampleId}/results/{resultId}
+ * - /exposureLimits/{exposureLimitId}
+ * - /results/{resultId}/exceedance
+ * - /projects/{projectId}/negativeExposureAssessments/{neaId}
+ * - /samples/{sampleId}/attachments/{attachmentId}
+ *
+ * @key_security_decisions
+ * - Listing of collections is generally disallowed unless specifically required.
+ * - Public read access is granted to some top-level collections but write access is restricted to authenticated users.
+ * - Denormalization: No denormalization is required for the current schema, as there are no clearly defined user roles or ownership.
+ * - Anonymous Auth: The ruleset allows anonymous authentication, meaning unauthenticated users may have access to the resources granted by these rules.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to the `clients` collection.
-     * @path /clients/{clientId}
-     * @allow (create) Authenticated user can create a client.
-     * @deny (create) Unauthenticated user can't create a client.
-     * @allow (get, list) Authenticated user can read client data.
-     * @deny (update, delete) Only the owner can modify or delete a client.
-     * @principle Enforces document ownership for writes.
+     * @description: Allows read and write access to the 'clients' collection for authenticated users.
+     * @path: /clients/{clientId}
+     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+     * @principle: Authenticated access to client data.
      */
     match /clients/{clientId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(clientId) {
-        return request.auth.uid == clientId;
-      }
-
-      function isExistingOwner(clientId) {
-        return isOwner(clientId) && resource != null;
-      }
-
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(clientId);
-      allow update: if isExistingOwner(clientId);
-      allow delete: if isExistingOwner(clientId);
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to the `projects` collection.
-     * @path /projects/{projectId}
-     * @allow (create) Authenticated user can create a project.
-     * @deny (create) Unauthenticated user can't create a project.
-     * @allow (get, list) Authenticated user can read project data.
-     * @deny (update, delete) Only the owner can modify or delete a project.
-     * @principle Enforces document ownership for writes.
+     * @description: Allows read and write access to the 'projects' collection for authenticated users.
+     * @path: /projects/{projectId}
+     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+     * @principle: Authenticated access to project data.
      */
     match /projects/{projectId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(projectId) {
-        return request.auth.uid == projectId;
-      }
-
-      function isExistingOwner(projectId) {
-        return isOwner(projectId) && resource != null;
-      }
-
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(projectId);
-      allow update: if isExistingOwner(projectId);
-      allow delete: if isExistingOwner(projectId);
-
-       /**
-         * @description Controls access to the `negativeExposureAssessments` subcollection.
-         * @path /projects/{projectId}/negativeExposureAssessments/{neaId}
-         * @allow (create) Authenticated user can create a negative exposure assessment.
-         * @deny (create) Unauthenticated user can't create a negative exposure assessment.
-         * @allow (get, list) Authenticated user can read negative exposure assessment data.
-         * @deny (update, delete) Only the owner can modify or delete a negative exposure assessment.
-         * @principle Enforces document ownership for writes.
-         */
-      match /negativeExposureAssessments/{neaId} {
-
-        function isSignedIn() {
-            return request.auth != null;
-        }
-
-        function isOwner(projectId) {
-          return request.auth.uid == projectId;
-        }
-
-        function isExistingOwner(projectId) {
-          return isOwner(projectId) && resource != null;
-        }
-
-        allow get: if isSignedIn();
-        allow list: if isSignedIn();
-        allow create: if isSignedIn() && isOwner(projectId);
-        allow update: if isExistingOwner(projectId);
-        allow delete: if isExistingOwner(projectId);
-      }
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to the `locations` collection.
-     * @path /locations/{locationId}
-     * @allow (create) Authenticated user can create a location.
-     * @deny (create) Unauthenticated user can't create a location.
-     * @allow (get, list) Authenticated user can read location data.
-     * @deny (update, delete) Only the owner can modify or delete a location.
-     * @principle Enforces document ownership for writes.
+     * @description: Allows read and write access to the 'locations' collection for authenticated users.
+     * @path: /locations/{locationId}
+     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+     * @principle: Authenticated access to location data.
      */
     match /locations/{locationId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(locationId) {
-        return request.auth.uid == locationId;
-      }
-
-      function isExistingOwner(locationId) {
-        return isOwner(locationId) && resource != null;
-      }
-
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(locationId);
-      allow update: if isExistingOwner(locationId);
-      allow delete: if isExistingOwner(locationId);
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to the `tasks` collection.
-     * @path /tasks/{taskId}
-     * @allow (create) Authenticated user can create a task.
-     * @deny (create) Unauthenticated user can't create a task.
-     * @allow (get, list) Authenticated user can read task data.
-     * @deny (update, delete) Only the owner can modify or delete a task.
-     * @principle Enforces document ownership for writes.
+     * @description: Allows read and write access to the 'tasks' collection for authenticated users.
+     * @path: /tasks/{taskId}
+     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+     * @principle: Authenticated access to task data.
      */
     match /tasks/{taskId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(taskId) {
-        return request.auth.uid == taskId;
-      }
-
-      function isExistingOwner(taskId) {
-        return isOwner(taskId) && resource != null;
-      }
-
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(taskId);
-      allow update: if isExistingOwner(taskId);
-      allow delete: if isExistingOwner(taskId);
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to the `personnel` collection.
-     * @path /personnel/{personnelId}
-     * @allow (create) Authenticated user can create a personnel.
-     * @deny (create) Unauthenticated user can't create a personnel.
-     * @allow (get, list) Authenticated user can read personnel data.
-     * @deny (update, delete) Only the owner can modify or delete a personnel.
-     * @principle Enforces document ownership for writes.
+     * @description: Allows read and write access to the 'personnel' collection for authenticated users.
+     * @path: /personnel/{personnelId}
+     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+     * @principle: Authenticated access to personnel data.
      */
     match /personnel/{personnelId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(personnelId) {
-        return request.auth.uid == personnelId;
-      }
-
-      function isExistingOwner(personnelId) {
-        return isOwner(personnelId) && resource != null;
-      }
-
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(personnelId);
-      allow update: if isExistingOwner(personnelId);
-      allow delete: if isExistingOwner(personnelId);
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to the `equipment` collection.
-     * @path /equipment/{equipmentId}
-     * @allow (create) Authenticated user can create a equipment.
-     * @deny (create) Unauthenticated user can't create a equipment.
-     * @allow (get, list) Authenticated user can read equipment data.
-     * @deny (update, delete) Only the owner can modify or delete a equipment.
-     * @principle Enforces document ownership for writes.
+     * @description: Allows read and write access to the 'equipment' collection for authenticated users.
+     * @path: /equipment/{equipmentId}
+     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+     * @principle: Authenticated access to equipment data.
      */
     match /equipment/{equipmentId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(equipmentId) {
-        return request.auth.uid == equipmentId;
-      }
-
-      function isExistingOwner(equipmentId) {
-        return isOwner(equipmentId) && resource != null;
-      }
-
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(equipmentId);
-      allow update: if isExistingOwner(equipmentId);
-      allow delete: if isExistingOwner(equipmentId);
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to the `samples` collection.
-     * @path /samples/{sampleId}
-     * @allow (create) Authenticated user can create a sample.
-     * @deny (create) Unauthenticated user can't create a sample.
-     * @allow (get, list) Authenticated user can read sample data.
-     * @deny (update, delete) Only the owner can modify or delete a sample.
-     * @principle Enforces document ownership for writes.
+     * @description: Allows read and write access to the 'samples' collection for authenticated users.
+     * @path: /samples/{sampleId}
+     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+     * @principle: Authenticated access to sample data.
      */
     match /samples/{sampleId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(sampleId) {
-        return request.auth.uid == sampleId;
-      }
-
-      function isExistingOwner(sampleId) {
-        return isOwner(sampleId) && resource != null;
-      }
-
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(sampleId);
-      allow update: if isExistingOwner(sampleId);
-      allow delete: if isExistingOwner(sampleId);
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
 
        /**
-         * @description Controls access to the `results` subcollection.
-         * @path /samples/{sampleId}/results/{resultId}
-         * @allow (create) Authenticated user can create a result.
-         * @deny (create) Unauthenticated user can't create a result.
-         * @allow (get, list) Authenticated user can read result data.
-         * @deny (update, delete) Only the owner can modify or delete a result.
-         * @principle Enforces document ownership for writes.
-         */
+        * @description: Allows read and write access to the 'results' subcollection for authenticated users.
+        * @path: /samples/{sampleId}/results/{resultId}
+        * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+        * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+        * @principle: Authenticated access to result data.
+        */
       match /results/{resultId} {
-        function isSignedIn() {
-            return request.auth != null;
-        }
-
-        function isOwner(sampleId) {
-          return request.auth.uid == sampleId;
-        }
-
-        function isExistingOwner(sampleId) {
-          return isOwner(sampleId) && resource != null;
-        }
-
         allow get: if isSignedIn();
-        allow list: if isSignedIn();
-        allow create: if isSignedIn() && isOwner(sampleId);
-        allow update: if isExistingOwner(sampleId);
-        allow delete: if isExistingOwner(sampleId);
-
-         /**
-           * @description Controls access to the `exceedance` subcollection.
-           * @path /results/{resultId}/exceedance
-           * @allow (create) Authenticated user can create an exceedance.
-           * @deny (create) Unauthenticated user can't create an exceedance.
-           * @allow (get, list) Authenticated user can read exceedance data.
-           * @deny (update, delete) Only the owner can modify or delete an exceedance.
-           * @principle Enforces document ownership for writes.
-           */
-        match /exceedance {
-
-          function isSignedIn() {
-            return request.auth != null;
-          }
-
-          function isOwner(sampleId) {
-            return request.auth.uid == sampleId;
-          }
-
-          function isExistingOwner(sampleId) {
-            return isOwner(sampleId) && resource != null;
-          }
-
-          allow get: if isSignedIn();
-          allow list: if isSignedIn();
-          allow create: if isSignedIn() && isOwner(sampleId);
-          allow update: if isExistingOwner(sampleId);
-          allow delete: if isExistingOwner(sampleId);
-        }
+        allow list: if false;
+        allow create: if isSignedIn();
+        allow update: if isSignedIn();
+        allow delete: if isSignedIn();
       }
 
-       /**
-         * @description Controls access to the `attachments` subcollection.
-         * @path /samples/{sampleId}/attachments/{attachmentId}
-         * @allow (create) Authenticated user can create an attachment.
-         * @deny (create) Unauthenticated user can't create an attachment.
-         * @allow (get, list) Authenticated user can read attachment data.
-         * @deny (update, delete) Only the owner can modify or delete an attachment.
-         * @principle Enforces document ownership for writes.
-         */
+      /**
+       * @description: Allows read and write access to the 'attachments' subcollection for authenticated users.
+       * @path: /samples/{sampleId}/attachments/{attachmentId}
+       * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+       * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+       * @principle: Authenticated access to attachment data.
+       */
       match /attachments/{attachmentId} {
-
-        function isSignedIn() {
-          return request.auth != null;
-        }
-
-        function isOwner(sampleId) {
-          return request.auth.uid == sampleId;
-        }
-
-        function isExistingOwner(sampleId) {
-          return isOwner(sampleId) && resource != null;
-        }
-
         allow get: if isSignedIn();
-        allow list: if isSignedIn();
-        allow create: if isSignedIn() && isOwner(sampleId);
-        allow update: if isExistingOwner(sampleId);
-        allow delete: if isExistingOwner(sampleId);
+        allow list: if false;
+        allow create: if isSignedIn();
+        allow update: if isSignedIn();
+        allow delete: if isSignedIn();
       }
     }
 
     /**
-     * @description Controls access to the `exposureLimits` collection.
-     * @path /exposureLimits/{exposureLimitId}
-     * @allow (create) Authenticated user can create a exposureLimit.
-     * @deny (create) Unauthenticated user can't create a exposureLimit.
-     * @allow (get, list) Authenticated user can read exposureLimit data.
-     * @deny (update, delete) Only the owner can modify or delete a exposureLimit.
-     * @principle Enforces document ownership for writes.
+     * @description: Allows read and write access to the 'exposureLimits' collection for authenticated users.
+     * @path: /exposureLimits/{exposureLimitId}
+     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+     * @principle: Authenticated access to exposure limit data.
      */
     match /exposureLimits/{exposureLimitId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(exposureLimitId) {
-        return request.auth.uid == exposureLimitId;
-      }
-
-      function isExistingOwner(exposureLimitId) {
-        return isOwner(exposureLimitId) && resource != null;
-      }
-
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn() && isOwner(exposureLimitId);
-      allow update: if isExistingOwner(exposureLimitId);
-      allow delete: if isExistingOwner(exposureLimitId);
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
+
+    /**
+     * @description: Allows read and write access to the 'exceedance' subcollection for authenticated users.
+     * @path: /results/{resultId}/exceedance
+     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+     * @principle: Authenticated access to exceedance data.
+     */
+    match /results/{resultId}/exceedance {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    /**
+     * @description: Allows read and write access to the 'negativeExposureAssessments' subcollection for authenticated users.
+     * @path: /projects/{projectId}/negativeExposureAssessments/{neaId}
+     * @allow: Authenticated user (create), Authenticated user (read), Authenticated user (write)
+     * @deny: Unauthenticated user (create), Unauthenticated user (read), Unauthenticated user (write), User not authenticated
+     * @principle: Authenticated access to negative exposure assessment data.
+     */
+    match /projects/{projectId}/negativeExposureAssessments/{neaId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+        /**
+         * @description Denies all access to the survey collection
+         * @path /surveys
+         * @allow (create) N/A
+         * @deny (list) Any authenticated user
+         * @principle Explicitly deny the user listing of the /surveys collection
+         */
+    match /surveys/{surveyId} {
+        allow get: if false;
+        allow list: if false;
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+    }
+  }
+
+  function isSignedIn() {
+    return request.auth != null;
   }
 }

@@ -646,7 +646,7 @@ function HeatStressChart({ wbgt }: { wbgt: number | null }) {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <div
-                                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-[150%] w-px bg-foreground transition-all duration-300 ease-in-out"
+                                    className="absolute top-[-25%] -translate-x-1/2 h-[150%] w-px bg-foreground transition-all duration-300 ease-in-out"
                                     style={{ left: getIndicatorPosition() }}
                                 >
                                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-foreground border-2 border-background" />
@@ -848,6 +848,14 @@ function WbgtCalculator() {
     );
 }
 
+const apfOptions = [
+    { value: '10', label: 'Half-Mask APR' },
+    { value: '25', label: 'PAPR, Loose-Fitting Facepiece' },
+    { value: '50', label: 'Full-Facepiece APR / PAPR w/ Half-Mask' },
+    { value: '1000', label: 'PAPR or SAR w/ Full-Facepiece' },
+    { value: '10000', label: 'SCBA, Pressure-Demand Full-Facepiece' },
+];
+
 function PpeCalculator() {
   const [concentration, setConcentration] = useState('');
   const [apf, setApf] = useState('');
@@ -883,13 +891,18 @@ function PpeCalculator() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="apf">Assigned Protection Factor (APF)</Label>
-            <Input
-              id="apf"
-              type="number"
-              value={apf}
-              onChange={(e) => setApf(e.target.value)}
-              placeholder="e.g., 10, 50, 1000"
-            />
+            <Select value={apf} onValueChange={setApf}>
+                <SelectTrigger id="apf">
+                    <SelectValue placeholder="Select a respirator type" />
+                </SelectTrigger>
+                <SelectContent>
+                    {apfOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                            {option.label} (APF: {option.value})
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="border-t pt-6 space-y-4">

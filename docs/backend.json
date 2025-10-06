@@ -7,106 +7,128 @@
       "type": "object",
       "description": "Represents a company or organization using the AbateIQ platform.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the organization."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the organization."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Date of organization creation.",
-          "format": "date-time"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the organization (orgId)." },
+        "name": { "type": "string", "description": "Name of the organization." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server-set timestamp of organization creation." }
       },
       "required": ["id", "name"]
     },
-    "Client": {
+    "Job": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Client",
+      "title": "Job",
       "type": "object",
-      "description": "Represents a client of an AbateIQ organization.",
+      "description": "Client and project metadata for a specific job.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the client."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the client."
-        },
-        "contactEmail": {
-          "type": "string",
-          "description": "Contact email address for the client.",
-          "format": "email"
-        }
+        "id": { "type": "string", "description": "Unique identifier for the job." },
+        "orgId": { "type": "string", "description": "The organization this job belongs to." },
+        "clientName": { "type": "string" },
+        "location": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Completed", "On Hold"] },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" }
       },
-      "required": ["id", "name"]
+      "required": ["id", "orgId", "clientName", "location", "status", "startDate"]
     },
-    "Project": {
+    "Site": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Project",
+      "title": "Site",
       "type": "object",
-      "description": "Represents a project associated with a client.",
+      "description": "A specific building, area, or site within a job.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the project."
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Reference to Client. (Relationship: Client 1:N Project)"
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the project."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the project."
-        }
+        "id": { "type": "string", "description": "Unique identifier for the site." },
+        "orgId": { "type": "string" }, "jobId": { "type": "string" },
+        "address": { "type": "string" }, "zone": { "type": "string" }
       },
-      "required": ["id", "clientId", "name"]
+      "required": ["id", "orgId", "jobId", "address"]
     },
-    "Personnel": {
+    "Analyte": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Personnel",
+      "title": "Analyte",
       "type": "object",
-      "description": "Represents a person working on a project.",
+      "description": "A regulated target substance for monitoring.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the personnel."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the person."
+        "id": { "type": "string" }, "orgId": { "type": "string" },
+        "name": { "type": "string" }, "method": { "type": "string" },
+        "unit": { "type": "string" }, "standardRef": { "type": "string" }
+      },
+      "required": ["id", "orgId", "name", "unit"]
+    },
+    "Instrument": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Instrument",
+      "type": "object",
+      "description": "A sampling pump or other device.",
+      "properties": {
+        "id": { "type": "string" }, "orgId": { "type": "string" },
+        "model": { "type": "string" }, "serial": { "type": "string" },
+        "calibrationLogs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": { "type": "string", "format": "date-time" },
+              "preFlow": { "type": "number" }, "postFlow": { "type": "number" }
+            }
+          }
         }
       },
-      "required": ["id", "name"]
+      "required": ["id", "orgId", "model", "serial"]
     },
     "Sample": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Sample",
       "type": "object",
-      "description": "Represents a sample taken for analysis.",
+      "description": "A generic sampling event.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the sample."
-        },
-        "projectId": {
-          "type": "string",
-          "description": "Reference to Project. (Relationship: Project 1:N Sample)"
-        },
-        "personnelId": {
-          "type": "string",
-          "description": "Reference to Personnel. (Relationship: Personnel 1:N Sample)"
-        }
+        "id": { "type": "string" }, "orgId": { "type": "string" }, "jobId": { "type": "string" },
+        "siteId": { "type": "string" }, "analyteId": { "type": "string" }, "method": { "type": "string" },
+        "mediaType": { "type": "string" }, "startTime": { "type": "string", "format": "date-time" },
+        "stopTime": { "type": "string", "format": "date-time" }, "preFlow": { "type": "number" },
+        "postFlow": { "type": "number" }, "labId": { "type": "string" }, "resultValue": { "type": "number" },
+        "resultUnit": { "type": "string" }, "resultQualifiers": { "type": "array", "items": { "type": "string" }},
+        "createdAt": { "type": "string", "format": "date-time" }, "createdByUid": { "type": "string" }
       },
-      "required": ["id", "projectId", "personnelId"]
+      "required": ["id", "orgId", "jobId", "analyteId", "startTime", "stopTime", "createdAt", "createdByUid"]
+    },
+    "Exceedance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Exceedance",
+      "type": "object",
+      "description": "An append-only finding of an exceeded exposure limit.",
+      "properties": {
+        "id": { "type": "string" }, "orgId": { "type": "string" }, "jobId": { "type": "string" },
+        "sampleId": { "type": "string" }, "analyteId": { "type": "string" }, "standardRef": { "type": "string" },
+        "thresholdValue": { "type": "number" }, "comparisonOperator": { "type": "string" },
+        "calculatedTWAorConc": { "type": "number" }, "exceeded": { "type": "boolean" },
+        "reviewerUid": { "type": "string" }, "reviewedAt": { "type": "string", "format": "date-time" },
+        "locked": { "type": "boolean", "default": false }
+      },
+      "required": ["id", "orgId", "jobId", "sampleId", "analyteId", "exceeded", "locked"]
+    },
+    "Person": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Person",
+      "type": "object",
+      "description": "Display-only user information.",
+      "properties": {
+        "id": { "type": "string", "description": "Matches Firebase Auth UID." },
+        "orgId": { "type": "string" }, "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" }, "role": { "type": "string" }
+      },
+      "required": ["id", "orgId", "email", "role"]
+    },
+    "Audit": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Audit",
+      "type": "object",
+      "description": "An immutable audit trail for sensitive changes.",
+      "properties": {
+        "id": { "type": "string" }, "orgId": { "type": "string" }, "actorUid": { "type": "string" },
+        "action": { "type": "string" }, "path": { "type": "string" },
+        "beforeSnapshotHash": { "type": "string" }, "afterSnapshotHash": { "type": "string" },
+        "serverTimestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "orgId", "actorUid", "action", "path", "serverTimestamp"]
     }
   },
   "auth": {
@@ -114,49 +136,20 @@
     "customClaims": ["orgId", "role"]
   },
   "firestore": {
-    "rules": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{db}/documents {\n    function authed() { return request.auth != null; }\n    function hasOrg(org) { return authed() && request.auth.token.orgId == org; }\n    function roleIs(r) { return authed() && request.auth.token.role == r; }\n    // Everything org-scoped lives under /orgs/{orgId}/...\n    match /orgs/{orgId}/{document=**} {\n      allow read: if hasOrg(orgId);\n      allow create, update: if hasOrg(orgId) && (roleIs('admin') || roleIs('editor'));\n      allow delete: if hasOrg(orgId) && roleIs('admin');\n    }\n  }\n}",
+    "rules": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{db}/documents {\n    function authed() { return request.auth != null; }\n    function hasOrg(org) { return authed() && request.auth.token.orgId == org; }\n    function roleIs(r) { return authed() && request.auth.token.role == r; }\n\n    // Everything org-scoped lives under /orgs/{orgId}/...\n    match /orgs/{orgId}/{document=**} {\n      allow read: if hasOrg(orgId);\n      allow create, update: if hasOrg(orgId) && (roleIs('admin') || roleIs('editor'));\n      allow delete: if hasOrg(orgId) && roleIs('admin');\n    }\n\n    // Specific lock-down for Exceedances\n    match /orgs/{orgId}/exceedances/{exceedanceId} {\n      // Allow anyone in the org to read exceedances\n      allow read: if hasOrg(orgId);\n      // Allow create for editors and admins\n      allow create: if hasOrg(orgId) && (roleIs('admin') || roleIs('editor'));\n      // Deny client-side updates and deletes once a record is locked.\n      allow update, delete: if false;\n    }\n\n    // Audits are append-only, written by server-side functions\n    match /orgs/{orgId}/audits/{auditId} {\n        allow read: if hasOrg(orgId) && roleIs('admin');\n        allow write: if false; // Can only be created by Cloud Functions\n    }\n  }\n}",
     "structure": [
-      {
-        "path": "/orgs/{orgId}",
-        "definition": {
-          "entityName": "Org",
-          "schema": { "$ref": "#/entities/Org" },
-          "description": "Stores organization information."
-        }
-      },
-      {
-        "path": "/orgs/{orgId}/clients/{clientId}",
-        "definition": {
-          "entityName": "Client",
-          "schema": { "$ref": "#/entities/Client" },
-          "description": "Stores client information for an organization."
-        }
-      },
-      {
-        "path": "/orgs/{orgId}/projects/{projectId}",
-        "definition": {
-          "entityName": "Project",
-          "schema": { "$ref": "#/entities/Project" },
-          "description": "Stores project information for an organization."
-        }
-      },
-      {
-        "path": "/orgs/{orgId}/personnel/{personnelId}",
-        "definition": {
-          "entityName": "Personnel",
-          "schema": { "$ref": "#/entities/Personnel" },
-          "description": "Stores personnel information for an organization."
-        }
-      },
-      {
-        "path": "/orgs/{orgId}/samples/{sampleId}",
-        "definition": {
-          "entityName": "Sample",
-          "schema": { "$ref": "#/entities/Sample" },
-          "description": "Stores sample information for an organization."
-        }
-      }
+      {"path": "/orgs/{orgId}", "definition": {"entityName": "Org"}},
+      {"path": "/orgs/{orgId}/jobs/{jobId}", "definition": {"entityName": "Job"}},
+      {"path": "/orgs/{orgId}/sites/{siteId}", "definition": {"entityName": "Site"}},
+      {"path": "/orgs/{orgId}/analytes/{analyteId}", "definition": {"entityName": "Analyte"}},
+      {"path": "/orgs/{orgId}/instruments/{instrumentId}", "definition": {"entityName": "Instrument"}},
+      {"path": "/orgs/{orgId}/samples/{sampleId}", "definition": {"entityName": "Sample"}},
+      {"path": "/orgs/{orgId}/exceedances/{exceedanceId}", "definition": {"entityName": "Exceedance"}},
+      {"path": "/orgs/{orgId}/people/{personId}", "definition": {"entityName": "Person"}},
+      {"path": "/orgs/{orgId}/audits/{auditId}", "definition": {"entityName": "Audit"}}
     ],
-    "reasoning": "The Firestore structure is designed around a multi-tenant, organization-scoped model. All primary data collections (clients, projects, personnel, samples, etc.) are nested under a top-level `/orgs/{orgId}` collection. This structural nesting directly maps to the Firestore security rules, which use the `orgId` from a user's custom claims to grant access only to documents within their own organization's data tree. This provides strong data isolation between tenants. The security rules implement role-based access control (RBAC), granting read access to all authenticated users within an organization, while write access (create, update, delete) is restricted to users with 'admin' or 'editor' roles, ensuring data integrity."
+    "reasoning": "The Firestore structure is designed around a multi-tenant, organization-scoped model where all data collections are nested under `/orgs/{orgId}`. This maps directly to security rules that use the `orgId` from a user's custom claims to grant access, providing strong data isolation. Role-based access control (RBAC) further refines permissions, granting read access to all org members while restricting write access to `admin` or `editor` roles. Sensitive collections like `Exceedances` and `Audits` have stricter rules, such as preventing client-side updates on locked records and making audit trails append-only from the server, ensuring data integrity and a clear chain of custody."
   }
 }
+
+    

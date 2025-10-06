@@ -22,14 +22,16 @@ import { useEffect, useState } from 'react';
 import type { Personnel } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 
 interface AddPersonnelDialogProps {
   person?: Personnel | null;
-  onSave: (personData: Omit<Personnel, 'id'> & { id?: string }) => void;
   children: React.ReactNode;
 }
 
-export function AddPersonnelDialog({ person, onSave, children }: AddPersonnelDialogProps) {
+export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps) {
+  const firestore = useFirestore();
   const [fitTestDate, setFitTestDate] = useState<Date>();
   const [medClearanceDate, setMedClearanceDate] = useState<Date>();
   const [name, setName] = useState('');
@@ -56,7 +58,8 @@ export function AddPersonnelDialog({ person, onSave, children }: AddPersonnelDia
     }
   }, [person, isEditMode, isOpen]);
   
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!firestore) return;
     if (!name || !employeeId || !fitTestDate || !medClearanceDate) {
         toast({
             title: 'Missing Fields',
@@ -74,17 +77,26 @@ export function AddPersonnelDialog({ person, onSave, children }: AddPersonnelDia
         isInspector,
     };
 
-    if (isEditMode && person) {
-        onSave({ id: person.id, ...personData });
-    } else {
-        onSave(personData);
+    try {
+      if (isEditMode && person) {
+          const personRef = doc(firestore, 'personnel', person.id);
+          await updateDoc(personRef, personData);
+      } else {
+          await addDoc(collection(firestore, 'personnel'), personData);
+      }
+      
+      toast({
+          title: isEditMode ? "Personnel Updated" : "Personnel Added",
+          description: `${name} has been ${isEditMode ? 'updated' : 'saved'}.`,
+        });
+      setIsOpen(false);
+    } catch (error) {
+       toast({
+          title: 'Error Saving Personnel',
+          description: 'An error occurred while saving to the database.',
+          variant: 'destructive',
+       });
     }
-    
-    toast({
-        title: isEditMode ? "Personnel Updated" : "Personnel Added",
-        description: `${name} has been ${isEditMode ? 'updated' : 'saved'}.`,
-      });
-    setIsOpen(false);
   }
 
   return (
@@ -188,3 +200,5 @@ export function AddPersonnelDialog({ person, onSave, children }: AddPersonnelDia
     </Dialog>
   );
 }
+
+    

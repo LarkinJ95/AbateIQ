@@ -2,44 +2,27 @@
 'use client';
 
 import { Header } from '@/components/header';
-import { personnel as initialPersonnel } from '@/lib/data';
 import { PersonnelList } from '@/app/(app)/personnel/personnel-list';
 import { Card, CardContent } from '@/components/ui/card';
 import { AddPersonnelDialog } from './add-personnel-dialog';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo } from 'react';
 import type { Personnel } from '@/lib/types';
 import { ImportPersonnelDialog } from './import-personnel-dialog';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 export default function PersonnelPage() {
-  const [personnel, setPersonnel] = useState<Personnel[]>(initialPersonnel);
+  const firestore = useFirestore();
 
-  const handleSavePersonnel = (personData: Omit<Personnel, 'id'> & { id?: string }) => {
-    if (personData.id) {
-      // Edit existing personnel
-      setPersonnel(prev => prev.map(p => p.id === personData.id ? { ...p, ...personData } as Personnel : p));
-    } else {
-      // Add new personnel
-      const newPersonnel: Personnel = {
-        ...personData,
-        id: `per-${Date.now()}`
-      };
-      setPersonnel(prev => [newPersonnel, ...prev]);
-    }
-  };
+  const personnelQuery = useMemoFirebase(() => collection(firestore, 'personnel'), [firestore]);
+  const { data: personnel, isLoading } = useCollection<Personnel>(personnelQuery);
 
-  const handleDeletePersonnel = (personnelId: string) => {
-    setPersonnel(prev => prev.filter(p => p.id !== personnelId));
-  };
-  
-  const handleImportPersonnel = (newPersonnel: Omit<Personnel, 'id'>[]) => {
-    const personnelWithIds: Personnel[] = newPersonnel.map((p, index) => ({
-      ...p,
-      id: `per-${Date.now()}-${index}`,
-    }));
-    setPersonnel(prev => [...personnelWithIds, ...prev]);
-  };
+  const sortedPersonnel = useMemo(() => {
+    if (!personnel) return [];
+    return [...personnel].sort((a, b) => a.name.localeCompare(b.name));
+  }, [personnel]);
 
 
   return (
@@ -51,8 +34,8 @@ export default function PersonnelPage() {
                 Manage Personnel
             </h2>
             <div className="flex gap-2">
-                <ImportPersonnelDialog onImport={handleImportPersonnel} />
-                <AddPersonnelDialog person={null} onSave={handleSavePersonnel}>
+                <ImportPersonnelDialog />
+                <AddPersonnelDialog person={null}>
                     <Button>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Add Personnel
@@ -62,14 +45,18 @@ export default function PersonnelPage() {
         </div>
         <Card>
             <CardContent className="p-0">
-                <PersonnelList 
-                    personnel={personnel} 
-                    onSave={handleSavePersonnel} 
-                    onDelete={handleDeletePersonnel}
-                />
+                {isLoading ? (
+                    <div className="h-48 flex items-center justify-center">Loading...</div>
+                ) : (
+                    <PersonnelList 
+                        personnel={sortedPersonnel} 
+                    />
+                )}
             </CardContent>
         </Card>
       </main>
     </div>
   );
 }
+
+    

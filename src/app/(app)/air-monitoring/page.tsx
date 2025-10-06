@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, Search } from 'lucide-react';
-import { samples as initialSamples, personnel as initialPersonnel, projects, tasks, exposureLimits } from '@/lib/data';
+import { projects, tasks, exposureLimits } from '@/lib/data';
 import type { Sample, Result, Personnel } from '@/lib/types';
 import { SamplesDataTable } from '../samples/samples-data-table';
 import { columns as sampleColumns } from '../samples/columns';
@@ -20,16 +20,25 @@ import { ImportPersonnelDialog } from '../personnel/import-personnel-dialog';
 import { ImportSamplesDialog } from './import-samples-dialog';
 import { differenceInMinutes, parse } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 
 export default function AirMonitoringPage() {
-  const [samples, setSamples] = useState(initialSamples);
-  const [personnel, setPersonnel] = useState<Personnel[]>(initialPersonnel);
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const samplesQuery = useMemoFirebase(() => collection(firestore, 'samples'), [firestore]);
+  const { data: samples, isLoading: samplesLoading } = useCollection<Sample>(samplesQuery);
+
+  const personnelQuery = useMemoFirebase(() => collection(firestore, 'personnel'), [firestore]);
+  const { data: personnel, isLoading: personnelLoading } = useCollection<Personnel>(personnelQuery);
+
   const [activeTab, setActiveTab] = useState<string>("samples");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [analyteFilter, setAnalyteFilter] = useState<string>("all");
   const [sampleTypeFilter, setSampleTypeFilter] = useState<string>("all");
-  const { toast } = useToast();
+  
 
   const processNewSample = (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, resultData?: { analyte: string; concentration: number; }}) => {
     const getMinutes = (start: string, stop: string) => {
@@ -51,7 +60,7 @@ export default function AirMonitoringPage() {
     let resultPayload: Result | undefined = undefined;
     const resultData = (newSampleData as any).result || (newSampleData as any).resultData;
     if(resultData?.analyte) {
-        const existingResult = newSampleData.id ? samples.find(s => s.id === newSampleData.id)?.result : undefined;
+        const existingResult = newSampleData.id ? samples?.find(s => s.id === newSampleData.id)?.result : undefined;
         
         let status: Result['status'] = 'Pending';
         const concentration = resultData.concentration;
@@ -92,22 +101,28 @@ export default function AirMonitoringPage() {
     return finalSample;
   }
 
-  const handleSaveSample = (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
+  const handleSaveSample = async (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
       const finalSample = processNewSample(newSampleData);
 
-      if (newSampleData.id) {
-          setSamples(prevSamples => prevSamples.map(s => s.id === newSampleData.id ? { ...s, ...finalSample } as Sample : s));
-      } else {
-          const newSampleWithId = {
-              ...finalSample,
-              id: `samp-${Math.floor(Math.random() * 10000)}`,
-          };
-          if(newSampleWithId.result) newSampleWithId.result.sampleId = newSampleWithId.id;
-          setSamples(prevSamples => [newSampleWithId, ...prevSamples]);
+      try {
+        if (newSampleData.id) {
+            const sampleRef = doc(firestore, 'samples', newSampleData.id);
+            await updateDoc(sampleRef, finalSample);
+            toast({ title: 'Sample Updated', description: 'The sample has been updated.' });
+        } else {
+            await addDoc(collection(firestore, 'samples'), finalSample);
+            toast({ title: 'Sample Added', description: 'A new sample has been created.' });
+        }
+      } catch (error) {
+           toast({
+                title: 'Error Saving Sample',
+                description: 'An error occurred while saving the sample.',
+                variant: 'destructive',
+            });
       }
   };
 
-  const handleImportSamples = (importedSamples: (Omit<Sample, 'id'> & { resultData: any })[]) => {
+  const handleImportSamples = async (importedSamples: (Omit<Sample, 'id'> & { resultData: any })[]) => {
       const newSamples: Sample[] = importedSamples.map((sampleData, index) => {
         const finalSample = processNewSample(sampleData);
         const newSampleWithId = {
@@ -117,40 +132,32 @@ export default function AirMonitoringPage() {
         if(newSampleWithId.result) newSampleWithId.result.sampleId = newSampleWithId.id;
         return newSampleWithId as Sample;
       });
-      setSamples(prev => [...newSamples, ...prev]);
+
+      try {
+        for (const newSample of newSamples) {
+          await addDoc(collection(firestore, 'samples'), newSample);
+        }
+        toast({ title: 'Import Successful', description: `${newSamples.length} samples imported.` });
+      } catch (error) {
+        toast({ title: 'Import Failed', variant: 'destructive' });
+      }
   }
 
-  const handleDeleteSample = (sampleId: string) => {
-    setSamples(prevSamples => prevSamples.filter(s => s.id !== sampleId));
-     toast({
-        title: 'Sample Deleted',
-        description: `Sample ${sampleId} has been deleted.`,
-        variant: 'destructive'
-    });
-  };
-
-  const handleSavePersonnel = (personData: Omit<Personnel, 'id'> & { id?: string }) => {
-    if (personData.id) {
-      setPersonnel(prev => prev.map(p => p.id === personData.id ? { ...p, ...personData } as Personnel : p));
-    } else {
-      const newPersonnel: Personnel = { ...personData, id: `per-${Date.now()}` };
-      setPersonnel(prev => [newPersonnel, ...prev]);
+  const handleDeleteSample = async (sampleId: string) => {
+    try {
+        await deleteDoc(doc(firestore, 'samples', sampleId));
+        toast({
+            title: 'Sample Deleted',
+            description: `Sample ${sampleId} has been deleted.`,
+            variant: 'destructive'
+        });
+    } catch (error) {
+        toast({ title: 'Error Deleting Sample', variant: 'destructive' });
     }
   };
 
-  const handleDeletePersonnel = (personnelId: string) => {
-    setPersonnel(prev => prev.filter(p => p.id !== personnelId));
-  };
-
-  const handleImportPersonnel = (newPersonnel: Omit<Personnel, 'id'>[]) => {
-    const personnelWithIds: Personnel[] = newPersonnel.map((p, index) => ({
-      ...p,
-      id: `per-${Date.now()}-${index}`,
-    }));
-    setPersonnel(prev => [...personnelWithIds, ...prev]);
-  };
-
   const samplesWithDetails = useMemo(() => {
+    if (!samples || !personnel) return [];
     return samples.map(sample => {
       const project = projects.find(p => p.id === sample.projectId);
       const task = tasks.find(t => t.id === sample.taskId);
@@ -185,6 +192,7 @@ export default function AirMonitoringPage() {
   }, [samplesWithDetails, searchQuery, statusFilter, analyteFilter, sampleTypeFilter]);
 
   const filteredPersonnel = useMemo(() => {
+    if (!personnel) return [];
     return personnel.filter((person: Personnel) => {
       const sQuery = searchQuery.toLowerCase();
       const matchesSearch = sQuery === "" ||
@@ -304,8 +312,8 @@ export default function AirMonitoringPage() {
                   />
                 </div>
                 <div className="flex gap-2">
-                    <ImportPersonnelDialog onImport={handleImportPersonnel} />
-                    <AddPersonnelDialog person={null} onSave={handleSavePersonnel}>
+                    <ImportPersonnelDialog />
+                    <AddPersonnelDialog person={null}>
                         <Button>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Add Personnel
@@ -316,9 +324,7 @@ export default function AirMonitoringPage() {
               <Card>
                   <CardContent className="p-0">
                       <PersonnelList 
-                          personnel={filteredPersonnel} 
-                          onSave={handleSavePersonnel} 
-                          onDelete={handleDeletePersonnel}
+                          personnel={filteredPersonnel}
                       />
                   </CardContent>
               </Card>
@@ -328,3 +334,5 @@ export default function AirMonitoringPage() {
     </div>
   );
 }
+
+    

@@ -3,7 +3,7 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { personnel, samples as allSamples, projects, tasks } from '@/lib/data';
+import { projects, tasks } from '@/lib/data';
 import { notFound, useParams } from 'next/navigation';
 import { format, isPast, differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -13,27 +13,47 @@ import { Pencil } from 'lucide-react';
 import { AddPersonnelDialog } from '../add-personnel-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
+import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
+import type { Personnel, Sample } from '@/lib/types';
+import { useMemo } from 'react';
 
 export default function PersonnelDetailsPage() {
   const params = useParams();
   const id = params.id as string;
-  const person = personnel.find(p => p.id === id);
+  const firestore = useFirestore();
+
+  const personRef = useMemoFirebase(() => doc(firestore, 'personnel', id), [firestore, id]);
+  const { data: person, isLoading: personLoading } = useDoc<Personnel>(personRef);
+
+  const personSamplesQuery = useMemoFirebase(() => {
+    if (!id) return null;
+    return query(collection(firestore, 'samples'), where('personnelId', '==', id));
+  }, [firestore, id]);
+  const { data: personSamples, isLoading: samplesLoading } = useCollection<Sample>(personSamplesQuery);
+
+
+  const personSamplesWithDetails = useMemo(() => {
+    if (!personSamples) return [];
+    return personSamples
+      .map(sample => {
+        const project = projects.find(p => p.id === sample.projectId);
+        const task = tasks.find(t => t.id === sample.taskId);
+        return {
+          ...sample,
+          projectName: project?.name || 'N/A',
+          taskName: task?.name || 'N/A',
+        };
+      });
+  }, [personSamples]);
+
+  if (personLoading) {
+    return <div>Loading...</div>
+  }
 
   if (!person) {
     notFound();
   }
-
-  const personSamples = allSamples
-    .filter(s => s.personnelId === person.id)
-    .map(sample => {
-      const project = projects.find(p => p.id === sample.projectId);
-      const task = tasks.find(t => t.id === sample.taskId);
-      return {
-        ...sample,
-        projectName: project?.name || 'N/A',
-        taskName: task?.name || 'N/A',
-      };
-    });
 
   const getStatus = (dateString: string) => {
     const date = new Date(dateString);
@@ -62,7 +82,7 @@ export default function PersonnelDetailsPage() {
                 Certification and compliance status for {person.name}.
               </CardDescription>
             </div>
-            <AddPersonnelDialog person={person} onSave={() => {}}>
+            <AddPersonnelDialog person={person}>
                 <Button variant="outline" size="icon">
                     <Pencil className="h-4 w-4" />
                     <span className="sr-only">Edit Personnel</span>
@@ -102,7 +122,7 @@ export default function PersonnelDetailsPage() {
                     <CardTitle className="font-headline">Exposure Trends</CardTitle>
                 </CardHeader>
                 <CardContent className="pl-2 h-[300px]">
-                    <OverviewChart />
+                    <OverviewChart samples={personSamples || []} />
                 </CardContent>
             </Card>
             <Card>
@@ -111,30 +131,39 @@ export default function PersonnelDetailsPage() {
                     <CardDescription>A log of all samples taken for this individual.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Sample ID</TableHead>
-                                <TableHead>Project</TableHead>
-                                <TableHead>Result</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {personSamples.map(sample => (
-                                <TableRow key={sample.id}>
-                                    <TableCell>
-                                        <Link href={`/samples/${sample.id}`} className="hover:underline font-medium">
-                                            {sample.id}
-                                        </Link>
-                                    </TableCell>
-                                    <TableCell>{sample.projectName}</TableCell>
-                                    <TableCell>
-                                        {sample.result?.concentration !== undefined ? `${sample.result.concentration} ${sample.result.units}` : 'Pending'}
-                                    </TableCell>
+                    {samplesLoading ? (
+                      <p>Loading samples...</p>
+                    ) : (
+                      <Table>
+                          <TableHeader>
+                              <TableRow>
+                                  <TableHead>Sample ID</TableHead>
+                                  <TableHead>Project</TableHead>
+                                  <TableHead>Result</TableHead>
+                              </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                              {personSamplesWithDetails.map(sample => (
+                                  <TableRow key={sample.id}>
+                                      <TableCell>
+                                          <Link href={`/samples/${sample.id}`} className="hover:underline font-medium">
+                                              {sample.id}
+                                          </Link>
+                                      </TableCell>
+                                      <TableCell>{sample.projectName}</TableCell>
+                                      <TableCell>
+                                          {sample.result?.concentration !== undefined ? `${sample.result.concentration} ${sample.result.units}` : 'Pending'}
+                                      </TableCell>
+                                  </TableRow>
+                              ))}
+                              {personSamplesWithDetails.length === 0 && (
+                                <TableRow>
+                                  <TableCell colSpan={3} className="text-center">No samples found for this person.</TableCell>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                              )}
+                          </TableBody>
+                      </Table>
+                    )}
                 </CardContent>
             </Card>
         </div>
@@ -142,3 +171,5 @@ export default function PersonnelDetailsPage() {
     </div>
   );
 }
+
+    

@@ -18,17 +18,17 @@ import { useToast } from '@/hooks/use-toast';
 import { FileDown } from 'lucide-react';
 import type { Personnel } from '@/lib/types';
 import { Label } from '@/components/ui/label';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 
-interface ImportPersonnelDialogProps {
-  onImport: (newPersonnel: Omit<Personnel, 'id'>[]) => void;
-}
-
-export function ImportPersonnelDialog({ onImport }: ImportPersonnelDialogProps) {
+export function ImportPersonnelDialog() {
+  const firestore = useFirestore();
   const [pasteData, setPasteData] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleImport = () => {
+  const handleImport = async () => {
+    if (!firestore) return;
     if (!pasteData.trim()) {
       toast({
         title: 'No Data to Import',
@@ -41,7 +41,6 @@ export function ImportPersonnelDialog({ onImport }: ImportPersonnelDialogProps) 
     try {
       const rows = pasteData.trim().split('\n');
       
-      // Check for header row and slice it off if it exists
       const headerRow = rows[0].toLowerCase().split('\t');
       const hasHeader = headerRow.includes('name') || headerRow.includes('employee id');
       const dataRows = hasHeader ? rows.slice(1) : rows;
@@ -57,7 +56,6 @@ export function ImportPersonnelDialog({ onImport }: ImportPersonnelDialogProps) 
           throw new Error(`Row ${i + 1} has fewer than 4 columns. Expected: Name, Employee ID, Fit Test Due Date, Medical Clearance Due Date.`);
         }
         
-        // Basic date validation
         const fitTestDate = new Date(columns[2]);
         const medClearanceDate = new Date(columns[3]);
 
@@ -73,7 +71,10 @@ export function ImportPersonnelDialog({ onImport }: ImportPersonnelDialogProps) 
         };
       });
 
-      onImport(newPersonnel);
+      for (const person of newPersonnel) {
+        await addDoc(collection(firestore, 'personnel'), person);
+      }
+
       toast({
         title: 'Import Successful',
         description: `${newPersonnel.length} personnel records have been added.`,
@@ -127,3 +128,5 @@ export function ImportPersonnelDialog({ onImport }: ImportPersonnelDialogProps) 
     </Dialog>
   );
 }
+
+    

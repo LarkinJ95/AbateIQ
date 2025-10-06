@@ -23,15 +23,16 @@ import { format, isPast, differenceInDays } from 'date-fns';
 import { AddPersonnelDialog } from './add-personnel-dialog';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { useFirestore } from '@/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 
 interface PersonnelListProps {
   personnel: Personnel[];
-  onSave: (personnelData: Omit<Personnel, 'id'> & { id?: string }) => void;
-  onDelete: (personnelId: string) => void;
 }
 
-export function PersonnelList({ personnel, onSave, onDelete }: PersonnelListProps) {
+export function PersonnelList({ personnel }: PersonnelListProps) {
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const getStatus = (dateString: string) => {
     const date = new Date(dateString);
@@ -45,13 +46,18 @@ export function PersonnelList({ personnel, onSave, onDelete }: PersonnelListProp
     return { text: 'Current', variant: 'default' as const };
   };
 
-  const handleDelete = (person: Personnel) => {
-    onDelete(person.id);
-    toast({
-        title: 'Personnel Deleted',
-        description: `${person.name} has been deleted.`,
-        variant: 'destructive',
-    });
+  const handleDelete = async (person: Personnel) => {
+    if (!firestore) return;
+    try {
+        await deleteDoc(doc(firestore, 'personnel', person.id));
+        toast({
+            title: 'Personnel Deleted',
+            description: `${person.name} has been deleted.`,
+            variant: 'destructive',
+        });
+    } catch (error) {
+        toast({ title: 'Error Deleting Personnel', variant: 'destructive' });
+    }
   };
 
   return (
@@ -107,7 +113,7 @@ export function PersonnelList({ personnel, onSave, onDelete }: PersonnelListProp
                             View History
                         </Link>
                     </DropdownMenuItem>
-                    <AddPersonnelDialog person={person} onSave={onSave}>
+                    <AddPersonnelDialog person={person}>
                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                             <Pencil className="mr-2 h-4 w-4"/>
                             Edit
@@ -127,3 +133,5 @@ export function PersonnelList({ personnel, onSave, onDelete }: PersonnelListProp
     </Table>
   );
 }
+
+    

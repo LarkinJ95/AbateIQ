@@ -86,12 +86,15 @@ const { data: tasks } = useCollection<any>(tasksQuery);
   }, [samples, personnel, tasks]);
     
 
-  // Filter surveys related to this project (matching by name for this example)
+  // Filter surveys related to this project
   const surveysQuery = useMemoFirebase(() => {
-      if (!firestore || !project) return null;
-      // This is a simple query, in a real app you might have a projectId on the survey
-      return query(collection(firestore, 'surveys'), where('siteName', '>=', project.name), where('siteName', '<=', project.name + '\uf8ff'));
-  }, [firestore, project]);
+      if (!firestore || !project || !user) return null;
+      return query(
+          collection(firestore, 'surveys'), 
+          where('jobNumber', '==', project.jobNumber),
+          where('ownerId', '==', user.uid)
+      );
+  }, [firestore, project, user]);
   const { data: linkedSurveys } = useCollection<Survey>(surveysQuery);
 
 
@@ -559,5 +562,3 @@ const { data: tasks } = useCollection<any>(tasksQuery);
     </div>
   );
 }
-
-    

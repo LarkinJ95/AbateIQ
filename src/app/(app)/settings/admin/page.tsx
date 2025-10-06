@@ -62,7 +62,7 @@ const mockUsers: User[] = [
         id: 'user-1',
         firstName: 'John',
         lastName: 'Larkin',
-        email: 'jlarkin@bierlein.com',
+        email: 'larkinjason123@gmail.com',
         role: 'admin',
         status: 'active',
         organization: 'Bierlein Companies',
@@ -77,7 +77,7 @@ const mockCompany: Company = {
     id: 'comp-1', 
     name: 'Bierlein Companies', 
     contactName: 'John Larkin', 
-    contactEmail: 'jlarkin@bierlein.com', 
+    contactEmail: 'larkinjason123@gmail.com', 
     status: 'active', 
     createdAt: '2024-01-01T10:00:00Z', 
     weatherApiKey: '9567e2b1ebb94c4989c131321250610'

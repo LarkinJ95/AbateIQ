@@ -18,7 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const initialCompanies: Company[] = [
-    { id: 'comp-1', name: 'Bierlein Companies', contactName: 'John Larkin', contactEmail: 'jlarkin@bierlein.com', status: 'active', createdAt: '2024-01-01T10:00:00Z', weatherApiKey: '9567e2b1ebb94c4989c131321250610' },
+    { id: 'comp-1', name: 'Bierlein Companies', contactName: 'John Larkin', contactEmail: 'larkinjason123@gmail.com', status: 'active', createdAt: '2024-01-01T10:00:00Z', weatherApiKey: '9567e2b1ebb94c4989c131321250610' },
     { id: 'comp-2', name: 'ACME Demolition', contactName: 'Jane Smith', contactEmail: 'jane@acme.com', status: 'active', createdAt: '2024-02-15T10:00:00Z' },
     { id: 'comp-3', name: 'Inactive Corp', contactName: 'Bob Johnson', contactEmail: 'bob@inactive.com', status: 'inactive', createdAt: '2024-03-20T10:00:00Z' },
 ];

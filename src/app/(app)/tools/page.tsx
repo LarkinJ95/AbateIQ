@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users, LocateFixed } from 'lucide-react';
+import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users, LocateFixed, Thermometer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -601,6 +601,73 @@ function VentilationCalculator() {
     );
 }
 
+const heatStressLevels = [
+    { level: 'Low', min: 0, max: 82, color: 'bg-green-500' },
+    { level: 'Moderate', min: 82, max: 87, color: 'bg-yellow-500' },
+    { level: 'High', min: 87, max: 90, color: 'bg-orange-500' },
+    { level: 'Extreme', min: 90, max: Infinity, color: 'bg-red-500' },
+];
+
+function HeatStressChart({ wbgt }: { wbgt: number | null }) {
+    const totalRange = 100; // Represents the visual width of the chart
+    const minWbgt = 75;
+    const maxWbgt = 95;
+    const range = maxWbgt - minWbgt;
+
+    const getIndicatorPosition = () => {
+        if (wbgt === null || wbgt < minWbgt) return '-5%';
+        if (wbgt > maxWbgt) return '105%';
+        const percentage = ((wbgt - minWbgt) / range) * 100;
+        return `${percentage}%`;
+    }
+
+    return (
+        <div className="space-y-4">
+             <h3 className="text-lg font-semibold flex items-center">
+                <Thermometer className="mr-2 h-5 w-5" />
+                Heat Stress Risk Level
+            </h3>
+            <div className="relative w-full h-8 flex rounded-full overflow-hidden border">
+                {heatStressLevels.map(({ level, min, max, color }) => {
+                    if(level === 'Low' || level === 'Extreme') return null; // Don't render segments for open ends
+                    const left = ((min - minWbgt) / range) * 100;
+                    const width = ((max - min) / range) * 100;
+                    return (
+                        <div key={level} className={color} style={{ position: 'absolute', left: `${left}%`, width: `${width}%`, height: '100%' }} />
+                    )
+                })}
+                 <div key="Low" className="bg-green-500" style={{ position: 'absolute', left: '0%', width: `${((82 - minWbgt) / range) * 100}%`, height: '100%' }} />
+                 <div key="Extreme" className="bg-red-500" style={{ position: 'absolute', right: '0%', width: `${((maxWbgt - 90) / range) * 100}%`, height: '100%' }} />
+                
+                {wbgt !== null && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div 
+                                    className="absolute top-0 h-full w-1 bg-foreground -translate-x-1/2 transition-all duration-300 ease-in-out"
+                                    style={{ left: getIndicatorPosition() }}
+                                >
+                                     <div className="absolute -top-3 -translate-x-1/2 left-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-foreground"></div>
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Calculated WBGT: {wbgt}°F</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+                <span className="text-green-500">Low</span>
+                <span className="text-yellow-500">Moderate</span>
+                <span className="text-orange-500">High</span>
+                <span className="text-red-500">Extreme</span>
+            </div>
+        </div>
+    );
+}
+
+
 function WbgtCalculator() {
     const [isOutdoor, setIsOutdoor] = useState(true);
     const [dryBulb, setDryBulb] = useState(''); // Tdb
@@ -619,10 +686,10 @@ function WbgtCalculator() {
         if (isOutdoor) {
             if(isNaN(tdb)) return null;
             const wbgt = (0.7 * tnwb) + (0.2 * tg) + (0.1 * tdb);
-            return wbgt.toFixed(1);
+            return wbgt;
         } else { // Indoor
             const wbgt = (0.7 * tnwb) + (0.3 * tg);
-            return wbgt.toFixed(1);
+            return wbgt;
         }
 
     }, [isOutdoor, dryBulb, wetBulb, globeTemp]);
@@ -705,8 +772,8 @@ function WbgtCalculator() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">WBGT Calculator</CardTitle>
-                <CardDescription>Calculate the Wet Bulb Globe Temperature (WBGT) for assessing heat stress risk.</CardDescription>
+                <CardTitle className="font-headline">Heat Stress Calculator (WBGT)</CardTitle>
+                <CardDescription>Calculate the Wet Bulb Globe Temperature to assess heat stress risk.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="space-y-2">
@@ -740,8 +807,8 @@ function WbgtCalculator() {
                         Calculated WBGT
                     </h3>
                     <div className="p-4 bg-muted/50 rounded-lg min-h-[80px] flex items-center">
-                        {result ? (
-                            <p className="text-2xl font-bold text-primary">{result} °F</p>
+                        {result !== null ? (
+                            <p className="text-2xl font-bold text-primary">{result.toFixed(1)} °F</p>
                         ) : (
                             <p className="text-muted-foreground">Enter all required temperatures for the selected environment.</p>
                         )}
@@ -750,6 +817,11 @@ function WbgtCalculator() {
                         Formula used: {isOutdoor ? "WBGT = 0.7(Tnwb) + 0.2(Tg) + 0.1(Tdb)" : "WBGT = 0.7(Tnwb) + 0.3(Tg)"}
                      </p>
                 </div>
+                {result !== null && (
+                    <div className="border-t pt-6 space-y-4">
+                         <HeatStressChart wbgt={result} />
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -765,7 +837,7 @@ export default function ToolsPage() {
             <TabsTrigger value="twa-calculator">TWA Calculator</TabsTrigger>
             <TabsTrigger value="unit-converter">Unit Converter</TabsTrigger>
             <TabsTrigger value="ventilation">Ventilation</TabsTrigger>
-            <TabsTrigger value="wbgt">WBGT</TabsTrigger>
+            <TabsTrigger value="heat-stress">Heat Stress</TabsTrigger>
           </TabsList>
           <TabsContent value="twa-calculator" className="mt-4">
             <TwaCalculator />
@@ -776,7 +848,7 @@ export default function ToolsPage() {
           <TabsContent value="ventilation" className="mt-4">
             <VentilationCalculator />
           </TabsContent>
-           <TabsContent value="wbgt" className="mt-4">
+           <TabsContent value="heat-stress" className="mt-4">
             <WbgtCalculator />
           </TabsContent>
         </Tabs>
@@ -784,5 +856,3 @@ export default function ToolsPage() {
     </div>
   );
 }
-
-    

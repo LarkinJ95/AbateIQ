@@ -2,7 +2,6 @@
 'use client';
 
 import { Header } from '@/components/header';
-import { documents as initialDocuments } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { summarizeLabReport, SummarizeLabReportOutput } from '@/ai/flows/summarize-lab-report';
 import {
@@ -30,46 +29,70 @@ import { Separator } from '@/components/ui/separator';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { Document } from '@/lib/types';
 import { format } from 'date-fns';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, addDoc, deleteDoc, doc } from 'firebase/firestore';
 
 export default function DocumentsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useUser();
+  const orgId = user?.orgId;
+  const firestore = useFirestore();
 
-  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
+  const documentsQuery = useMemoFirebase(() => {
+    if (!orgId) return null;
+    return query(collection(firestore, 'orgs', orgId, 'documents'));
+  }, [firestore, orgId]);
+  const { data: documents, isLoading } = useCollection<Document>(documentsQuery);
+
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [summaryResult, setSummaryResult] = useState<SummarizeLabReportOutput | null>(null);
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
 
-  const handleUploadClick = () => {
-    if (fileInputRef.current?.files && fileInputRef.current.files.length > 0) {
-      const file = fileInputRef.current.files[0];
-      const defaultThumbnail = PlaceHolderImages.find(img => img.id === 'doc-thumb-1');
-
-      const newDocument: Document = {
-        id: `doc-${Date.now()}`,
-        name: file.name,
-        type: file.type.startsWith('image/') ? 'Photo' : 'Lab Report',
-        uploadDate: format(new Date(), 'yyyy-MM-dd'),
-        thumbnailUrl: defaultThumbnail?.imageUrl || 'https://placehold.co/400x300',
-        thumbnailHint: defaultThumbnail?.imageHint || 'document paper',
-      };
-      
-      setDocuments(prevDocs => [newDocument, ...prevDocs]);
-
-      toast({
-        title: 'Upload Successful',
-        description: `${file.name} has been added to Project Files.`,
-      });
-
-      // Clear the file input
-      if(fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-
-    } else {
+  const handleUploadClick = async () => {
+    if (!fileInputRef.current?.files || fileInputRef.current.files.length === 0) {
       toast({
         title: 'No File Selected',
         description: 'Please select a file to upload.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!orgId) return;
+
+    const file = fileInputRef.current.files[0];
+    const defaultThumbnail = PlaceHolderImages.find(img => img.id === 'doc-thumb-1');
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+
+        const newDocument: Omit<Document, 'id'> = {
+          name: file.name,
+          type: file.type.startsWith('image/') ? 'Photo' : 'Lab Report',
+          uploadDate: format(new Date(), 'yyyy-MM-dd'),
+          thumbnailUrl: defaultThumbnail?.imageUrl || 'https://placehold.co/400x300',
+          thumbnailHint: defaultThumbnail?.imageHint || 'document paper',
+          fileUrl: dataUrl,
+          ownerId: user?.uid,
+        };
+
+        await addDoc(collection(firestore, 'orgs', orgId, 'documents'), newDocument);
+
+        toast({
+          title: 'Upload Successful',
+          description: `${file.name} has been added to Project Files.`,
+        });
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      };
+    } catch (error) {
+       toast({
+        title: 'Upload Failed',
         variant: 'destructive',
       });
     }
@@ -86,12 +109,10 @@ export default function DocumentsPage() {
     }
 
     const file = fileInputRef.current.files[0];
-
     setIsSummarizing(true);
     setSummaryResult(null);
 
     try {
-      // Convert file to data URI
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = async () => {
@@ -131,20 +152,37 @@ export default function DocumentsPage() {
     }
   };
 
-  const handleAction = (action: string, docName: string) => {
-    toast({
-      title: 'Action Triggered',
-      description: `You triggered "${action}" on ${docName}. This feature is not yet implemented.`,
-    });
+  const handleAction = (action: string, doc: Document) => {
+    if (action === 'Download' && doc.fileUrl) {
+      const link = document.createElement('a');
+      link.href = doc.fileUrl;
+      link.download = doc.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      toast({
+        title: 'Action Triggered',
+        description: `You triggered "${action}" on ${doc.name}. This feature is not yet implemented.`,
+      });
+    }
   }
 
-  const handleDelete = (docId: string, docName: string) => {
-    setDocuments(prevDocs => prevDocs.filter(d => d.id !== docId));
-    toast({
-      title: 'Document Deleted',
-      description: `${docName} has been removed from Project Files.`,
-      variant: 'destructive',
-    });
+  const handleDelete = async (docId: string, docName: string) => {
+    if(!orgId) return;
+    try {
+        await deleteDoc(doc(firestore, 'orgs', orgId, 'documents', docId));
+        toast({
+            title: 'Document Deleted',
+            description: `${docName} has been removed from Project Files.`,
+            variant: 'destructive',
+        });
+    } catch (error) {
+        toast({
+            title: 'Error Deleting Document',
+            variant: 'destructive',
+        });
+    }
   }
 
 
@@ -182,8 +220,12 @@ export default function DocumentsPage() {
           <h2 className="text-2xl font-headline font-bold tracking-tight mb-4">
             Project Files
           </h2>
+          {isLoading && <p>Loading documents...</p>}
+          {!isLoading && (!documents || documents.length === 0) && (
+            <p className="text-muted-foreground">No documents uploaded yet.</p>
+          )}
           <div className="grid gap-4 md:gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {documents.map((doc) => (
+            {documents && documents.map((doc) => (
               <Card key={doc.id} className="overflow-hidden">
                 <CardHeader className="p-0 relative">
                   <Image
@@ -196,7 +238,7 @@ export default function DocumentsPage() {
                   />
                 </CardHeader>
                 <CardContent className="p-4">
-                  <h3 className="font-semibold">{doc.name}</h3>
+                  <h3 className="font-semibold truncate">{doc.name}</h3>
                   <p className="text-sm text-muted-foreground">{doc.type}</p>
                 </CardContent>
                 <CardFooter className="flex justify-between items-center p-4 pt-0">
@@ -210,11 +252,11 @@ export default function DocumentsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onSelect={() => handleAction('View', doc.name)}>
+                      <DropdownMenuItem onSelect={() => handleAction('View', doc)}>
                         <Eye className="mr-2 h-4 w-4" />
                         View
                       </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => handleAction('Download', doc.name)}>
+                      <DropdownMenuItem onSelect={() => handleAction('Download', doc)}>
                         <Download className="mr-2 h-4 w-4" />
                         Download
                       </DropdownMenuItem>
@@ -266,3 +308,5 @@ export default function DocumentsPage() {
     </div>
   );
 }
+
+    

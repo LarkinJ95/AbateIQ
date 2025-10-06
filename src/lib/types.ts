@@ -7,18 +7,20 @@ export type Org = {
   name: string;
 }
 
-export type Company = {
-  id: string;
-  name: string;
-  contactName: string;
-  contactEmail: string;
-  status: 'active' | 'inactive' | 'suspended';
-  createdAt: string;
-  logoUrl?: string;
-  primaryColor?: string;
-  secondaryColor?: string;
-  weatherApiKey?: string;
-};
+export const CompanySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  contactName: z.string(),
+  contactEmail: z.string().email(),
+  status: z.enum(['active', 'inactive', 'suspended']),
+  createdAt: z.string(),
+  logoUrl: z.string().url().optional(),
+  primaryColor: z.string().optional(),
+  secondaryColor: z.string().optional(),
+  weatherApiKey: z.string().optional(),
+});
+export type Company = z.infer<typeof CompanySchema>;
+
 
 export type AppFeature = 'dashboard' | 'projects' | 'airMonitoring' | 'surveys' | 'nea' | 'documents' | 'tools' | 'settings' | 'admin';
 
@@ -240,11 +242,14 @@ export type Document = {
   uploadDate: string;
   thumbnailUrl: string;
   thumbnailHint: string;
+  fileUrl?: string;
+  ownerId?: string;
 };
 
 export type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
-  active?: boolean;
 };
+
+    

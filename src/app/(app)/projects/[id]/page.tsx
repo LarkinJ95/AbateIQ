@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, query, where, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { exposureLimits } from '@/lib/data';
+import { createExceedance } from '@/ai/flows/create-exceedance';
 
 type LinkedReport = {
   id: string;
@@ -155,7 +156,21 @@ const { data: tasks } = useCollection<any>(tasksQuery);
           if(concentration !== undefined && concentration !== null) {
               const limit = exposureLimits.find(l => l.analyte.toLowerCase() === newSampleData.result!.analyte!.toLowerCase());
               if(limit) {
-                if (concentration > limit.pel) status = '>PEL';
+                if (concentration > limit.pel) {
+                    status = '>PEL';
+                    const person = personnel?.find(p => p.id === newSampleData.personnelId);
+                    if (project && person && user && orgId) {
+                        createExceedance({
+                            resultId: existingResult?.id || `res-${Date.now()}`,
+                            analyte: limit.analyte,
+                            concentration: `${concentration} ${limit.units}`,
+                            limit: `${limit.pel} ${limit.units} (PEL)`,
+                            personnel: person.name,
+                            location: project.location,
+                            correctiveAction: 'Immediate action required. Review exposure controls and implement corrective measures.',
+                        });
+                    }
+                }
                 else if (concentration >= limit.al) status = '≥AL';
                 else status = 'OK';
               } else {
@@ -565,3 +580,5 @@ const { data: tasks } = useCollection<any>(tasksQuery);
     </div>
   );
 }
+
+    

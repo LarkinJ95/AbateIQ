@@ -1,25 +1,3 @@
-/**
- * @file Firebase Security Rules for AbateIQ Firestore database.
- *
- * Core Philosophy:
- * This ruleset implements a strict data ownership model.  Most documents are accessible only to authenticated users and often only to the user who "owns" the data, typically via matching UIDs in the path and a dedicated `ownerId` field.  The rules prioritize security and data isolation.
- *
- * Data Structure:
- * - Root-level collections: clients, projects, locations, tasks, personnel, equipment, samples, and exposureLimits
- * - Subcollections: results (under samples), exceedance (under results), negativeExposureAssessments (under projects), and attachments (under samples).
- *
- * Key Security Decisions:
- * - Public listing is disallowed for almost all collections to protect data privacy, with the exception of exposureLimits which might be considered public data.
- * - Write operations require authentication.
- * - The rules do not validate the data types or the presence of most fields.  Only fields critical for authorization are validated.
- * - Role-based access is not explicitly implemented in this iteration.
- *
- * Denormalization for Authorization:
- *  The data model uses subcollections to establish clear ownership. For example, /samples/{sampleId}/results/{resultId} clearly associates a result with a sample. This allows rules to easily verify that the user has access to the sample before accessing the result.
- *
- * Structural Segregation:
- * Private data (e.g., samples, results) is stored in user-specific subcollections to prevent unauthorized access. This avoids the need for complex filtering based on boolean flags.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -27,16 +5,11 @@ service cloud.firestore {
     /**
      * @description Allows access to client documents.
      * @path /clients/{clientId}
-     * @allow (read) Authenticated users can get/list client documents.
-     * @allow (create) Authenticated users can create client documents. The `id` field in the data must match the `clientId` path parameter.
-     * @allow (update) Authenticated users can update existing client documents.
-     * @allow (delete) Authenticated users can delete existing client documents.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `clientId` path parameter.
-     * @principle Enforces document ownership for writes, and authenticated read access.
      */
     match /clients/{clientId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == clientId;
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
@@ -44,16 +17,11 @@ service cloud.firestore {
     /**
      * @description Allows access to project documents.
      * @path /projects/{projectId}
-     * @allow (read) Authenticated users can get/list project documents.
-     * @allow (create) Authenticated users can create project documents. The `id` field in the data must match the `projectId` path parameter.
-     * @allow (update) Authenticated users can update existing project documents.
-     * @allow (delete) Authenticated users can delete existing project documents.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `projectId` path parameter.
-     * @principle Enforces document ownership for writes, and authenticated read access.
      */
     match /projects/{projectId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == projectId;
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
@@ -61,16 +29,11 @@ service cloud.firestore {
     /**
      * @description Allows access to location documents.
      * @path /locations/{locationId}
-     * @allow (read) Authenticated users can get/list location documents.
-     * @allow (create) Authenticated users can create location documents. The `id` field in the data must match the `locationId` path parameter.
-     * @allow (update) Authenticated users can update existing location documents.
-     * @allow (delete) Authenticated users can delete existing location documents.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `locationId` path parameter.
-     * @principle Enforces document ownership for writes, and authenticated read access.
      */
     match /locations/{locationId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == locationId;
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
@@ -78,16 +41,11 @@ service cloud.firestore {
     /**
      * @description Allows access to task documents.
      * @path /tasks/{taskId}
-     * @allow (read) Authenticated users can get/list task documents.
-     * @allow (create) Authenticated users can create task documents. The `id` field in the data must match the `taskId` path parameter.
-     * @allow (update) Authenticated users can update existing task documents.
-     * @allow (delete) Authenticated users can delete existing task documents.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `taskId` path parameter.
-     * @principle Enforces document ownership for writes, and authenticated read access.
      */
     match /tasks/{taskId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == taskId;
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
@@ -95,16 +53,11 @@ service cloud.firestore {
     /**
      * @description Allows access to personnel documents.
      * @path /personnel/{personnelId}
-     * @allow (read) Authenticated users can get/list personnel documents.
-     * @allow (create) Authenticated users can create personnel documents. The `id` field in the data must match the `personnelId` path parameter.
-     * @allow (update) Authenticated users can update existing personnel documents.
-     * @allow (delete) Authenticated users can delete existing personnel documents.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `personnelId` path parameter.
-     * @principle Enforces document ownership for writes, and authenticated read access.
      */
     match /personnel/{personnelId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == personnelId;
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
@@ -112,16 +65,11 @@ service cloud.firestore {
     /**
      * @description Allows access to equipment documents.
      * @path /equipment/{equipmentId}
-     * @allow (read) Authenticated users can get/list equipment documents.
-     * @allow (create) Authenticated users can create equipment documents. The `id` field in the data must match the `equipmentId` path parameter.
-     * @allow (update) Authenticated users can update existing equipment documents.
-     * @allow (delete) Authenticated users can delete existing equipment documents.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `equipmentId` path parameter.
-     * @principle Enforces document ownership for writes, and authenticated read access.
      */
     match /equipment/{equipmentId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == equipmentId;
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
@@ -129,33 +77,22 @@ service cloud.firestore {
     /**
      * @description Allows access to sample documents.
      * @path /samples/{sampleId}
-     * @allow (read) Authenticated users can get/list sample documents.
-     * @allow (create) Authenticated users can create sample documents. The `id` field in the data must match the `sampleId` path parameter.
-     * @allow (update) Authenticated users can update existing sample documents.
-     * @allow (delete) Authenticated users can delete existing sample documents.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `sampleId` path parameter.
-     * @principle Enforces document ownership for writes, and authenticated read access.
      */
     match /samples/{sampleId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == sampleId;
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
 
       /**
        * @description Allows access to result documents under a sample.
        * @path /samples/{sampleId}/results/{resultId}
-       * @allow (read) Authenticated users can get/list result documents under a sample.
-       * @allow (create) Authenticated users can create result documents under a sample.  The `sampleId` in the data must match the `sampleId` path parameter. The `id` field in the data must match the `resultId` path parameter.
-       * @allow (update) Authenticated users can update existing result documents under a sample.
-       * @allow (delete) Authenticated users can delete existing result documents under a sample.
-       * @deny (create) Creation is denied if the `sampleId` in the data does not match the `sampleId` path parameter.
-       * @deny (create) Creation is denied if the `id` field in the data does not match the `resultId` path parameter.
-       * @principle Enforces document ownership (via the parent sample) for writes, and authenticated read access.
        */
       match /results/{resultId} {
-        allow get, list: if isSignedIn();
-        allow create: if isSignedIn() && request.resource.data.id == resultId;
+        allow get: if isSignedIn();
+        allow list: if false;
+        allow create: if isSignedIn();
         allow update: if isSignedIn();
         allow delete: if isSignedIn();
       }
@@ -163,66 +100,35 @@ service cloud.firestore {
       /**
        * @description Allows access to attachment documents under a sample.
        * @path /samples/{sampleId}/attachments/{attachmentId}
-       * @allow (read) Authenticated users can get/list attachment documents under a sample.
-       * @allow (create) Authenticated users can create attachment documents under a sample. The `sampleId` in the data must match the `sampleId` path parameter. The `id` field in the data must match the `attachmentId` path parameter.
-       * @allow (update) Authenticated users can update existing attachment documents under a sample.
-       * @allow (delete) Authenticated users can delete existing attachment documents under a sample.
-       * @deny (create) Creation is denied if the `sampleId` in the data does not match the `sampleId` path parameter.
-       * @deny (create) Creation is denied if the `id` field in the data does not match the `attachmentId` path parameter.
-       * @principle Enforces document ownership (via the parent sample) for writes, and authenticated read access.
        */
       match /attachments/{attachmentId} {
-        allow get, list: if isSignedIn();
-        allow create: if isSignedIn() && request.resource.data.id == attachmentId;
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn();
         allow update: if isSignedIn();
         allow delete: if isSignedIn();
       }
     }
 
     /**
-     * @description Allows access to exposureLimit documents.
-     * @path /exposureLimits/{exposureLimitId}
-     * @allow (read) Public read access to exposureLimit documents.
-     * @allow (create) Authenticated users can create exposureLimit documents.  The `id` field in the data must match the `exposureLimitId` path parameter.
-     * @allow (update) Authenticated users can update existing exposureLimit documents.
-     * @allow (delete) Authenticated users can delete existing exposureLimit documents.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `exposureLimitId` path parameter.
-     * @principle Public read access, and authenticated write access with ownership check.
+     * @description Allows access to exceedance documents under a result.
+     * @path /results/{resultId}/exceedance
      */
-    match /exposureLimits/{exposureLimitId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.id == exposureLimitId;
+    match /results/{resultId}/exceedance {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
 
     /**
-     * @description Allows access to exceedance documents under a result.
-     * @path /results/{resultId}/exceedance
-     * @allow (read) Authenticated users can get/list exceedance documents under a result.
-     * @allow (create) Authenticated users can create exceedance documents under a result. The `id` field in the data must match the `resultId` path parameter.
-     * @allow (update) Authenticated users can update existing exceedance documents under a result.
-     * @allow (delete) Authenticated users can delete existing exceedance documents under a result.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `resultId` path parameter.
+     * @description Allows access to exposureLimit documents.
+     * @path /exposureLimits/{exposureLimitId}
      */
-    match /samples/{sampleId}/results/{resultId}/exceedance {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
-    }
-    
-    /**
-     * @description Allows access to exceedance documents.
-     * @path /exceedances
-     * @allow (read) Authenticated users can get/list exceedance documents under a result.
-     * @allow (create) Authenticated users can create exceedance documents under a result. The `id` field in the data must match the `resultId` path parameter.
-     * @allow (update) Authenticated users can update existing exceedance documents under a result.
-     * @allow (delete) Authenticated users can delete existing exceedance documents under a result.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `resultId` path parameter.
-     */
-    match /exceedances/{exceedanceId} {
-      allow get, list: if isSignedIn();
+    match /exposureLimits/{exposureLimitId} {
+      allow get: if isSignedIn();
+      allow list: if false;
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
@@ -231,37 +137,33 @@ service cloud.firestore {
     /**
      * @description Allows access to negativeExposureAssessment documents under a project.
      * @path /projects/{projectId}/negativeExposureAssessments/{neaId}
-     * @allow (read) Authenticated users can get/list negativeExposureAssessment documents under a project.
-     * @allow (create) Authenticated users can create negativeExposureAssessment documents under a project. The `projectId` in the data must match the `projectId` path parameter. The `id` field in the data must match the `neaId` path parameter.
-     * @allow (update) Authenticated users can update existing negativeExposureAssessment documents under a project.
-     * @allow (delete) Authenticated users can delete existing negativeExposureAssessment documents under a project.
-     * @deny (create) Creation is denied if the `projectId` in the data does not match the `projectId` path parameter.
-     * @deny (create) Creation is denied if the `id` field in the data does not match the `neaId` path parameter.
-     * @principle Enforces document ownership (via the parent project) for writes, and authenticated read access.
      */
     match /projects/{projectId}/negativeExposureAssessments/{neaId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == neaId;
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
     }
-
+    
+    /**
+     * @description Allows access to surveys
+     * @path /surveys/
+     */
+    match /surveys/{surveyId} {
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isSignedIn();
+        allow delete: if isSignedIn();
+    }
   }
 
   /**
    * @description Checks if the user is signed in.
-   * @returns {boolean} True if the user is signed in, false otherwise.
+   * @return True if the user is signed in, false otherwise.
    */
   function isSignedIn() {
     return request.auth != null;
-  }
-
-  /**
-   * @description Checks if the user is the owner of the document.
-   * @param {string} userId - The user ID to check.
-   * @returns {boolean} True if the user is the owner, false otherwise.
-   */
-  function isOwner(userId) {
-    return request.auth.uid == userId;
   }
 }

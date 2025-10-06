@@ -578,7 +578,7 @@ export default function AdminDashboard() {
                       <Label htmlFor="email-verification">Require Email Verification</Label>
                       <p className="text-sm text-muted-foreground">New users must verify their email</p>
                     </div>
-                    <Switch id="email-verification" defaultChecked />
+                    <Switch id="email-verification" />
                   </div>
 
                   <div className="flex items-center justify-between">

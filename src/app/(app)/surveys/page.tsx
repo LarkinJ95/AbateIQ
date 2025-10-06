@@ -40,7 +40,7 @@ export default function SurveysPage() {
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>();
   const [sortBy, setSortBy] = useState<string>("date-desc");
 
-  const handleSaveSurvey = async (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
+  const handleSaveSurvey = async (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint' | 'ownerId'> & { id?: string }) => {
     if (!user) {
         toast({ title: "Not authenticated", variant: 'destructive' });
         return;
@@ -488,4 +488,3 @@ export default function SurveysPage() {
   );
 }
 
-    

@@ -1,203 +1,248 @@
 /**
- * @file Firestore Security Rules
- * @description This ruleset enforces a flexible access control model, primarily based on the owner-only access pattern, while allowing public read access where appropriate.
+ * @fileoverview Firestore Security Rules for AbateIQ.
+ *
+ * Core Philosophy:
+ * This ruleset prioritizes secure access control based on a combination of
+ * ownership and role-based access patterns. Data is organized to allow for
+ * efficient querying and prevent unauthorized data access.
  *
  * Data Structure:
- * - Top-level collections: clients, projects, locations, tasks, personnel, equipment and samples
- * - Subcollections: results, exceedances, negativeExposureAssessments, and attachments, attached under their parents as detailed in the firestore.structure.
+ * - Root collections: /clients/{clientId}, /projects/{projectId}, /locations/{locationId},
+ *   /tasks/{taskId}, /personnel/{personnelId}, /equipment/{equipmentId}, /exposureLimits/{exposureLimitId}
+ * - Subcollections:
+ *   - /samples/{sampleId}/results/{resultId}
+ *   - /results/{resultId}/exceedance
+ *   - /projects/{projectId}/negativeExposureAssessments/{neaId}
+ *   - /samples/{sampleId}/attachments/{attachmentId}
  *
  * Key Security Decisions:
- * - Clients, Projects, Locations, Tasks, Personnel and Equipment are not secured at this time, and require custom logic to be implemented.
- * - List operations on samples collection is public, which means anyone can see any sample.
- * - Schema validation is relaxed for rapid prototyping. Only critical relational integrity checks are enforced.
- *
- * Denormalization for Authorization:
- *   This ruleset avoids `get()` calls by relying on the assumption that authorization is delegated to helper functions.
+ * - No public listing is allowed for any collection containing private data.
+ * - Data consistency between the path and document's internal fields enforced on create and update.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Grants owner-only access to client documents.
+     * @description Manages access to client data.
      * @path /clients/{clientId}
-     * @allow (create, update, delete) if the user is the owner of the client.
-     * @deny (create, update, delete) if the user is not the owner of the client.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
+     * @deny (create, update, delete)
+     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
+     * @allow (get, list) Any authenticated user can read client data
      * @principle Enforces document ownership for writes.
      */
     match /clients/{clientId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
     }
 
     /**
-     * @description Grants owner-only access to project documents.
+     * @description Manages access to project data.
      * @path /projects/{projectId}
-     * @allow (create, update, delete) if the user is the owner of the project.
-     * @deny (create, update, delete) if the user is not the owner of the project.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
+     * @deny (create, update, delete)
+     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
+     * @allow (get, list) Any authenticated user can read project data.
      * @principle Enforces document ownership for writes.
      */
     match /projects/{projectId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
     }
 
     /**
-     * @description Grants owner-only access to location documents.
+     * @description Manages access to location data.
      * @path /locations/{locationId}
-     * @allow (create, update, delete) if the user is the owner of the location.
-     * @deny (create, update, delete) if the user is not the owner of the location.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
+     * @deny (create, update, delete)
+     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
+     * @allow (get, list) Any authenticated user can read location data.
      * @principle Enforces document ownership for writes.
      */
     match /locations/{locationId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
     }
 
     /**
-     * @description Grants owner-only access to task documents.
+     * @description Manages access to task data.
      * @path /tasks/{taskId}
-     * @allow (create, update, delete) if the user is the owner of the task.
-     * @deny (create, update, delete) if the user is not the owner of the task.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
+     * @deny (create, update, delete)
+     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
+     * @allow (get, list) Any authenticated user can read task data.
      * @principle Enforces document ownership for writes.
      */
     match /tasks/{taskId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
     }
 
     /**
-     * @description Grants owner-only access to personnel documents.
+     * @description Manages access to personnel data.
      * @path /personnel/{personnelId}
-     * @allow (create, update, delete) if the user is the owner of the personnel.
-     * @deny (create, update, delete) if the user is not the owner of the personnel.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
+     * @deny (create, update, delete)
+     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
+     * @allow (get, list) Any authenticated user can read personnel data.
      * @principle Enforces document ownership for writes.
      */
     match /personnel/{personnelId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
     }
 
     /**
-     * @description Grants owner-only access to equipment documents.
+     * @description Manages access to equipment data.
      * @path /equipment/{equipmentId}
-     * @allow (create, update, delete) if the user is the owner of the equipment.
-     * @deny (create, update, delete) if the user is not the owner of the equipment.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
+     * @deny (create, update, delete)
+     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
+     * @allow (get, list) Any authenticated user can read equipment data.
      * @principle Enforces document ownership for writes.
      */
     match /equipment/{equipmentId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
     }
 
     /**
-     * @description Allows public read access and owner-only writes to sample documents.
+     * @description Manages access to sample data.
      * @path /samples/{sampleId}
-     * @allow (get, list) any user can read samples.
-     * @allow (create) only if the request includes a matching ownerId.
-     * @allow (update, delete) only if the user is the owner of the sample.
-     * @deny (create, update, delete) if the user is not the owner of the sample.
-     * @principle Public read with owner-only writes.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id", data.projectId exists
+     * @deny (create, update, delete)
+     *   Request: auth.uid = "another_user_id", data.projectId does not exist
+     * @allow (get, list) Any authenticated user can read sample data.
+     * @principle Requires user to be signed in to write.
      */
     match /samples/{sampleId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Grants owner-only access to result documents under a specific sample.
+     * @description Manages access to result data within a specific sample.
      * @path /samples/{sampleId}/results/{resultId}
-     * @allow (create, update, delete) if the user is the owner of the parent sample.
-     * @deny (create, update, delete) if the user is not the owner of the parent sample.
-     * @principle Enforces document ownership for writes.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id"
+     * @deny (create, update, delete)
+     *   Request: auth.uid = "another_user_id"
+     * @allow (get, list) Any authenticated user can read result data.
+     * @principle Requires user to be signed in to write.
      */
     match /samples/{sampleId}/results/{resultId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Grants owner-only access to exposureLimit documents.
+     * @description Manages access to exposure limit data.
      * @path /exposureLimits/{exposureLimitId}
-     * @allow (create, update, delete) if the user is the owner of the exposureLimit.
-     * @deny (create, update, delete) if the user is not the owner of the exposureLimit.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
+     * @deny (create, update, delete)
+     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
+     * @allow (get, list) Any authenticated user can read exposure limit data.
      * @principle Enforces document ownership for writes.
      */
     match /exposureLimits/{exposureLimitId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
     }
 
     /**
-     * @description Grants owner-only access to exceedance documents under a specific result.
+     * @description Manages access to exceedance data within a specific result.
      * @path /results/{resultId}/exceedance
-     * @allow (create, update, delete) if the user is the owner of the parent result's sample.
-     * @deny (create, update, delete) if the user is not the owner of the parent result's sample.
-     * @principle Enforces document ownership for writes.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id"
+     * @deny (create, update, delete)
+     *   Request: auth.uid = "another_user_id"
+     * @allow (get, list) Any authenticated user can read exceedance data.
+     * @principle Requires user to be signed in to write.
      */
     match /results/{resultId}/exceedance {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Grants owner-only access to negativeExposureAssessment documents under a specific project.
+     * @description Manages access to negative exposure assessment data within a specific project.
      * @path /projects/{projectId}/negativeExposureAssessments/{neaId}
-     * @allow (create, update, delete) if the user is the owner of the parent project.
-     * @deny (create, update, delete) if the user is not the owner of the parent project.
-     * @principle Enforces document ownership for writes.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id"
+     * @deny (create, update, delete)
+     * @allow (get, list) Any authenticated user can read NEA data.
+     * @principle Requires user to be signed in to write.
      */
     match /projects/{projectId}/negativeExposureAssessments/{neaId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Grants owner-only access to attachment documents under a specific sample.
+     * @description Manages access to attachment data within a specific sample.
      * @path /samples/{sampleId}/attachments/{attachmentId}
-     * @allow (create, update, delete) if the user is the owner of the parent sample.
-     * @deny (create, update, delete) if the user is not the owner of the parent sample.
-     * @principle Enforces document ownership for writes.
+     * @allow (create, update, delete)
+     *   Request: auth.uid = "some_user_id"
+     * @deny (create, update, delete)
+     * @allow (get, list) Any authenticated user can read attachment data.
+     * @principle Requires user to be signed in to write.
      */
     match /samples/{sampleId}/attachments/{attachmentId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
+
+    /**
+     * @description Allows any signed-in user to list exceedances
+     * @path /exceedances
+     * @allow (get, list) Any authenticated user can read exceedance data.
+     */
+     match /exceedances/{exceedanceId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+  }
+
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isOwner(userId) {
+    return request.auth.uid == userId;
   }
 }

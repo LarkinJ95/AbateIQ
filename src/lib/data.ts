@@ -201,6 +201,14 @@ export const personnelExposureData: PersonnelExposure[] = [
     { name: 'S. Garcia', asbestos: 70, silica: 55, 'heavy-metals': 60 },
 ];
 
+export const averageResultsData = [
+  { analyte: 'Asbestos', average: 0.08, units: 'f/cc' },
+  { analyte: 'Silica', average: 0.04, units: 'mg/m³' },
+  { analyte: 'Lead', average: 35, units: 'µg/m³' },
+  { analyte: 'Cadmium', average: 5, units: 'µg/m³' },
+];
+
+
 export const documents: Document[] = [
   { id: 'd1', name: 'Lab Report - DT-S-001', type: 'Lab Report', uploadDate: '2024-07-15', thumbnailUrl: findImage('doc-thumb-1')?.imageUrl ?? '', thumbnailHint: findImage('doc-thumb-1')?.imageHint ?? '' },
   { id: 'd2', name: 'Site Photo - Area C', type: 'Photo', uploadDate: '2024-07-14', thumbnailUrl: findImage('doc-thumb-2')?.imageUrl ?? '', thumbnailHint: findImage('doc-thumb-2')?.imageHint ?? '' },

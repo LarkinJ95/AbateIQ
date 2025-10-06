@@ -32,7 +32,7 @@ export default function DashboardPage() {
           {/* Main Chart */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="font-headline">Personnel Exposure History</CardTitle>
+              <CardTitle className="font-headline">Average Results (Last 90 Days)</CardTitle>
             </CardHeader>
             <CardContent className="pl-2">
               <OverviewChart />

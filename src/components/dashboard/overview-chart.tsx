@@ -6,20 +6,12 @@ import {
   ChartTooltipContent,
   ChartContainer,
 } from '@/components/ui/chart';
-import { personnelExposureData } from '@/lib/data';
+import { averageResultsData } from '@/lib/data';
 
 const chartConfig = {
-  asbestos: {
-    label: 'Asbestos',
+  average: {
+    label: 'Average',
     color: 'hsl(var(--chart-1))',
-  },
-  silica: {
-    label: 'Silica',
-    color: 'hsl(var(--chart-2))',
-  },
-  'heavy-metals': {
-    label: 'Heavy Metals',
-    color: 'hsl(var(--chart-3))',
   },
 };
 
@@ -30,10 +22,10 @@ export function OverviewChart() {
       className="min-h-[200px] w-full"
     >
       <ResponsiveContainer width="100%" height={350}>
-        <BarChart data={personnelExposureData}>
+        <BarChart data={averageResultsData}>
           <CartesianGrid vertical={false} />
           <XAxis
-            dataKey="name"
+            dataKey="analyte"
             stroke="hsl(var(--foreground))"
             fontSize={12}
             tickLine={false}
@@ -44,28 +36,20 @@ export function OverviewChart() {
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `${value}%`}
+            tickFormatter={(value) => `${value}`}
           />
           <Tooltip
             cursor={false}
             content={<ChartTooltipContent
               indicator="dot"
-              formatter={(value, name) => `${chartConfig[name as keyof typeof chartConfig]?.label}: ${value}% of Limit`}
+              formatter={(value, name, props) => {
+                return `${props.payload.analyte}: ${value} ${props.payload.units}`;
+              }}
               />}
           />
           <Bar
-            dataKey="asbestos"
-            fill="var(--color-asbestos)"
-            radius={[4, 4, 0, 0]}
-          />
-          <Bar
-            dataKey="silica"
-            fill="var(--color-silica)"
-            radius={[4, 4, 0, 0]}
-          />
-           <Bar
-            dataKey="heavy-metals"
-            fill="var(--color-heavy-metals)"
+            dataKey="average"
+            fill="var(--color-average)"
             radius={[4, 4, 0, 0]}
           />
         </BarChart>

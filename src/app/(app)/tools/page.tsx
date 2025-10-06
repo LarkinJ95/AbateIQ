@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
+import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -449,6 +449,22 @@ function VentilationCalculator() {
 
     }, [roomVolume, cfmSelection, customCfm, machineCfmOptions]);
     
+    const recommendedMachines = useMemo(() => {
+        if (requiredCfmResult === null || requiredCfmResult <= 0) return null;
+    
+        let machineCfm = 0;
+        if (cfmSelection === 'custom') {
+            machineCfm = parseFloat(customCfm);
+        } else {
+            machineCfm = machineCfmOptions[cfmSelection];
+        }
+    
+        if (isNaN(machineCfm) || machineCfm <= 0) return null;
+    
+        return Math.ceil(requiredCfmResult / machineCfm);
+    
+    }, [requiredCfmResult, cfmSelection, customCfm, machineCfmOptions]);
+
     const showAchWarning = useMemo(() => {
         const ach = parseFloat(targetAch);
         return !isNaN(ach) && ach > 0 && ach < 6;
@@ -498,20 +514,38 @@ function VentilationCalculator() {
                                 </Tooltip>
                             </TooltipProvider>
                         </div>
-                        <div className="border-t pt-4">
-                            <h3 className="text-lg font-semibold flex items-center mb-2">
-                                <Wind className="mr-2 h-5 w-5" />
-                                Required Airflow
-                            </h3>
-                            <div className="p-4 bg-muted/50 rounded-lg min-h-[96px]">
-                                {requiredCfmResult !== null ? (
-                                    <>
-                                        <p className="text-sm text-muted-foreground">Required CFM to achieve {targetAch} ACH</p>
-                                        <p className="text-2xl font-bold text-primary">{requiredCfmResult.toFixed(2)} CFM</p>
-                                    </>
-                                ) : (
-                                    <p className="text-muted-foreground text-sm">Enter room dimensions and a target ACH.</p>
-                                )}
+                        <div className="border-t pt-4 space-y-4">
+                            <div>
+                                <h3 className="text-lg font-semibold flex items-center mb-2">
+                                    <Wind className="mr-2 h-5 w-5" />
+                                    Required Airflow
+                                </h3>
+                                <div className="p-4 bg-muted/50 rounded-lg min-h-[96px]">
+                                    {requiredCfmResult !== null ? (
+                                        <>
+                                            <p className="text-sm text-muted-foreground">Required CFM to achieve {targetAch} ACH</p>
+                                            <p className="text-2xl font-bold text-primary">{requiredCfmResult.toFixed(2)} CFM</p>
+                                        </>
+                                    ) : (
+                                        <p className="text-muted-foreground text-sm">Enter room dimensions and a target ACH.</p>
+                                    )}
+                                </div>
+                            </div>
+                             <div>
+                                <h3 className="text-lg font-semibold flex items-center mb-2">
+                                    <Users className="mr-2 h-5 w-5" />
+                                    Recommended Machines
+                                </h3>
+                                <div className="p-4 bg-muted/50 rounded-lg min-h-[96px]">
+                                    {recommendedMachines !== null ? (
+                                        <>
+                                            <p className="text-sm text-muted-foreground">Machines needed for selected CFM</p>
+                                            <p className="text-2xl font-bold text-primary">{recommendedMachines}</p>
+                                        </>
+                                    ) : (
+                                        <p className="text-muted-foreground text-sm">Enter required info and select a machine.</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

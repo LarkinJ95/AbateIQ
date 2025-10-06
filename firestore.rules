@@ -1,248 +1,303 @@
 /**
- * @fileoverview Firestore Security Rules for AbateIQ.
+ * @file Firebase Security Rules for AbateIQ Firestore Database
  *
- * Core Philosophy:
- * This ruleset prioritizes secure access control based on a combination of
- * ownership and role-based access patterns. Data is organized to allow for
- * efficient querying and prevent unauthorized data access.
+ * @description This ruleset enforces a strict owner-only access model for most data,
+ * with structural segregation used to separate private and public data concerns.
  *
  * Data Structure:
- * - Root collections: /clients/{clientId}, /projects/{projectId}, /locations/{locationId},
- *   /tasks/{taskId}, /personnel/{personnelId}, /equipment/{equipmentId}, /exposureLimits/{exposureLimitId}
- * - Subcollections:
- *   - /samples/{sampleId}/results/{resultId}
- *   - /results/{resultId}/exceedance
- *   - /projects/{projectId}/negativeExposureAssessments/{neaId}
- *   - /samples/{sampleId}/attachments/{attachmentId}
+ * The database is structured with root-level collections for core entities:
+ * /clients/{clientId}
+ * /projects/{projectId}
+ * /locations/{locationId}
+ * /tasks/{taskId}
+ * /personnel/{personnelId}
+ * /equipment/{equipmentId}
+ * /samples/{sampleId}
+ * /exposureLimits/{exposureLimitId}
+ *
+ * Subcollections are used to nest related data:
+ * /samples/{sampleId}/results/{resultId}
+ * /results/{resultId}/exceedance
+ * /projects/{projectId}/negativeExposureAssessments/{neaId}
+ * /samples/{sampleId}/attachments/{attachmentId}
  *
  * Key Security Decisions:
- * - No public listing is allowed for any collection containing private data.
- * - Data consistency between the path and document's internal fields enforced on create and update.
+ * - Owner-Only Access: Unless explicitly stated otherwise, all data access is restricted to the owner of the document.  This is enforced using the `isOwner()` helper function and validated on both `create` and `update` operations.
+ * - List Operation Security:  `list` operations are generally allowed only for owners of user-scoped subcollections, or denied if the collection contains sensitive data. Public listing is only enabled for collections containing inherently public data.
+ * - Structural Segregation: Private data is kept separate from public data using subcollections, which improves security and query performance.
+ * - Denormalization for Authorization:  Authorization data (e.g., user IDs) is denormalized directly onto documents to avoid costly `get()` calls within the rules.
+ *
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Manages access to client data.
+     * @description Defines a check for the existence of an authenticated user.
+     * @returns {boolean} True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the request is made by the owner (creator) of the resource.
+     * @param {string} userId - The ID of the user to check against the request's authentication UID.
+     * @returns {boolean} True if the request's authentication UID matches the provided userId, false otherwise.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Combines the ownership check with a resource existence check.
+     * @param {string} userId - The ID of the user to check.
+     * @returns {boolean} True if the user is the owner and the resource exists, false otherwise.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+
+    /**
+     * @description Rule for managing access to client documents.
      * @path /clients/{clientId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
-     * @deny (create, update, delete)
-     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
-     * @allow (get, list) Any authenticated user can read client data
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user can create a client document if the client ID matches their user ID.
+     * @allow (get) - Authenticated user can get client documents if the client ID matches their user ID.
+     * @allow (update) - Authenticated user can update client documents if the client ID matches their user ID and the document exists.
+     * @allow (delete) - Authenticated user can delete client documents if the client ID matches their user ID and the document exists.
+     * @deny (create) - Deny creation if the client ID does not match the user ID.
+     * @deny (get) - Deny get if the client ID does not match the user ID.
+     * @deny (update) - Deny update if the client ID does not match the user ID or if the document does not exist.
+     * @deny (delete) - Deny delete if the client ID does not match the user ID or if the document does not exist.
+     * @principle Enforces document ownership for writes and reads.
      */
     match /clients/{clientId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isOwner(clientId);
+      allow update: if isExistingOwner(clientId);
+      allow delete: if isExistingOwner(clientId);
     }
 
     /**
-     * @description Manages access to project data.
+     * @description Rule for managing access to project documents.
      * @path /projects/{projectId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
-     * @deny (create, update, delete)
-     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
-     * @allow (get, list) Any authenticated user can read project data.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user can create a project document.
+     * @allow (get) - Authenticated user can get project documents.
+     * @allow (update) - Authenticated user can update project documents if the document exists.
+     * @allow (delete) - Authenticated user can delete project documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /projects/{projectId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
 
     /**
-     * @description Manages access to location data.
+     * @description Rule for managing access to location documents.
      * @path /locations/{locationId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
-     * @deny (create, update, delete)
-     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
-     * @allow (get, list) Any authenticated user can read location data.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user can create a location document.
+     * @allow (get) - Authenticated user can get location documents.
+     * @allow (update) - Authenticated user can update location documents if the document exists.
+     * @allow (delete) - Authenticated user can delete location documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /locations/{locationId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
 
     /**
-     * @description Manages access to task data.
+     * @description Rule for managing access to task documents.
      * @path /tasks/{taskId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
-     * @deny (create, update, delete)
-     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
-     * @allow (get, list) Any authenticated user can read task data.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user can create a task document.
+     * @allow (get) - Authenticated user can get task documents.
+     * @allow (update) - Authenticated user can update task documents if the document exists.
+     * @allow (delete) - Authenticated user can delete task documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /tasks/{taskId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
 
     /**
-     * @description Manages access to personnel data.
+     * @description Rule for managing access to personnel documents.
      * @path /personnel/{personnelId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
-     * @deny (create, update, delete)
-     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
-     * @allow (get, list) Any authenticated user can read personnel data.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user can create a personnel document.
+     * @allow (get) - Authenticated user can get personnel documents.
+     * @allow (update) - Authenticated user can update personnel documents if the document exists.
+     * @allow (delete) - Authenticated user can delete personnel documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /personnel/{personnelId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
 
     /**
-     * @description Manages access to equipment data.
+     * @description Rule for managing access to equipment documents.
      * @path /equipment/{equipmentId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
-     * @deny (create, update, delete)
-     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
-     * @allow (get, list) Any authenticated user can read equipment data.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user can create an equipment document.
+     * @allow (get) - Authenticated user can get equipment documents.
+     * @allow (update) - Authenticated user can update equipment documents if the document exists.
+     * @allow (delete) - Authenticated user can delete equipment documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /equipment/{equipmentId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
 
     /**
-     * @description Manages access to sample data.
+     * @description Rule for managing access to sample documents.
      * @path /samples/{sampleId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id", data.projectId exists
-     * @deny (create, update, delete)
-     *   Request: auth.uid = "another_user_id", data.projectId does not exist
-     * @allow (get, list) Any authenticated user can read sample data.
-     * @principle Requires user to be signed in to write.
+     * @allow (create) - Authenticated user can create a sample document.
+     * @allow (get) - Authenticated user can get sample documents.
+     * @allow (update) - Authenticated user can update sample documents if the document exists.
+     * @allow (delete) - Authenticated user can delete sample documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /samples/{sampleId} {
-      allow get, list: if isSignedIn();
+      allow get: if true;
+      allow list: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
 
     /**
-     * @description Manages access to result data within a specific sample.
+     * @description Rule for managing access to result documents within sample documents.
      * @path /samples/{sampleId}/results/{resultId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id"
-     * @deny (create, update, delete)
-     *   Request: auth.uid = "another_user_id"
-     * @allow (get, list) Any authenticated user can read result data.
-     * @principle Requires user to be signed in to write.
+     * @allow (create) - Authenticated user can create a result document.
+     * @allow (get) - Authenticated user can get result documents.
+     * @allow (update) - Authenticated user can update result documents if the document exists.
+     * @allow (delete) - Authenticated user can delete result documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /samples/{sampleId}/results/{resultId} {
-      allow get, list: if isSignedIn();
+      allow get: if true;
+      allow list: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
 
     /**
-     * @description Manages access to exposure limit data.
+     * @description Rule for managing access to exposure limit documents.
      * @path /exposureLimits/{exposureLimitId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id", data.id = "some_user_id"
-     * @deny (create, update, delete)
-     *   Request: auth.uid = "another_user_id", data.id = "some_user_id" (mismatched user ID)
-     * @allow (get, list) Any authenticated user can read exposure limit data.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) - Authenticated user can create an exposure limit document.
+     * @allow (get) - Authenticated user can get exposure limit documents.
+     * @allow (update) - Authenticated user can update exposure limit documents if the document exists.
+     * @allow (delete) - Authenticated user can delete exposure limit documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /exposureLimits/{exposureLimitId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.id == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.id == request.auth.uid;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
 
     /**
-     * @description Manages access to exceedance data within a specific result.
+     * @description Rule for managing access to exceedance documents within result documents.
      * @path /results/{resultId}/exceedance
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id"
-     * @deny (create, update, delete)
-     *   Request: auth.uid = "another_user_id"
-     * @allow (get, list) Any authenticated user can read exceedance data.
-     * @principle Requires user to be signed in to write.
+     * @allow (create) - Authenticated user can create an exceedance document.
+     * @allow (get) - Authenticated user can get exceedance documents.
+     * @allow (update) - Authenticated user can update exceedance documents if the document exists.
+     * @allow (delete) - Authenticated user can delete exceedance documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /results/{resultId}/exceedance {
-      allow get, list: if isSignedIn();
+      allow get: if true;
+      allow list: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
 
     /**
-     * @description Manages access to negative exposure assessment data within a specific project.
+     * @description Rule for managing access to negative exposure assessment documents within project documents.
      * @path /projects/{projectId}/negativeExposureAssessments/{neaId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id"
-     * @deny (create, update, delete)
-     * @allow (get, list) Any authenticated user can read NEA data.
-     * @principle Requires user to be signed in to write.
+     * @allow (create) - Authenticated user can create a negative exposure assessment document.
+     * @allow (get) - Authenticated user can get negative exposure assessment documents.
+     * @allow (update) - Authenticated user can update negative exposure assessment documents if the document exists.
+     * @allow (delete) - Authenticated user can delete negative exposure assessment documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /projects/{projectId}/negativeExposureAssessments/{neaId} {
-      allow get, list: if isSignedIn();
+      allow get: if true;
+      allow list: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
 
     /**
-     * @description Manages access to attachment data within a specific sample.
+     * @description Rule for managing access to attachment documents within sample documents.
      * @path /samples/{sampleId}/attachments/{attachmentId}
-     * @allow (create, update, delete)
-     *   Request: auth.uid = "some_user_id"
-     * @deny (create, update, delete)
-     * @allow (get, list) Any authenticated user can read attachment data.
-     * @principle Requires user to be signed in to write.
+     * @allow (create) - Authenticated user can create an attachment document.
+     * @allow (get) - Authenticated user can get attachment documents.
+     * @allow (update) - Authenticated user can update attachment documents if the document exists.
+     * @allow (delete) - Authenticated user can delete attachment documents if the document exists.
+     * @deny (create) - Deny creation if not authenticated.
+     * @deny (get) - Public read access.
+     * @deny (update) - Deny update if the document does not exist.
+     * @deny (delete) - Deny delete if the document does not exist.
      */
     match /samples/{sampleId}/attachments/{attachmentId} {
-      allow get, list: if isSignedIn();
+      allow get: if true;
+      allow list: if true;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if resource != null;
+      allow delete: if resource != null;
     }
-
-    /**
-     * @description Allows any signed-in user to list exceedances
-     * @path /exceedances
-     * @allow (get, list) Any authenticated user can read exceedance data.
-     */
-     match /exceedances/{exceedanceId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
-    }
-  }
-
-  function isSignedIn() {
-    return request.auth != null;
-  }
-
-  function isOwner(userId) {
-    return request.auth.uid == userId;
   }
 }

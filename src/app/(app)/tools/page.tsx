@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -8,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users, LocateFixed, Thermometer, Shield, UserCheck, ClockIcon } from 'lucide-react';
+import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users, LocateFixed, Thermometer, Shield, UserCheck, ClockIcon, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -17,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { exposureLimits } from '@/lib/data';
 
-const weatherApiKey = "9567e2b1ebb94c4989c131321250610";
+const weatherApiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
 
 
 type TwaSample = {
@@ -857,161 +858,209 @@ const apfOptions = [
     { value: '10000', label: 'SCBA, Pressure-Demand Full-Facepiece' },
 ];
 
+type PpeSample = {
+    id: number;
+    analyteId: string;
+    concentration: string;
+    apf: string;
+    duration: string;
+};
+
 function PpeCalculator() {
-  const [concentration, setConcentration] = useState('');
-  const [duration, setDuration] = useState('');
-  const [apf, setApf] = useState('');
-  const [analyteId, setAnalyteId] = useState('');
+    const [samples, setSamples] = useState<PpeSample[]>([
+        { id: 1, analyteId: '', concentration: '', apf: '', duration: '' },
+    ]);
+    const { toast } = useToast();
 
-  const selectedAnalyte = useMemo(() => {
-    return exposureLimits.find(limit => limit.id === analyteId);
-  }, [analyteId]);
+    const handleAddSample = () => {
+        setSamples([
+            ...samples,
+            { id: Date.now(), analyteId: '', concentration: '', apf: '', duration: '' },
+        ]);
+    };
 
-  const effectiveExposure = useMemo(() => {
-    const conc = parseFloat(concentration);
-    const protectionFactor = parseInt(apf, 10);
-    if (isNaN(conc) || isNaN(protectionFactor) || protectionFactor <= 0) {
-      return null;
-    }
-    return conc / protectionFactor;
-  }, [concentration, apf]);
+    const handleRemoveSample = (id: number) => {
+        if (samples.length > 1) {
+            setSamples(samples.filter((sample) => sample.id !== id));
+        } else {
+            toast({
+                title: 'Cannot remove last sample',
+                variant: 'destructive',
+            });
+        }
+    };
 
-  const twaInMaskExposure = useMemo(() => {
-    if (effectiveExposure === null) return null;
-    const dur = parseFloat(duration);
-    if (isNaN(dur) || dur <= 0) return null;
-    return (effectiveExposure * dur) / 480; // Assuming 8-hour shift (480 mins)
-  }, [effectiveExposure, duration]);
+    const handleSampleChange = (id: number, field: keyof PpeSample, value: string) => {
+        setSamples(samples.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
+    };
 
-  const exposureStatus = useMemo(() => {
-    if (twaInMaskExposure === null || !selectedAnalyte) {
-      return null;
-    }
-    if (twaInMaskExposure > selectedAnalyte.pel) {
-      return { status: 'Above PEL', className: 'text-destructive' };
-    }
-    if (twaInMaskExposure > selectedAnalyte.al) {
-      return { status: 'Above AL', className: 'text-orange-500' };
-    }
-    return { status: 'Below AL', className: 'text-green-500' };
-  }, [twaInMaskExposure, selectedAnalyte]);
+    const generateReport = () => {
+        const reportContent = `
+      <html>
+        <head>
+          <title>PPE Exposure Assessment Report</title>
+          <style>
+            body { font-family: sans-serif; margin: 2rem; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            h1 { color: #333; }
+            .status-ok { color: green; }
+            .status-warning { color: orange; }
+            .status-danger { color: red; }
+          </style>
+        </head>
+        <body>
+          <h1>PPE Exposure Assessment Report</h1>
+          <p>Generated on: ${new Date().toLocaleDateString()}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Analyte</th>
+                <th>Measured Conc.</th>
+                <th>APF</th>
+                <th>In-Mask Conc.</th>
+                <th>Duration (min)</th>
+                <th>8-hr TWA</th>
+                <th>PEL</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${samples
+                .map((sample) => {
+                    const analyte = exposureLimits.find((l) => l.id === sample.analyteId);
+                    const conc = parseFloat(sample.concentration);
+                    const protectionFactor = parseInt(sample.apf, 10);
+                    const dur = parseFloat(sample.duration);
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-headline">Effective Exposure & TWA Calculator</CardTitle>
-        <CardDescription>
-          Estimate the contaminant concentration inside a respirator and the resulting 8-hour TWA.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="analyte">Analyte</Label>
-            <Select value={analyteId} onValueChange={setAnalyteId}>
-                <SelectTrigger id="analyte">
-                    <SelectValue placeholder="Select an analyte" />
-                </SelectTrigger>
-                <SelectContent>
-                    {exposureLimits.map(limit => (
-                        <SelectItem key={limit.id} value={limit.id}>
-                            {limit.analyte}
-                        </SelectItem>
+                    if (!analyte || isNaN(conc) || isNaN(protectionFactor) || protectionFactor <= 0 || isNaN(dur)) {
+                        return '<tr><td colspan="8">Incomplete data for one row</td></tr>';
+                    }
+
+                    const effectiveExposure = conc / protectionFactor;
+                    const twa = (effectiveExposure * dur) / 480;
+                    
+                    let status = { text: 'Below AL', className: 'status-ok' };
+                    if (twa > analyte.pel) {
+                        status = { text: 'Above PEL', className: 'status-danger' };
+                    } else if (twa > analyte.al) {
+                        status = { text: 'Above AL', className: 'status-warning' };
+                    }
+
+                    return `
+                    <tr>
+                      <td>${analyte.analyte}</td>
+                      <td>${conc} ${analyte.units}</td>
+                      <td>${protectionFactor}</td>
+                      <td>${effectiveExposure.toFixed(4)} ${analyte.units}</td>
+                      <td>${dur}</td>
+                      <td>${twa.toFixed(4)} ${analyte.units}</td>
+                      <td>${analyte.pel} ${analyte.units}</td>
+                      <td class="${status.className}">${status.text}</td>
+                    </tr>
+                  `;
+                })
+                .join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+        const reportWindow = window.open('', '_blank');
+        reportWindow?.document.write(reportContent);
+        reportWindow?.document.close();
+        reportWindow?.print();
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Effective Exposure & TWA Calculator</CardTitle>
+                <CardDescription>
+                    Estimate contaminant concentrations inside a respirator and the resulting 8-hour TWA for multiple samples.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-4">
+                    {samples.map((sample, index) => (
+                        <div key={sample.id} className="p-4 border rounded-lg space-y-4 relative">
+                           <h4 className="font-semibold">Sample {index + 1}</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor={`analyte-${sample.id}`}>Analyte</Label>
+                                    <Select value={sample.analyteId} onValueChange={(v) => handleSampleChange(sample.id, 'analyteId', v)}>
+                                        <SelectTrigger id={`analyte-${sample.id}`}>
+                                            <SelectValue placeholder="Select..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {exposureLimits.map((limit) => (
+                                                <SelectItem key={limit.id} value={limit.id}>{limit.analyte}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`concentration-${sample.id}`}>Measured Conc.</Label>
+                                    <Input
+                                        id={`concentration-${sample.id}`}
+                                        type="number"
+                                        value={sample.concentration}
+                                        onChange={(e) => handleSampleChange(sample.id, 'concentration', e.target.value)}
+                                        placeholder="e.g., 1.25"
+                                        disabled={!sample.analyteId}
+                                    />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor={`apf-${sample.id}`}>Respirator (APF)</Label>
+                                    <Select value={sample.apf} onValueChange={(v) => handleSampleChange(sample.id, 'apf', v)}>
+                                        <SelectTrigger id={`apf-${sample.id}`}>
+                                            <SelectValue placeholder="Select..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {apfOptions.map((option) => (
+                                                <SelectItem key={option.value} value={option.value}>
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor={`duration-${sample.id}`}>Duration (min)</Label>
+                                    <Input
+                                        id={`duration-${sample.id}`}
+                                        type="number"
+                                        value={sample.duration}
+                                        onChange={(e) => handleSampleChange(sample.id, 'duration', e.target.value)}
+                                        placeholder="e.g., 240"
+                                    />
+                                </div>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-2 right-2"
+                                onClick={() => handleRemoveSample(sample.id)}
+                            >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </div>
                     ))}
-                </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="concentration">Measured Concentration ({selectedAnalyte?.units || '...'})</Label>
-            <Input
-              id="concentration"
-              type="number"
-              value={concentration}
-              onChange={(e) => setConcentration(e.target.value)}
-              placeholder="e.g., 1.25"
-              disabled={!selectedAnalyte}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="apf">Assigned Protection Factor (APF)</Label>
-            <Select value={apf} onValueChange={setApf}>
-                <SelectTrigger id="apf">
-                    <SelectValue placeholder="Select a respirator type" />
-                </SelectTrigger>
-                <SelectContent>
-                    {apfOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                            {option.label} (APF: {option.value})
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-          </div>
-           <div className="space-y-2">
-            <Label htmlFor="duration">Exposure Duration (minutes)</Label>
-            <Input
-              id="duration"
-              type="number"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              placeholder="e.g., 240"
-            />
-          </div>
-        </div>
-        <div className="border-t pt-6 space-y-4">
-          <h3 className="text-lg font-semibold flex items-center">
-            <Shield className="mr-2 h-5 w-5" />
-            Calculated In-Mask Exposure
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-muted/50 rounded-lg min-h-[80px]">
-                <p className="text-sm text-muted-foreground">Effective Exposure (Instantaneous)</p>
-                {effectiveExposure !== null ? (
-                <p className="text-xl font-bold text-primary">
-                    {effectiveExposure.toFixed(4)} {selectedAnalyte?.units}
-                </p>
-                ) : (
-                <p className="text-muted-foreground text-sm mt-2">
-                    Enter concentration and APF.
-                </p>
-                )}
-            </div>
-             <div className="p-4 bg-muted/50 rounded-lg min-h-[80px]">
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <ClockIcon className="h-4 w-4" />
-                    8-hr TWA In-Mask Exposure
-                </p>
-                {twaInMaskExposure !== null ? (
-                <p className="text-xl font-bold text-primary">
-                    {twaInMaskExposure.toFixed(4)} {selectedAnalyte?.units}
-                </p>
-                ) : (
-                <p className="text-muted-foreground text-sm mt-2">
-                    Enter duration to calculate TWA.
-                </p>
-                )}
-            </div>
-             <div className="p-4 bg-muted/50 rounded-lg min-h-[80px]">
-                <p className="text-sm text-muted-foreground">Status vs. PEL ({selectedAnalyte?.pel} {selectedAnalyte?.units})</p>
-                 {exposureStatus !== null ? (
-                    <p className={`text-xl font-bold ${exposureStatus.className}`}>
-                        {exposureStatus.status}
-                    </p>
-                    ) : (
-                    <p className="text-muted-foreground text-sm mt-2">
-                        Select an analyte and calculate TWA.
-                    </p>
-                    )}
-            </div>
-          </div>
+                </div>
 
-          <p className="text-xs text-muted-foreground">
-            TWA Formula: (Effective Exposure * Duration) / 480 minutes
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  );
+                <div className="flex justify-between items-center">
+                    <Button variant="outline" onClick={handleAddSample}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Sample
+                    </Button>
+                    <Button onClick={generateReport} disabled={samples.length === 0}>
+                        <Printer className="mr-2 h-4 w-4" /> Generate PDF Report
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
 }
 
 export default function ToolsPage() {

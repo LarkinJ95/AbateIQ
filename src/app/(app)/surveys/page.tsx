@@ -46,18 +46,13 @@ export default function SurveysPage() {
         return;
     }
     try {
-        const dataToSave: Partial<Survey> & {ownerId: string} = {
-            ...surveyData,
-            ownerId: user.uid,
-        };
-
         if (surveyData.id) {
             const surveyRef = doc(firestore, 'surveys', surveyData.id);
-            const { id, ...updateData } = dataToSave;
-            await updateDoc(surveyRef, updateData);
+            await updateDoc(surveyRef, surveyData);
         } else {
             const newSurvey: Partial<Survey> & { ownerId: string } = {
-                ...dataToSave,
+                ...surveyData,
+                ownerId: user.uid,
                 sitePhotoUrl: 'https://picsum.photos/seed/1/600/400',
                 sitePhotoHint: 'construction site',
             };
@@ -491,5 +486,3 @@ export default function SurveysPage() {
     </div>
   );
 }
-
-    

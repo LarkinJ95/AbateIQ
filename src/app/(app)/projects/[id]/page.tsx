@@ -562,5 +562,3 @@ const { data: tasks } = useCollection<any>(tasksQuery);
     </div>
   );
 }
-
-    

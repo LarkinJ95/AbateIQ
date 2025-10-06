@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users } from 'lucide-react';
+import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users, LocateFixed } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -606,6 +606,8 @@ function WbgtCalculator() {
     const [dryBulb, setDryBulb] = useState(''); // Tdb
     const [wetBulb, setWetBulb] = useState(''); // Tnwb
     const [globeTemp, setGlobeTemp] = useState(''); // Tg
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
 
     const result = useMemo(() => {
         const tdb = parseFloat(dryBulb);
@@ -625,6 +627,81 @@ function WbgtCalculator() {
 
     }, [isOutdoor, dryBulb, wetBulb, globeTemp]);
 
+    const handleFetchWeather = () => {
+        setIsLoading(true);
+        if (!navigator.geolocation) {
+            toast({
+                title: "Geolocation Not Supported",
+                description: "Your browser does not support geolocation.",
+                variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                const apiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
+                if (!apiKey) {
+                    toast({
+                        title: "API Key Missing",
+                        description: "Weather API key is not configured.",
+                        variant: "destructive",
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
+                const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${latitude},${longitude}&aqi=no`;
+                
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`Weather API Error: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    
+                    const tempF = data.current.temp_f;
+                    const humidity = data.current.humidity; // in percentage
+
+                    // Simple approximation for WBGT from temp and humidity.
+                    // This is NOT a substitute for actual sensor readings but is a common estimation.
+                    // The formula for Tnwb from Tdb and RH is complex. A simplified estimation is used here.
+                    // A more accurate globe temp would also need sunlight data. We'll estimate.
+                    const estimatedTnwb = tempF * Math.atan(0.151977 * Math.pow(humidity + 8.313659, 0.5)) + Math.atan(tempF + humidity) - Math.atan(humidity - 1.676331) + 0.00391838 * Math.pow(humidity, 1.5) * Math.atan(0.023101 * humidity) - 4.686035;
+                    const estimatedTg = tempF + 5; // A rough guess for a sunny day.
+                    
+                    setDryBulb(tempF.toFixed(1));
+                    setWetBulb(estimatedTnwb.toFixed(1));
+                    setGlobeTemp(estimatedTg.toFixed(1));
+
+                    toast({
+                        title: "Weather Data Fetched",
+                        description: `Data for ${data.location.name} populated.`,
+                    });
+
+                } catch (error: any) {
+                    toast({
+                        title: "Failed to Fetch Weather",
+                        description: error.message || "An unknown error occurred.",
+                        variant: "destructive",
+                    });
+                } finally {
+                    setIsLoading(false);
+                }
+            },
+            (error) => {
+                toast({
+                    title: "Geolocation Failed",
+                    description: error.message,
+                    variant: "destructive",
+                });
+                setIsLoading(false);
+            }
+        );
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -634,9 +711,13 @@ function WbgtCalculator() {
             <CardContent className="space-y-6">
                 <div className="space-y-2">
                     <Label>Environment</Label>
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
                         <Button variant={isOutdoor ? 'default' : 'outline'} onClick={() => setIsOutdoor(true)}><Sun className="mr-2"/>Outdoor (with solar load)</Button>
                         <Button variant={!isOutdoor ? 'default' : 'outline'} onClick={() => setIsOutdoor(false)}><Building className="mr-2"/>Indoor (or outdoor without sun)</Button>
+                        <Button variant="outline" onClick={handleFetchWeather} disabled={isLoading}>
+                            <LocateFixed className="mr-2"/> 
+                            {isLoading ? 'Fetching...' : 'Use Current Location'}
+                        </Button>
                     </div>
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

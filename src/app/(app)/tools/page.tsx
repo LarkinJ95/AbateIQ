@@ -649,7 +649,7 @@ function HeatStressChart({ wbgt }: { wbgt: number | null }) {
                                     className="absolute top-[-25%] -translate-x-1/2 h-[150%] w-px bg-foreground transition-all duration-300 ease-in-out"
                                     style={{ left: getIndicatorPosition() }}
                                 >
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-foreground border-2 border-background" />
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-foreground border-2 border-background" />
                                 </div>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -849,6 +849,7 @@ function WbgtCalculator() {
 }
 
 const apfOptions = [
+    { value: '1', label: 'No Protection' },
     { value: '10', label: 'Half-Mask APR' },
     { value: '25', label: 'PAPR, Loose-Fitting Facepiece' },
     { value: '50', label: 'Full-Facepiece APR / PAPR w/ Half-Mask' },

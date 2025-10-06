@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, MapPin, Calendar, User, Edit, FileText, Filter, Download, Trash2, X, CalendarDays, FileDown, FileUp } from "lucide-react";
+import { Search, Plus, MapPin, Calendar, User, Edit, FileText, Filter, Download, Trash2, X, CalendarDays, FileUp } from "lucide-react";
 import { format } from "date-fns";
 import type { Survey } from "@/lib/types";
 import Link from "next/link";
@@ -53,6 +53,8 @@ export default function SurveysPage() {
         } else {
             const newSurvey: Partial<Survey> = {
                 ...surveyData,
+                orgId,
+                ownerId: user.uid,
                 sitePhotoUrl: 'https://picsum.photos/seed/1/600/400',
                 sitePhotoHint: 'construction site',
             };
@@ -127,7 +129,7 @@ export default function SurveysPage() {
       (survey.address && survey.address.toLowerCase().includes(searchQuery.toLowerCase())) ||
       survey.inspector.toLowerCase().includes(searchQuery.toLowerCase()) ||
       survey.surveyType.join(' ').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (survey.jobNumber && survey.jobNumber.toLowerCase().includes(searchQuery.toLowerCase()))
+      (survey.jobId && survey.jobId.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     if (statusFilter !== "all") {
@@ -449,10 +451,10 @@ export default function SurveysPage() {
                                   <span className="truncate">{survey.address}</span>
                                 </div>
                               )}
-                              {survey.jobNumber && (
+                              {survey.jobId && (
                                 <div className="flex items-center text-sm text-muted-foreground">
                                   <FileText className="h-4 w-4 mr-2 flex-shrink-0" />
-                                  <span className="truncate">Job #{survey.jobNumber}</span>
+                                  <span className="truncate">Job #{survey.jobId}</span>
                                 </div>
                               )}
                               <div className="flex items-center text-sm text-muted-foreground">

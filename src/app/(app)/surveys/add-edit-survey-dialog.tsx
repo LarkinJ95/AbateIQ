@@ -41,7 +41,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
 
     const inspectorsQuery = useMemoFirebase(() => {
         if (!orgId) return null;
-        return query(collection(firestore, 'orgs', orgId, 'personnel'), where('isInspector', '==', true));
+        return query(collection(firestore, 'orgs', orgId, 'people'), where('isInspector', '==', true));
     }, [firestore, orgId]);
     const { data: inspectors, isLoading } = useCollection<Personnel>(inspectorsQuery);
 
@@ -52,7 +52,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
     const [surveyDate, setSurveyDate] = useState<Date>();
     const [status, setStatus] = useState<Survey['status'] | ''>('');
     const [surveyType, setSurveyType] = useState<string[]>([]);
-    const [jobNumber, setJobNumber] = useState('');
+    const [jobId, setJobId] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
 
@@ -66,7 +66,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             setSurveyDate(new Date(survey.surveyDate));
             setStatus(survey.status);
             setSurveyType(Array.isArray(survey.surveyType) ? survey.surveyType : []);
-            setJobNumber(survey.jobNumber || '');
+            setJobId(survey.jobId || '');
         } else if (!isEditMode && isOpen) {
             setSiteName('');
             setAddress('');
@@ -74,7 +74,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             setSurveyDate(new Date());
             setStatus('Draft');
             setSurveyType([]);
-            setJobNumber('');
+            setJobId('');
         }
     }, [survey, isEditMode, isOpen]);
 
@@ -96,7 +96,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             surveyDate: format(surveyDate, 'yyyy-MM-dd'),
             status,
             surveyType,
-            jobNumber,
+            jobId,
         };
         
         if (isEditMode && survey) {
@@ -136,8 +136,8 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             <Input id="address" value={address} onChange={e => setAddress(e.target.value)} />
           </div>
            <div className="space-y-2">
-            <Label htmlFor="jobNumber">Job Number</Label>
-            <Input id="jobNumber" value={jobNumber} onChange={e => setJobNumber(e.target.value)} />
+            <Label htmlFor="jobId">Job ID</Label>
+            <Input id="jobId" value={jobId} onChange={e => setJobId(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="inspector">Inspector</Label>
@@ -147,7 +147,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
               </SelectTrigger>
               <SelectContent>
                 {inspectors?.map(p => (
-                    <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                    <SelectItem key={p.id} value={p.displayName}>{p.displayName}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

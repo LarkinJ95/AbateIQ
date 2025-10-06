@@ -9,12 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users, LocateFixed, Thermometer } from 'lucide-react';
+import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users, LocateFixed, Thermometer, Shield, UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Alert, AlertDescription } from "@/components/ui/alert"
+
 
 type TwaSample = {
   id: number;
@@ -602,14 +604,14 @@ function VentilationCalculator() {
 }
 
 const heatStressLevels = [
-    { level: 'Low', min: 0, max: 82, color: 'bg-green-500' },
-    { level: 'Moderate', min: 82, max: 87, color: 'bg-yellow-500' },
-    { level: 'High', min: 87, max: 90, color: 'bg-orange-500' },
-    { level: 'Extreme', min: 90, max: Infinity, color: 'bg-red-500' },
+    { level: 'Low', min: 0, max: 82, color: 'bg-green-500', recommendation: "Normal work activities. Standard hydration protocols." },
+    { level: 'Moderate', min: 82, max: 87, color: 'bg-yellow-500', recommendation: "20 min work, 10 min rest per hour. Increase hydration reminders." },
+    { level: 'High', min: 87, max: 90, color: 'bg-orange-500', recommendation: "15 min work, 45 min rest per hour. Actively monitor workers for signs of heat stress." },
+    { level: 'Extreme', min: 90, max: Infinity, color: 'bg-red-500', recommendation: "Stop all non-essential work. Only emergency work with strict controls." },
 ];
 
 function HeatStressChart({ wbgt }: { wbgt: number | null }) {
-    const totalRange = 100; // Represents the visual width of the chart
+    const totalRange = 100;
     const minWbgt = 75;
     const maxWbgt = 95;
     const range = maxWbgt - minWbgt;
@@ -629,7 +631,7 @@ function HeatStressChart({ wbgt }: { wbgt: number | null }) {
             </h3>
             <div className="relative w-full h-8 flex rounded-full overflow-hidden border">
                 {heatStressLevels.map(({ level, min, max, color }) => {
-                    if(level === 'Low' || level === 'Extreme') return null; // Don't render segments for open ends
+                    if(level === 'Low' || level === 'Extreme') return null;
                     const left = ((min - minWbgt) / range) * 100;
                     const width = ((max - min) / range) * 100;
                     return (
@@ -667,7 +669,6 @@ function HeatStressChart({ wbgt }: { wbgt: number | null }) {
     );
 }
 
-
 function WbgtCalculator() {
     const [isOutdoor, setIsOutdoor] = useState(true);
     const [dryBulb, setDryBulb] = useState(''); // Tdb
@@ -693,6 +694,11 @@ function WbgtCalculator() {
         }
 
     }, [isOutdoor, dryBulb, wetBulb, globeTemp]);
+    
+    const currentRecommendation = useMemo(() => {
+        if (result === null) return null;
+        return heatStressLevels.find(level => result >= level.min && result < level.max) || heatStressLevels[heatStressLevels.length -1];
+    }, [result]);
 
     const handleFetchWeather = () => {
         setIsLoading(true);
@@ -732,12 +738,8 @@ function WbgtCalculator() {
                     const tempF = data.current.temp_f;
                     const humidity = data.current.humidity; // in percentage
 
-                    // Simple approximation for WBGT from temp and humidity.
-                    // This is NOT a substitute for actual sensor readings but is a common estimation.
-                    // The formula for Tnwb from Tdb and RH is complex. A simplified estimation is used here.
-                    // A more accurate globe temp would also need sunlight data. We'll estimate.
                     const estimatedTnwb = tempF * Math.atan(0.151977 * Math.pow(humidity + 8.313659, 0.5)) + Math.atan(tempF + humidity) - Math.atan(humidity - 1.676331) + 0.00391838 * Math.pow(humidity, 1.5) * Math.atan(0.023101 * humidity) - 4.686035;
-                    const estimatedTg = tempF + 5; // A rough guess for a sunny day.
+                    const estimatedTg = tempF + 5;
                     
                     setDryBulb(tempF.toFixed(1));
                     setWetBulb(estimatedTnwb.toFixed(1));
@@ -822,9 +824,97 @@ function WbgtCalculator() {
                          <HeatStressChart wbgt={result} />
                     </div>
                 )}
+                 {currentRecommendation && (
+                    <div className="border-t pt-6 space-y-4">
+                         <h3 className="text-lg font-semibold flex items-center">
+                            <UserCheck className="mr-2 h-5 w-5" />
+                            Work/Rest & Hydration Recommendation
+                        </h3>
+                        <Alert variant={currentRecommendation.level === 'High' || currentRecommendation.level === 'Extreme' ? 'destructive' : 'default'}>
+                            <AlertTriangle className={`h-4 w-4 ${currentRecommendation.level === 'Low' || currentRecommendation.level === 'Moderate' ? 'hidden' : ''}`} />
+                            <CardTitle>
+                                <span style={{ color: currentRecommendation.color.startsWith('bg-') ? undefined : currentRecommendation.color }}>
+                                    {currentRecommendation.level} Risk
+                                </span>
+                            </CardTitle>
+                            <AlertDescription>
+                                {currentRecommendation.recommendation}
+                            </AlertDescription>
+                        </Alert>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
+}
+
+function PpeCalculator() {
+  const [concentration, setConcentration] = useState('');
+  const [apf, setApf] = useState('');
+
+  const effectiveExposure = useMemo(() => {
+    const conc = parseFloat(concentration);
+    const protectionFactor = parseInt(apf, 10);
+    if (isNaN(conc) || isNaN(protectionFactor) || protectionFactor <= 0) {
+      return null;
+    }
+    return conc / protectionFactor;
+  }, [concentration, apf]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-headline">Effective Exposure Calculator</CardTitle>
+        <CardDescription>
+          Estimate the contaminant concentration inside a respirator based on the measured outside concentration and the respirator's Assigned Protection Factor (APF).
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="concentration">Measured Concentration</Label>
+            <Input
+              id="concentration"
+              type="number"
+              value={concentration}
+              onChange={(e) => setConcentration(e.target.value)}
+              placeholder="e.g., 1.25"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="apf">Assigned Protection Factor (APF)</Label>
+            <Input
+              id="apf"
+              type="number"
+              value={apf}
+              onChange={(e) => setApf(e.target.value)}
+              placeholder="e.g., 10, 50, 1000"
+            />
+          </div>
+        </div>
+        <div className="border-t pt-6 space-y-4">
+          <h3 className="text-lg font-semibold flex items-center">
+            <Shield className="mr-2 h-5 w-5" />
+            Calculated In-Mask Exposure
+          </h3>
+          <div className="p-4 bg-muted/50 rounded-lg min-h-[80px] flex items-center">
+            {effectiveExposure !== null ? (
+              <p className="text-2xl font-bold text-primary">
+                {effectiveExposure.toFixed(4)}
+              </p>
+            ) : (
+              <p className="text-muted-foreground">
+                Enter concentration and APF to calculate.
+              </p>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Formula: Effective Exposure = Measured Concentration / APF
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function ToolsPage() {
@@ -833,11 +923,12 @@ export default function ToolsPage() {
       <Header title="Industrial Hygiene Tools" />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <Tabs defaultValue="twa-calculator">
-          <TabsList className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 w-full md:w-auto">
+          <TabsList className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 w-full md:w-auto">
             <TabsTrigger value="twa-calculator">TWA Calculator</TabsTrigger>
             <TabsTrigger value="unit-converter">Unit Converter</TabsTrigger>
             <TabsTrigger value="ventilation">Ventilation</TabsTrigger>
             <TabsTrigger value="heat-stress">Heat Stress</TabsTrigger>
+            <TabsTrigger value="ppe">PPE</TabsTrigger>
           </TabsList>
           <TabsContent value="twa-calculator" className="mt-4">
             <TwaCalculator />
@@ -850,6 +941,9 @@ export default function ToolsPage() {
           </TabsContent>
            <TabsContent value="heat-stress" className="mt-4">
             <WbgtCalculator />
+          </TabsContent>
+          <TabsContent value="ppe" className="mt-4">
+            <PpeCalculator />
           </TabsContent>
         </Tabs>
       </main>

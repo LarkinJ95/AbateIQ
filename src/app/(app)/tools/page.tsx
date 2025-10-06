@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { exposureLimits } from '@/lib/data';
 
 
 type TwaSample = {
@@ -649,7 +650,7 @@ function HeatStressChart({ wbgt }: { wbgt: number | null }) {
                                     className="absolute top-[-25%] -translate-x-1/2 h-[150%] w-px bg-foreground transition-all duration-300 ease-in-out"
                                     style={{ left: getIndicatorPosition() }}
                                 >
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-foreground border-2 border-background" />
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-foreground border-2 border-background" />
                                 </div>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -860,6 +861,11 @@ const apfOptions = [
 function PpeCalculator() {
   const [concentration, setConcentration] = useState('');
   const [apf, setApf] = useState('');
+  const [analyteId, setAnalyteId] = useState('');
+
+  const selectedAnalyte = useMemo(() => {
+    return exposureLimits.find(limit => limit.id === analyteId);
+  }, [analyteId]);
 
   const effectiveExposure = useMemo(() => {
     const conc = parseFloat(concentration);
@@ -870,24 +876,53 @@ function PpeCalculator() {
     return conc / protectionFactor;
   }, [concentration, apf]);
 
+  const exposureStatus = useMemo(() => {
+    if (effectiveExposure === null || !selectedAnalyte) {
+      return null;
+    }
+    if (effectiveExposure > selectedAnalyte.pel) {
+      return { status: 'Above PEL', className: 'text-destructive' };
+    }
+    if (effectiveExposure > selectedAnalyte.al) {
+      return { status: 'Above AL', className: 'text-orange-500' };
+    }
+    return { status: 'Below AL', className: 'text-green-500' };
+  }, [effectiveExposure, selectedAnalyte]);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="font-headline">Effective Exposure Calculator</CardTitle>
         <CardDescription>
-          Estimate the contaminant concentration inside a respirator based on the measured outside concentration and the respirator's Assigned Protection Factor (APF).
+          Estimate the contaminant concentration inside a respirator and compare it to exposure limits.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="concentration">Measured Concentration</Label>
+            <Label htmlFor="analyte">Analyte</Label>
+            <Select value={analyteId} onValueChange={setAnalyteId}>
+                <SelectTrigger id="analyte">
+                    <SelectValue placeholder="Select an analyte" />
+                </SelectTrigger>
+                <SelectContent>
+                    {exposureLimits.map(limit => (
+                        <SelectItem key={limit.id} value={limit.id}>
+                            {limit.analyte}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="concentration">Measured Concentration ({selectedAnalyte?.units || '...'})</Label>
             <Input
               id="concentration"
               type="number"
               value={concentration}
               onChange={(e) => setConcentration(e.target.value)}
               placeholder="e.g., 1.25"
+              disabled={!selectedAnalyte}
             />
           </div>
           <div className="space-y-2">
@@ -911,17 +946,33 @@ function PpeCalculator() {
             <Shield className="mr-2 h-5 w-5" />
             Calculated In-Mask Exposure
           </h3>
-          <div className="p-4 bg-muted/50 rounded-lg min-h-[80px] flex items-center">
-            {effectiveExposure !== null ? (
-              <p className="text-2xl font-bold text-primary">
-                {effectiveExposure.toFixed(4)}
-              </p>
-            ) : (
-              <p className="text-muted-foreground">
-                Enter concentration and APF to calculate.
-              </p>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-muted/50 rounded-lg min-h-[80px]">
+                <p className="text-sm text-muted-foreground">Effective Exposure</p>
+                {effectiveExposure !== null ? (
+                <p className="text-2xl font-bold text-primary">
+                    {effectiveExposure.toFixed(4)} {selectedAnalyte?.units}
+                </p>
+                ) : (
+                <p className="text-muted-foreground text-sm mt-2">
+                    Enter concentration and APF to calculate.
+                </p>
+                )}
+            </div>
+             <div className="p-4 bg-muted/50 rounded-lg min-h-[80px]">
+                <p className="text-sm text-muted-foreground">Status vs. PEL ({selectedAnalyte?.pel} {selectedAnalyte?.units})</p>
+                 {exposureStatus !== null ? (
+                    <p className={`text-2xl font-bold ${exposureStatus.className}`}>
+                        {exposureStatus.status}
+                    </p>
+                    ) : (
+                    <p className="text-muted-foreground text-sm mt-2">
+                        Select an analyte to see status.
+                    </p>
+                    )}
+            </div>
           </div>
+
           <p className="text-xs text-muted-foreground">
             Formula: Effective Exposure = Measured Concentration / APF
           </p>

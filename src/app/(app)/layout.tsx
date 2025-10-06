@@ -1,3 +1,4 @@
+
 'use client';
 
 import { AppShell } from '@/components/app-shell';
@@ -11,6 +12,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
+  /*
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');
@@ -27,6 +29,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
     );
   }
+  */
 
   return <AppShell>{children}</AppShell>;
 }

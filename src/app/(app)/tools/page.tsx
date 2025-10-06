@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -9,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users, LocateFixed, Thermometer, Shield, UserCheck } from 'lucide-react';
+import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle, Users, LocateFixed, Thermometer, Shield, UserCheck, ClockIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -18,8 +17,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { exposureLimits } from '@/lib/data';
 
-// Read the environment variable at the top level of the module
-const weatherApiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
+const weatherApiKey = "9567e2b1ebb94c4989c131321250610";
+
 
 type TwaSample = {
   id: number;
@@ -614,7 +613,6 @@ const heatStressLevels = [
 ];
 
 function HeatStressChart({ wbgt }: { wbgt: number | null }) {
-    const totalRange = 100;
     const minWbgt = 75;
     const maxWbgt = 95;
     const range = maxWbgt - minWbgt;
@@ -861,6 +859,7 @@ const apfOptions = [
 
 function PpeCalculator() {
   const [concentration, setConcentration] = useState('');
+  const [duration, setDuration] = useState('');
   const [apf, setApf] = useState('');
   const [analyteId, setAnalyteId] = useState('');
 
@@ -877,29 +876,36 @@ function PpeCalculator() {
     return conc / protectionFactor;
   }, [concentration, apf]);
 
+  const twaInMaskExposure = useMemo(() => {
+    if (effectiveExposure === null) return null;
+    const dur = parseFloat(duration);
+    if (isNaN(dur) || dur <= 0) return null;
+    return (effectiveExposure * dur) / 480; // Assuming 8-hour shift (480 mins)
+  }, [effectiveExposure, duration]);
+
   const exposureStatus = useMemo(() => {
-    if (effectiveExposure === null || !selectedAnalyte) {
+    if (twaInMaskExposure === null || !selectedAnalyte) {
       return null;
     }
-    if (effectiveExposure > selectedAnalyte.pel) {
+    if (twaInMaskExposure > selectedAnalyte.pel) {
       return { status: 'Above PEL', className: 'text-destructive' };
     }
-    if (effectiveExposure > selectedAnalyte.al) {
+    if (twaInMaskExposure > selectedAnalyte.al) {
       return { status: 'Above AL', className: 'text-orange-500' };
     }
     return { status: 'Below AL', className: 'text-green-500' };
-  }, [effectiveExposure, selectedAnalyte]);
+  }, [twaInMaskExposure, selectedAnalyte]);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Effective Exposure Calculator</CardTitle>
+        <CardTitle className="font-headline">Effective Exposure & TWA Calculator</CardTitle>
         <CardDescription>
-          Estimate the contaminant concentration inside a respirator and compare it to exposure limits.
+          Estimate the contaminant concentration inside a respirator and the resulting 8-hour TWA.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Label htmlFor="analyte">Analyte</Label>
             <Select value={analyteId} onValueChange={setAnalyteId}>
@@ -941,41 +947,66 @@ function PpeCalculator() {
                 </SelectContent>
             </Select>
           </div>
+           <div className="space-y-2">
+            <Label htmlFor="duration">Exposure Duration (minutes)</Label>
+            <Input
+              id="duration"
+              type="number"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              placeholder="e.g., 240"
+            />
+          </div>
         </div>
         <div className="border-t pt-6 space-y-4">
           <h3 className="text-lg font-semibold flex items-center">
             <Shield className="mr-2 h-5 w-5" />
             Calculated In-Mask Exposure
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 bg-muted/50 rounded-lg min-h-[80px]">
-                <p className="text-sm text-muted-foreground">Effective Exposure</p>
+                <p className="text-sm text-muted-foreground">Effective Exposure (Instantaneous)</p>
                 {effectiveExposure !== null ? (
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-xl font-bold text-primary">
                     {effectiveExposure.toFixed(4)} {selectedAnalyte?.units}
                 </p>
                 ) : (
                 <p className="text-muted-foreground text-sm mt-2">
-                    Enter concentration and APF to calculate.
+                    Enter concentration and APF.
+                </p>
+                )}
+            </div>
+             <div className="p-4 bg-muted/50 rounded-lg min-h-[80px]">
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <ClockIcon className="h-4 w-4" />
+                    8-hr TWA In-Mask Exposure
+                </p>
+                {twaInMaskExposure !== null ? (
+                <p className="text-xl font-bold text-primary">
+                    {twaInMaskExposure.toFixed(4)} {selectedAnalyte?.units}
+                </p>
+                ) : (
+                <p className="text-muted-foreground text-sm mt-2">
+                    Enter duration to calculate TWA.
                 </p>
                 )}
             </div>
              <div className="p-4 bg-muted/50 rounded-lg min-h-[80px]">
                 <p className="text-sm text-muted-foreground">Status vs. PEL ({selectedAnalyte?.pel} {selectedAnalyte?.units})</p>
                  {exposureStatus !== null ? (
-                    <p className={`text-2xl font-bold ${exposureStatus.className}`}>
+                    <p className={`text-xl font-bold ${exposureStatus.className}`}>
                         {exposureStatus.status}
                     </p>
                     ) : (
                     <p className="text-muted-foreground text-sm mt-2">
-                        Select an analyte to see status.
+                        Select an analyte and calculate TWA.
                     </p>
                     )}
             </div>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Formula: Effective Exposure = Measured Concentration / APF
+            TWA Formula: (Effective Exposure * Duration) / 480 minutes
           </p>
         </div>
       </CardContent>

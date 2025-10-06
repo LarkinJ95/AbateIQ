@@ -18,7 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const initialCompanies: Company[] = [
-    { id: 'comp-1', name: 'Bierlein Companies', contactName: 'John Larkin', contactEmail: 'jlarkin@bierlein.com', status: 'active', createdAt: '2024-01-01T10:00:00Z' },
+    { id: 'comp-1', name: 'Bierlein Companies', contactName: 'John Larkin', contactEmail: 'jlarkin@bierlein.com', status: 'active', createdAt: '2024-01-01T10:00:00Z', weatherApiKey: '9567e2b1ebb94c4989c131321250610' },
     { id: 'comp-2', name: 'ACME Demolition', contactName: 'Jane Smith', contactEmail: 'jane@acme.com', status: 'active', createdAt: '2024-02-15T10:00:00Z' },
     { id: 'comp-3', name: 'Inactive Corp', contactName: 'Bob Johnson', contactEmail: 'bob@inactive.com', status: 'inactive', createdAt: '2024-03-20T10:00:00Z' },
 ];
@@ -195,10 +195,13 @@ function CompanyForm({ company, onSave, onCancel }: CompanyFormProps) {
     const [contactName, setContactName] = useState(company?.contactName || '');
     const [contactEmail, setContactEmail] = useState(company?.contactEmail || '');
     const [status, setStatus] = useState<Company['status']>(company?.status || 'active');
+    const [weatherApiKey, setWeatherApiKey] = useState(company?.weatherApiKey || '');
+    const [logoUrl, setLogoUrl] = useState(company?.logoUrl || '');
+    const [primaryColor, setPrimaryColor] = useState(company?.primaryColor || '');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSave({ name, contactName, contactEmail, status });
+        onSave({ name, contactName, contactEmail, status, weatherApiKey, logoUrl, primaryColor });
     };
 
     return (
@@ -228,6 +231,18 @@ function CompanyForm({ company, onSave, onCancel }: CompanyFormProps) {
                   </SelectContent>
                 </Select>
             </div>
+            <div>
+                <Label htmlFor="weatherApiKey">Weather API Key</Label>
+                <Input id="weatherApiKey" value={weatherApiKey} onChange={e => setWeatherApiKey(e.target.value)} />
+            </div>
+             <div>
+                <Label htmlFor="logoUrl">Logo URL</Label>
+                <Input id="logoUrl" value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://example.com/logo.png" />
+            </div>
+             <div>
+                <Label htmlFor="primaryColor">Primary Brand Color</Label>
+                <Input id="primaryColor" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} placeholder="#00BFFF" />
+            </div>
             <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
                 <Button type="submit">Save Company</Button>
@@ -235,4 +250,3 @@ function CompanyForm({ company, onSave, onCancel }: CompanyFormProps) {
         </form>
     );
 }
-

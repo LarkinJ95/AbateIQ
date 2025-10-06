@@ -11,6 +11,7 @@ export type Company = {
   logoUrl?: string;
   primaryColor?: string;
   secondaryColor?: string;
+  weatherApiKey?: string;
 };
 
 export type Project = {

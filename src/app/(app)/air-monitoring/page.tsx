@@ -341,4 +341,10 @@ export default function AirMonitoringPage() {
                           personnel={filteredPersonnel}
                       />
                   </CardContent>
-              </Card
+              </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
+  );
+}

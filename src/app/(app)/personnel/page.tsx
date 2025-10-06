@@ -13,13 +13,16 @@ import { ImportPersonnelDialog } from './import-personnel-dialog';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
+
 export default function PersonnelPage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
   const personnelQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, 'personnel'), where('ownerId', '==', user.uid));
+    return query(collection(firestore, 'orgs', ORG_ID, 'personnel'));
   }, [firestore, user]);
   const { data: personnel, isLoading } = useCollection<Personnel>(personnelQuery);
 

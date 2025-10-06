@@ -4,30 +4,37 @@
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { notFound, useParams } from 'next/navigation';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Sample, Project, Task, Personnel } from '@/lib/types';
 import { useMemo } from 'react';
+
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
 
 export default function SampleDetailsPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  const sampleRef = useMemoFirebase(() => doc(firestore, 'samples', id), [firestore, id]);
+  const sampleRef = useMemoFirebase(() => {
+    if(!user) return null;
+    return doc(firestore, 'orgs', ORG_ID, 'samples', id);
+  }, [firestore, id, user]);
   const { data: sample, isLoading: sampleLoading } = useDoc<Sample>(sampleRef);
 
   const projectId = sample?.projectId;
   const taskId = sample?.taskId;
   const personnelId = sample?.personnelId;
 
-  const projectRef = useMemoFirebase(() => projectId ? doc(firestore, 'projects', projectId) : null, [firestore, projectId]);
+  const projectRef = useMemoFirebase(() => projectId ? doc(firestore, 'orgs', ORG_ID, 'projects', projectId) : null, [firestore, projectId]);
   const { data: project } = useDoc<Project>(projectRef);
 
-  const taskRef = useMemoFirebase(() => taskId ? doc(firestore, 'tasks', taskId) : null, [firestore, taskId]);
+  const taskRef = useMemoFirebase(() => taskId ? doc(firestore, 'orgs', ORG_ID, 'tasks', taskId) : null, [firestore, taskId]);
   const { data: task } = useDoc<Task>(taskRef);
 
-  const personnelRef = useMemoFirebase(() => personnelId ? doc(firestore, 'personnel', personnelId) : null, [firestore, personnelId]);
+  const personnelRef = useMemoFirebase(() => personnelId ? doc(firestore, 'orgs', ORG_ID, 'personnel', personnelId) : null, [firestore, personnelId]);
   const { data: person } = useDoc<Personnel>(personnelRef);
 
   if (sampleLoading) {
@@ -131,5 +138,3 @@ export default function SampleDetailsPage() {
     </div>
   );
 }
-
-    

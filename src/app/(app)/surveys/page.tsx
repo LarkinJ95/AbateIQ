@@ -21,6 +21,9 @@ import { AddEditSurveyDialog } from "./add-edit-survey-dialog";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, where, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
+
 export default function SurveysPage() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -28,7 +31,7 @@ export default function SurveysPage() {
 
   const surveysQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, 'surveys'), where('ownerId', '==', user.uid));
+    return query(collection(firestore, 'orgs', ORG_ID, 'surveys'));
   }, [firestore, user]);
   const { data: surveys, isLoading } = useCollection<Survey>(surveysQuery);
 
@@ -47,16 +50,15 @@ export default function SurveysPage() {
     }
     try {
         if (surveyData.id) {
-            const surveyRef = doc(firestore, 'surveys', surveyData.id);
+            const surveyRef = doc(firestore, 'orgs', ORG_ID, 'surveys', surveyData.id);
             await updateDoc(surveyRef, surveyData);
         } else {
-            const newSurvey: Partial<Survey> & { ownerId: string } = {
+            const newSurvey: Partial<Survey> = {
                 ...surveyData,
-                ownerId: user.uid,
                 sitePhotoUrl: 'https://picsum.photos/seed/1/600/400',
                 sitePhotoHint: 'construction site',
             };
-            await addDoc(collection(firestore, 'surveys'), newSurvey);
+            await addDoc(collection(firestore, 'orgs', ORG_ID, 'surveys'), newSurvey);
         }
          toast({
             title: surveyData.id ? 'Survey Updated' : 'Survey Added',
@@ -83,7 +85,7 @@ export default function SurveysPage() {
         if (confirmed) {
             try {
                 for (const id of selectedSurveys) {
-                    await deleteDoc(doc(firestore, 'surveys', id));
+                    await deleteDoc(doc(firestore, 'orgs', ORG_ID, 'surveys', id));
                 }
                 toast({
                     title: 'Surveys Deleted',

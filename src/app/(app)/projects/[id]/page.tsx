@@ -25,6 +25,8 @@ import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@
 import { collection, query, where, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { exposureLimits } from '@/lib/data';
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
 
 type LinkedReport = {
   id: string;
@@ -38,7 +40,10 @@ export default function ProjectDetailsPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   
-  const projectRef = useMemoFirebase(() => doc(firestore, 'projects', id), [firestore, id]);
+  const projectRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'orgs', ORG_ID, 'projects', id)
+  }, [firestore, id, user]);
   const { data: project, isLoading: projectLoading } = useDoc<Project>(projectRef);
   
   const { toast } = useToast();
@@ -51,21 +56,21 @@ export default function ProjectDetailsPage() {
   // Samples for this project
   const projectSamplesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, 'samples'), where('projectId', '==', id), where('ownerId', '==', user.uid));
+    return query(collection(firestore, 'orgs', ORG_ID, 'samples'), where('projectId', '==', id));
   }, [firestore, id, user]);
   const { data: samples, isLoading: samplesLoading } = useCollection<Sample>(projectSamplesQuery);
 
   // Personnel data (to resolve names)
   const personnelQuery = useMemoFirebase(() => {
       if (!user) return null;
-      return query(collection(firestore, 'personnel'), where('ownerId', '==', user.uid));
+      return query(collection(firestore, 'orgs', ORG_ID, 'personnel'));
   }, [firestore, user]);
   const { data: personnel } = useCollection<any>(personnelQuery);
 
    // Task data (to resolve names)
    const tasksQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, 'tasks'), where('ownerId', '==', user.uid));
+    return query(collection(firestore, 'orgs', ORG_ID, 'tasks'));
 }, [firestore, user]);
 const { data: tasks } = useCollection<any>(tasksQuery);
 
@@ -90,9 +95,8 @@ const { data: tasks } = useCollection<any>(tasksQuery);
   const surveysQuery = useMemoFirebase(() => {
       if (!firestore || !project || !user) return null;
       return query(
-          collection(firestore, 'surveys'), 
+          collection(firestore, 'orgs', ORG_ID, 'surveys'), 
           where('jobNumber', '==', project.jobNumber),
-          where('ownerId', '==', user.uid)
       );
   }, [firestore, project, user]);
   const { data: linkedSurveys } = useCollection<Survey>(surveysQuery);
@@ -184,11 +188,11 @@ const { data: tasks } = useCollection<any>(tasksQuery);
 
       try {
         if (newSampleData.id) {
-            const sampleRef = doc(firestore, 'samples', newSampleData.id);
+            const sampleRef = doc(firestore, 'orgs', ORG_ID, 'samples', newSampleData.id);
             await updateDoc(sampleRef, finalSample);
             toast({ title: 'Sample Updated' });
         } else {
-            await addDoc(collection(firestore, 'samples'), { ...finalSample, ownerId: user.uid });
+            await addDoc(collection(firestore, 'orgs', ORG_ID, 'samples'), { ...finalSample });
             toast({ title: 'Sample Added' });
         }
       } catch (e) {
@@ -199,7 +203,7 @@ const { data: tasks } = useCollection<any>(tasksQuery);
 
   const handleDeleteSample = async (sampleId: string) => {
        try {
-        await deleteDoc(doc(firestore, 'samples', sampleId));
+        await deleteDoc(doc(firestore, 'orgs', ORG_ID, 'samples', sampleId));
          toast({
             title: 'Sample Deleted',
             description: `Sample ${sampleId} has been deleted.`,

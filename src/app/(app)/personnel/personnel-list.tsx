@@ -30,6 +30,9 @@ interface PersonnelListProps {
   personnel: Personnel[];
 }
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
+
 export function PersonnelList({ personnel }: PersonnelListProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -49,7 +52,7 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
   const handleDelete = async (person: Personnel) => {
     if (!firestore) return;
     try {
-        await deleteDoc(doc(firestore, 'personnel', person.id));
+        await deleteDoc(doc(firestore, 'orgs', ORG_ID, 'personnel', person.id));
         toast({
             title: 'Personnel Deleted',
             description: `${person.name} has been deleted.`,
@@ -133,5 +136,3 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
     </Table>
   );
 }
-
-    

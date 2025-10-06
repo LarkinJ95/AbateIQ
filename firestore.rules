@@ -1,84 +1,15 @@
+
 rules_version = '2';
 service cloud.firestore {
-  match /databases/{database}/documents {
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Clients: Any signed-in user can read/write
-    match /clients/{clientId} {
-      allow get, list, create, update, delete: if isSignedIn();
-    }
-
-    // Projects: Any signed-in user can read/write
-    match /projects/{projectId} {
-      allow get, list, create, update, delete: if isSignedIn();
-    }
-
-    // Locations: Any signed-in user can read/write
-    match /locations/{locationId} {
-      allow get, list, create, update, delete: if isSignedIn();
-    }
-
-    // Tasks: Any signed-in user can read/write
-    match /tasks/{taskId} {
-      allow get, list, create, update, delete: if isSignedIn();
-    }
-
-    // Personnel: Any signed-in user can read/write
-    match /personnel/{personnelId} {
-      allow get, list, create, update, delete: if isSignedIn();
-    }
-
-    // Equipment: Any signed-in user can read/write
-    match /equipment/{equipmentId} {
-      allow get, list, create, update, delete: if isSignedIn();
-    }
-
-    // Samples: Any signed-in user can read/write
-    match /samples/{sampleId} {
-      allow get, list, create, update, delete: if isSignedIn();
-
-      // Results (nested under Samples): Any signed-in user can read/write
-      match /results/{resultId} {
-        allow get, list, create, update, delete: if isSignedIn();
-      }
-
-      // Attachments (nested under Samples): Any signed-in user can read/write
-      match /attachments/{attachmentId} {
-        allow get, list, create, update, delete: if isSignedIn();
-      }
-    }
-
-    // Exposure Limits: Any signed-in user can read/write
-    match /exposureLimits/{exposureLimitId} {
-      allow get, list, create, update, delete: if isSignedIn();
-    }
-
-    // Exceedances: Any signed-in user can read/write.  Read is open for prototyping
-    match /exceedances/{exceedanceId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-
-    // Negative Exposure Assessments (nested under Projects): Any signed-in user can read/write
-    match /projects/{projectId}/negativeExposureAssessments/{neaId} {
-      allow get, list, create, update, delete: if isSignedIn();
-    }
-
-    // Results: Any signed-in user can read/write
-    match /results/{resultId} {
-        allow get, list, create, update, delete: if isSignedIn();
-
-        // Exceedance (nested under Results): Any signed-in user can read/write
-        match /exceedances/{exceedanceId} {
-            allow get, list, create, update, delete: if isSignedIn();
-        }
+  match /databases/{db}/documents {
+    function authed() { return request.auth != null; }
+    function hasOrg(org) { return authed() && request.auth.token.orgId == org; }
+    function roleIs(r) { return authed() && request.auth.token.role == r; }
+    // Everything org-scoped lives under /orgs/{orgId}/...
+    match /orgs/{orgId}/{document=**} {
+      allow read: if hasOrg(orgId);
+      allow create, update: if hasOrg(orgId) && (roleIs('admin') || roleIs('editor'));
+      allow delete: if hasOrg(orgId) && roleIs('admin');
     }
   }
 }

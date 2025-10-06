@@ -30,6 +30,9 @@ interface AddPersonnelDialogProps {
   children: React.ReactNode;
 }
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
+
 export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps) {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -70,7 +73,7 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
         return;
     }
 
-    const personData: Partial<Personnel> & { ownerId?: string } = {
+    const personData: Partial<Personnel> = {
         name,
         employeeId,
         fitTestDueDate: format(fitTestDate, 'yyyy-MM-dd'),
@@ -80,11 +83,10 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
 
     try {
       if (isEditMode && person) {
-          const personRef = doc(firestore, 'personnel', person.id);
+          const personRef = doc(firestore, 'orgs', ORG_ID, 'personnel', person.id);
           await updateDoc(personRef, personData);
       } else {
-          personData.ownerId = user.uid;
-          await addDoc(collection(firestore, 'personnel'), personData);
+          await addDoc(collection(firestore, 'orgs', ORG_ID, 'personnel'), personData);
       }
       
       toast({

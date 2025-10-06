@@ -21,6 +21,9 @@ import { Label } from '@/components/ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
+
 export function ImportPersonnelDialog() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -51,7 +54,7 @@ export function ImportPersonnelDialog() {
         return;
       }
 
-      const newPersonnel: (Omit<Personnel, 'id'> & { ownerId: string })[] = dataRows.map((row, i) => {
+      const newPersonnel: (Omit<Personnel, 'id'>)[] = dataRows.map((row, i) => {
         const columns = row.split('\t');
         if (columns.length < 4) {
           throw new Error(`Row ${i + 1} has fewer than 4 columns. Expected: Name, Employee ID, Fit Test Due Date, Medical Clearance Due Date.`);
@@ -69,12 +72,11 @@ export function ImportPersonnelDialog() {
           employeeId: columns[1],
           fitTestDueDate: fitTestDate.toISOString().split('T')[0],
           medicalClearanceDueDate: medClearanceDate.toISOString().split('T')[0],
-          ownerId: user.uid,
         };
       });
 
       for (const person of newPersonnel) {
-        await addDoc(collection(firestore, 'personnel'), person);
+        await addDoc(collection(firestore, 'orgs', ORG_ID, 'personnel'), person);
       }
 
       toast({

@@ -24,13 +24,19 @@ import { generateSurveyReport, GenerateSurveyReportOutput } from '@/ai/flows/gen
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
 
 export default function SurveyDetailsPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  const surveyRef = useMemoFirebase(() => doc(firestore, 'surveys', id), [firestore, id]);
+  const surveyRef = useMemoFirebase(() => {
+      if(!user) return null;
+      return doc(firestore, 'orgs', ORG_ID, 'surveys', id);
+  }, [firestore, id, user]);
   const { data: survey, isLoading } = useDoc<Survey>(surveyRef);
   
   const [homogeneousAreas, setHomogeneousAreas] = useState<HomogeneousArea[]>([]);
@@ -54,7 +60,6 @@ export default function SurveyDetailsPage() {
   const [generatedReport, setGeneratedReport] = useState<GenerateSurveyReportOutput | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   
-  const { user } = useUser();
   const { toast } = useToast();
 
   // Sync state when survey data is loaded from Firestore
@@ -73,6 +78,7 @@ export default function SurveyDetailsPage() {
   }, [survey]);
 
   const updateSurveyInFirestore = async (updatedData: Partial<Survey>) => {
+    if(!surveyRef) return;
     try {
       await updateDoc(surveyRef, updatedData);
       toast({
@@ -572,5 +578,3 @@ export default function SurveyDetailsPage() {
     </div>
   );
 }
-
-    

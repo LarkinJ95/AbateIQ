@@ -17,25 +17,31 @@ import { doc, collection, query, where } from 'firebase/firestore';
 import type { Personnel, Sample, Project, Task } from '@/lib/types';
 import { useMemo } from 'react';
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
+
 export default function PersonnelDetailsPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
   const { user } = useUser();
 
-  const personRef = useMemoFirebase(() => doc(firestore, 'personnel', id), [firestore, id]);
+  const personRef = useMemoFirebase(() => {
+    if(!user) return null;
+    return doc(firestore, 'orgs', ORG_ID, 'personnel', id)
+  }, [firestore, id, user]);
   const { data: person, isLoading: personLoading } = useDoc<Personnel>(personRef);
 
   const personSamplesQuery = useMemoFirebase(() => {
     if (!id || !user) return null;
-    return query(collection(firestore, 'samples'), where('personnelId', '==', id), where('ownerId', '==', user.uid));
+    return query(collection(firestore, 'orgs', ORG_ID, 'samples'), where('personnelId', '==', id));
   }, [firestore, id, user]);
   const { data: personSamples, isLoading: samplesLoading } = useCollection<Sample>(personSamplesQuery);
 
-  const projectsQuery = useMemoFirebase(() => user ? query(collection(firestore, 'projects'), where('ownerId', '==', user.uid)) : null, [firestore, user]);
+  const projectsQuery = useMemoFirebase(() => user ? query(collection(firestore, 'orgs', ORG_ID, 'projects')) : null, [firestore, user]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
-  const tasksQuery = useMemoFirebase(() => user ? query(collection(firestore, 'tasks'), where('ownerId', '==', user.uid)) : null, [firestore, user]);
+  const tasksQuery = useMemoFirebase(() => user ? query(collection(firestore, 'orgs', ORG_ID, 'tasks')) : null, [firestore, user]);
   const { data: tasks } = useCollection<Task>(tasksQuery);
 
 

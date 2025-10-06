@@ -1,10 +1,33 @@
+
 {
   "entities": {
+    "Org": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Organization",
+      "type": "object",
+      "description": "Represents a company or organization using the AbateIQ platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the organization."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the organization."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Date of organization creation.",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "name"]
+    },
     "Client": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Client",
       "type": "object",
-      "description": "Represents a client of AbateIQ.",
+      "description": "Represents a client of an AbateIQ organization.",
       "properties": {
         "id": {
           "type": "string",
@@ -18,20 +41,9 @@
           "type": "string",
           "description": "Contact email address for the client.",
           "format": "email"
-        },
-        "contactPhone": {
-          "type": "string",
-          "description": "Contact phone number for the client."
-        },
-        "address": {
-          "type": "string",
-          "description": "Address of the client."
         }
       },
-      "required": [
-        "id",
-        "name"
-      ]
+      "required": ["id", "name"]
     },
     "Project": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -54,95 +66,9 @@
         "description": {
           "type": "string",
           "description": "Description of the project."
-        },
-        "startDate": {
-          "type": "string",
-          "description": "Start date of the project.",
-          "format": "date-time"
-        },
-        "endDate": {
-          "type": "string",
-          "description": "End date of the project.",
-          "format": "date-time"
         }
       },
-      "required": [
-        "id",
-        "clientId",
-        "name"
-      ]
-    },
-    "Location": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Location",
-      "type": "object",
-      "description": "Represents a location within a project.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the location."
-        },
-        "projectId": {
-          "type": "string",
-          "description": "Reference to Project. (Relationship: Project 1:N Location)"
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the location."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the location."
-        },
-        "coordinates": {
-          "type": "string",
-          "description": "Coordinates of the location (e.g., latitude, longitude)."
-        }
-      },
-      "required": [
-        "id",
-        "projectId",
-        "name"
-      ]
-    },
-    "Task": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Task",
-      "type": "object",
-      "description": "Represents a task within a project.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the task."
-        },
-        "projectId": {
-          "type": "string",
-          "description": "Reference to Project. (Relationship: Project 1:N Task)"
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the task."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the task."
-        },
-        "startDate": {
-          "type": "string",
-          "description": "Start date of the task.",
-          "format": "date-time"
-        },
-        "endDate": {
-          "type": "string",
-          "description": "End date of the task.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "projectId",
-        "name"
-      ]
+      "required": ["id", "clientId", "name"]
     },
     "Personnel": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -157,58 +83,9 @@
         "name": {
           "type": "string",
           "description": "Name of the person."
-        },
-        "email": {
-          "type": "string",
-          "description": "Email address of the person.",
-          "format": "email"
-        },
-        "phone": {
-          "type": "string",
-          "description": "Phone number of the person."
-        },
-        "role": {
-          "type": "string",
-          "description": "Role of the person in the project (e.g., field user, manager)."
         }
       },
-      "required": [
-        "id",
-        "name"
-      ]
-    },
-    "Equipment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Equipment",
-      "type": "object",
-      "description": "Represents a piece of equipment used in a project.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the equipment."
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the equipment."
-        },
-        "model": {
-          "type": "string",
-          "description": "Model of the equipment."
-        },
-        "serialNumber": {
-          "type": "string",
-          "description": "Serial number of the equipment."
-        },
-        "calibrationDate": {
-          "type": "string",
-          "description": "Last calibration date of the equipment.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name"
-      ]
+      "required": ["id", "name"]
     },
     "Sample": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -224,496 +101,62 @@
           "type": "string",
           "description": "Reference to Project. (Relationship: Project 1:N Sample)"
         },
-        "taskId": {
-          "type": "string",
-          "description": "Reference to Task. (Relationship: Task 1:N Sample)"
-        },
         "personnelId": {
           "type": "string",
           "description": "Reference to Personnel. (Relationship: Personnel 1:N Sample)"
-        },
-        "equipmentId": {
-          "type": "string",
-          "description": "Reference to Equipment. (Relationship: Equipment 1:N Sample)"
-        },
-        "sampleDate": {
-          "type": "string",
-          "description": "Date the sample was taken.",
-          "format": "date-time"
-        },
-        "location": {
-          "type": "string",
-          "description": "Location where the sample was taken."
-        },
-        "startTime": {
-          "type": "string",
-          "description": "Time the sample collection started.",
-          "format": "date-time"
-        },
-        "stopTime": {
-          "type": "string",
-          "description": "Time the sample collection ended.",
-          "format": "date-time"
-        },
-        "duration": {
-          "type": "number",
-          "description": "Duration of the sample collection in minutes."
-        },
-        "averageFlow": {
-          "type": "number",
-          "description": "Average flow rate during sample collection."
-        },
-        "volume": {
-          "type": "number",
-          "description": "Calculated volume of air sampled."
         }
       },
-      "required": [
-        "id",
-        "projectId",
-        "taskId",
-        "personnelId",
-        "equipmentId",
-        "sampleDate"
-      ]
-    },
-    "Result": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Result",
-      "type": "object",
-      "description": "Represents a result of a sample analysis.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the result."
-        },
-        "sampleId": {
-          "type": "string",
-          "description": "Reference to Sample. (Relationship: Sample 1:N Result)"
-        },
-        "analyte": {
-          "type": "string",
-          "description": "Type of analyte (e.g., asbestos, silica, heavy metals)."
-        },
-        "method": {
-          "type": "string",
-          "description": "Method used for the analysis."
-        },
-        "concentration": {
-          "type": "number",
-          "description": "Concentration of the analyte."
-        },
-        "units": {
-          "type": "string",
-          "description": "Units of measurement for the concentration."
-        },
-        "reportingLimit": {
-          "type": "number",
-          "description": "Reporting limit for the analysis."
-        },
-        "lab": {
-          "type": "string",
-          "description": "Laboratory that performed the analysis."
-        },
-        "complianceStatus": {
-          "type": "string",
-          "description": "Compliance status of the result (e.g., pass, fail)."
-        }
-      },
-      "required": [
-        "id",
-        "sampleId",
-        "analyte",
-        "method",
-        "concentration",
-        "units"
-      ]
-    },
-    "ExposureLimit": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ExposureLimit",
-      "type": "object",
-      "description": "Represents an exposure limit for a specific analyte.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the exposure limit."
-        },
-        "analyte": {
-          "type": "string",
-          "description": "Type of analyte (e.g., asbestos, silica, heavy metals)."
-        },
-        "al": {
-          "type": "number",
-          "description": "Action Level (AL) exposure limit."
-        },
-        "pel": {
-          "type": "number",
-          "description": "Permissible Exposure Limit (PEL)."
-        },
-        "stel": {
-          "type": "number",
-          "description": "Short-Term Exposure Limit (STEL)."
-        },
-        "excursionLimit": {
-          "type": "number",
-          "description": "Excursion limit."
-        }
-      },
-      "required": [
-        "id",
-        "analyte"
-      ]
-    },
-    "Exceedance": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Exceedance",
-      "type": "object",
-      "description": "Represents an exceedance of an exposure limit.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the exceedance."
-        },
-        "resultId": {
-          "type": "string",
-          "description": "Reference to Result. (Relationship: Result 1:1 Exceedance)"
-        },
-        "exposureLimitId": {
-          "type": "string",
-          "description": "Reference to ExposureLimit."
-        },
-        "trigger": {
-          "type": "string",
-          "description": "Details about the trigger for the exceedance."
-        },
-        "correctiveActions": {
-          "type": "string",
-          "description": "Recommended corrective actions for the exceedance."
-        },
-        "exceedanceDate": {
-          "type": "string",
-          "description": "The date the exceedance was detected",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "resultId",
-        "exposureLimitId",
-        "trigger",
-        "correctiveActions"
-      ]
-    },
-    "NegativeExposureAssessment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "NegativeExposureAssessment",
-      "type": "object",
-      "description": "Represents a negative exposure assessment.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the negative exposure assessment."
-        },
-        "projectId": {
-          "type": "string",
-          "description": "Reference to Project. (Relationship: Project 1:N NegativeExposureAssessment)"
-        },
-        "taskId": {
-          "type": "string",
-          "description": "Reference to Task. (Relationship: Task 1:N NegativeExposureAssessment)"
-        },
-        "analyte": {
-          "type": "string",
-          "description": "Analyte for which the assessment is performed."
-        },
-        "effectiveDate": {
-          "type": "string",
-          "description": "Effective date of the assessment.",
-          "format": "date-time"
-        },
-        "reviewDate": {
-          "type": "string",
-          "description": "Date when the NEA is due for review. (30-day review reminder)",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "projectId",
-        "taskId",
-        "analyte",
-        "effectiveDate"
-      ]
-    },
-    "Attachment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Attachment",
-      "type": "object",
-      "description": "Represents an attachment to a sample, such as a lab report or photo.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the attachment."
-        },
-        "sampleId": {
-          "type": "string",
-          "description": "Reference to Sample. (Relationship: Sample 1:N Attachment)"
-        },
-        "filePath": {
-          "type": "string",
-          "description": "Path to the file in cloud storage."
-        },
-        "fileName": {
-          "type": "string",
-          "description": "Name of the attached file."
-        },
-        "fileType": {
-          "type": "string",
-          "description": "Type of the attached file (e.g., lab report, photo)."
-        },
-        "uploadDate": {
-          "type": "string",
-          "description": "Date when the attachment was uploaded",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "sampleId",
-        "filePath",
-        "fileName"
-      ]
-    },
-    "SurveyReport": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "SurveyReport",
-      "type": "object",
-      "description": "Represents an AI-generated survey report.",
-      "properties": {
-        "reportHtml": {
-          "type": "string",
-          "description": "The full survey report formatted as a single HTML string."
-        }
-      },
-      "required": [
-        "reportHtml"
-      ]
+      "required": ["id", "projectId", "personnelId"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"],
+    "customClaims": ["orgId", "role"]
   },
   "firestore": {
+    "rules": "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{db}/documents {\n    function authed() { return request.auth != null; }\n    function hasOrg(org) { return authed() && request.auth.token.orgId == org; }\n    function roleIs(r) { return authed() && request.auth.token.role == r; }\n    // Everything org-scoped lives under /orgs/{orgId}/...\n    match /orgs/{orgId}/{document=**} {\n      allow read: if hasOrg(orgId);\n      allow create, update: if hasOrg(orgId) && (roleIs('admin') || roleIs('editor'));\n      allow delete: if hasOrg(orgId) && roleIs('admin');\n    }\n  }\n}",
     "structure": [
       {
-        "path": "/clients/{clientId}",
+        "path": "/orgs/{orgId}",
+        "definition": {
+          "entityName": "Org",
+          "schema": { "$ref": "#/entities/Org" },
+          "description": "Stores organization information."
+        }
+      },
+      {
+        "path": "/orgs/{orgId}/clients/{clientId}",
         "definition": {
           "entityName": "Client",
-          "schema": {
-            "$ref": "#/backend/entities/Client"
-          },
-          "description": "Stores client information.",
-          "params": [
-            {
-              "name": "clientId",
-              "description": "Unique identifier for the client."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Client" },
+          "description": "Stores client information for an organization."
         }
       },
       {
-        "path": "/projects/{projectId}",
+        "path": "/orgs/{orgId}/projects/{projectId}",
         "definition": {
           "entityName": "Project",
-          "schema": {
-            "$ref": "#/backend/entities/Project"
-          },
-          "description": "Stores project information.",
-          "params": [
-            {
-              "name": "projectId",
-              "description": "Unique identifier for the project."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Project" },
+          "description": "Stores project information for an organization."
         }
       },
       {
-        "path": "/locations/{locationId}",
-        "definition": {
-          "entityName": "Location",
-          "schema": {
-            "$ref": "#/backend/entities/Location"
-          },
-          "description": "Stores location information.",
-          "params": [
-            {
-              "name": "locationId",
-              "description": "Unique identifier for the location."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/tasks/{taskId}",
-        "definition": {
-          "entityName": "Task",
-          "schema": {
-            "$ref": "#/backend/entities/Task"
-          },
-          "description": "Stores task information.",
-          "params": [
-            {
-              "name": "taskId",
-              "description": "Unique identifier for the task."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/personnel/{personnelId}",
+        "path": "/orgs/{orgId}/personnel/{personnelId}",
         "definition": {
           "entityName": "Personnel",
-          "schema": {
-            "$ref": "#/backend/entities/Personnel"
-          },
-          "description": "Stores personnel information.",
-          "params": [
-            {
-              "name": "personnelId",
-              "description": "Unique identifier for the personnel."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Personnel" },
+          "description": "Stores personnel information for an organization."
         }
       },
       {
-        "path": "/equipment/{equipmentId}",
-        "definition": {
-          "entityName": "Equipment",
-          "schema": {
-            "$ref": "#/backend/entities/Equipment"
-          },
-          "description": "Stores equipment information.",
-          "params": [
-            {
-              "name": "equipmentId",
-              "description": "Unique identifier for the equipment."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/samples/{sampleId}",
+        "path": "/orgs/{orgId}/samples/{sampleId}",
         "definition": {
           "entityName": "Sample",
-          "schema": {
-            "$ref": "#/backend/entities/Sample"
-          },
-          "description": "Stores sample information.",
-          "params": [
-            {
-              "name": "sampleId",
-              "description": "Unique identifier for the sample."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/samples/{sampleId}/results/{resultId}",
-        "definition": {
-          "entityName": "Result",
-          "schema": {
-            "$ref": "#/backend/entities/Result"
-          },
-          "description": "Stores result information for a specific sample.",
-          "params": [
-            {
-              "name": "sampleId",
-              "description": "Unique identifier for the parent sample."
-            },
-            {
-              "name": "resultId",
-              "description": "Unique identifier for the result."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/exposureLimits/{exposureLimitId}",
-        "definition": {
-          "entityName": "ExposureLimit",
-          "schema": {
-            "$ref": "#/backend/entities/ExposureLimit"
-          },
-          "description": "Stores exposure limit information.",
-          "params": [
-            {
-              "name": "exposureLimitId",
-              "description": "Unique identifier for the exposure limit."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/results/{resultId}/exceedance",
-        "definition": {
-          "entityName": "Exceedance",
-          "schema": {
-            "$ref": "#/backend/entities/Exceedance"
-          },
-          "description": "Stores exceedance information for a specific result.",
-          "params": [
-            {
-              "name": "resultId",
-              "description": "Unique identifier for the parent result."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/projects/{projectId}/negativeExposureAssessments/{neaId}",
-        "definition": {
-          "entityName": "NegativeExposureAssessment",
-          "schema": {
-            "$ref": "#/backend/entities/NegativeExposureAssessment"
-          },
-          "description": "Stores negative exposure assessment information for a specific project.",
-          "params": [
-            {
-              "name": "projectId",
-              "description": "Unique identifier for the parent project."
-            },
-            {
-              "name": "neaId",
-              "description": "Unique identifier for the negative exposure assessment."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/samples/{sampleId}/attachments/{attachmentId}",
-        "definition": {
-          "entityName": "Attachment",
-          "schema": {
-            "$ref": "#/backend/entities/Attachment"
-          },
-          "description": "Stores attachment information for a specific sample.",
-          "params": [
-            {
-              "name": "sampleId",
-              "description": "Unique identifier for the parent sample."
-            },
-            {
-              "name": "attachmentId",
-              "description": "Unique identifier for the attachment."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Sample" },
+          "description": "Stores sample information for an organization."
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to ensure authorization independence and support secure list operations (QAPs). It leverages structural segregation and consistent access modeling. Clients, Projects, Locations, Tasks, Personnel and Equipment will be stored as root collections. Samples, Results, Exceedances, Negative Exposure Assessments, and Attachments are structured as subcollections to maintain data integrity and simplify querying.  Authorization independence is achieved through denormalization of access control data (like members) into subcollections. This removes the need for `get()` calls in security rules, which enhances atomicity and debuggability. Roles for users are managed via a separate collection, which allows for easy DBAC implementation based on user existence in role collections."
+    "reasoning": "The Firestore structure is designed around a multi-tenant, organization-scoped model. All primary data collections (clients, projects, personnel, samples, etc.) are nested under a top-level `/orgs/{orgId}` collection. This structural nesting directly maps to the Firestore security rules, which use the `orgId` from a user's custom claims to grant access only to documents within their own organization's data tree. This provides strong data isolation between tenants. The security rules implement role-based access control (RBAC), granting read access to all authenticated users within an organization, while write access (create, update, delete) is restricted to users with 'admin' or 'editor' roles, ensuring data integrity."
   }
 }

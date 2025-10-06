@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase';
 
 interface AddNeaDialogProps {
-  onNeaAdded: (nea: Omit<ExistingNea, 'id'> & { ownerId: string }) => void;
+  onNeaAdded: (nea: Omit<ExistingNea, 'id'>) => void;
 }
 
 export function AddNeaDialog({ onNeaAdded }: AddNeaDialogProps) {
@@ -55,12 +55,11 @@ export function AddNeaDialog({ onNeaAdded }: AddNeaDialogProps) {
         });
         return;
     }
-    const newNea: Omit<ExistingNea, 'id'> & { ownerId: string } = {
+    const newNea: Omit<ExistingNea, 'id'> = {
         project,
         task,
         analyte,
         effectiveDate: format(effectiveDate, 'yyyy-MM-dd'),
-        ownerId: user.uid,
     };
     onNeaAdded(newNea);
     toast({

@@ -13,37 +13,40 @@ import type { Exceedance, Project, Sample, Survey, ExistingNea } from '@/lib/typ
 import { useMemo } from 'react';
 import { RecentExceedances } from '@/components/dashboard/recent-exceedances';
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
+
 export default function DashboardPage() {
     const firestore = useFirestore();
     const { user } = useUser();
 
     const projectsQuery = useMemoFirebase(() => {
         if (!user) return null;
-        return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
+        return query(collection(firestore, 'orgs', ORG_ID, 'projects'));
     }, [firestore, user]);
     const { data: projectsData } = useCollection<Project>(projectsQuery);
 
     const samplesQuery = useMemoFirebase(() => {
         if (!user) return null;
-        return query(collection(firestore, 'samples'), where('ownerId', '==', user.uid));
+        return query(collection(firestore, 'orgs', ORG_ID, 'samples'));
     }, [firestore, user]);
     const { data: samplesData } = useCollection<Sample>(samplesQuery);
 
     const surveysQuery = useMemoFirebase(() => {
         if (!user) return null;
-        return query(collection(firestore, 'surveys'), where('ownerId', '==', user.uid));
+        return query(collection(firestore, 'orgs', ORG_ID, 'surveys'));
     }, [firestore, user]);
     const { data: surveysData } = useCollection<Survey>(surveysQuery);
 
     const neasQuery = useMemoFirebase(() => {
         if (!user) return null;
-        return query(collection(firestore, 'neas'), where('ownerId', '==', user.uid));
+        return query(collection(firestore, 'orgs', ORG_ID, 'neas'));
     }, [firestore, user]);
     const { data: neasData } = useCollection<ExistingNea>(neasQuery);
     
     const exceedancesQuery = useMemoFirebase(() => {
         if (!user) return null;
-        return query(collection(firestore, 'exceedances'), where('ownerId', '==', user.uid));
+        return query(collection(firestore, 'orgs', ORG_ID, 'exceedances'));
     }, [firestore, user]);
     const { data: exceedancesData } = useCollection<Exceedance>(exceedancesQuery);
 

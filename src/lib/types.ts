@@ -1,6 +1,11 @@
 
 import type { LucideIcon } from "lucide-react";
 
+export type Org = {
+  id: string;
+  name: string;
+}
+
 export type Company = {
   id: string;
   name: string;
@@ -22,6 +27,7 @@ export type User = {
   lastName: string;
   email: string;
   role: 'admin' | 'manager' | 'user';
+  orgId?: string;
   status: 'active' | 'inactive' | 'pending';
   organization: string;
   jobTitle: string;

@@ -26,6 +26,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
 
 interface AddEditSurveyDialogProps {
   survey?: Survey | null;
@@ -41,7 +43,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
 
     const inspectorsQuery = useMemoFirebase(() => {
         if (!user) return null;
-        return query(collection(firestore, 'personnel'), where('ownerId', '==', user.uid), where('isInspector', '==', true));
+        return query(collection(firestore, 'orgs', ORG_ID, 'personnel'), where('isInspector', '==', true));
     }, [firestore, user]);
     const { data: inspectors, isLoading } = useCollection<Personnel>(inspectorsQuery);
 
@@ -89,7 +91,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             return;
         }
 
-        const surveyData: Partial<Survey> & {ownerId?: string} = {
+        const surveyData: Partial<Survey> = {
             siteName,
             address,
             inspector,
@@ -101,8 +103,6 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
         
         if (isEditMode && survey) {
             surveyData.id = survey.id;
-        } else if (user) {
-            surveyData.ownerId = user.uid;
         }
 
         onSave(surveyData);

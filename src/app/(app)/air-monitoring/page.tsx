@@ -23,6 +23,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, addDoc, updateDoc, doc, deleteDoc, query, where } from 'firebase/firestore';
 
+// TODO: Replace with actual orgId from user's custom claims
+const ORG_ID = "org_placeholder_123";
+
 export default function AirMonitoringPage() {
   const firestore = useFirestore();
   const { user } = useUser();
@@ -30,13 +33,13 @@ export default function AirMonitoringPage() {
 
   const samplesQuery = useMemoFirebase(() => {
       if (!user) return null;
-      return query(collection(firestore, 'samples'), where('ownerId', '==', user.uid));
+      return query(collection(firestore, 'orgs', ORG_ID, 'samples'));
   }, [firestore, user]);
   const { data: samples, isLoading: samplesLoading } = useCollection<Sample>(samplesQuery);
 
   const personnelQuery = useMemoFirebase(() => {
       if (!user) return null;
-      return query(collection(firestore, 'personnel'), where('ownerId', '==', user.uid));
+      return query(collection(firestore, 'orgs', ORG_ID, 'personnel'));
   }, [firestore, user]);
   const { data: personnel, isLoading: personnelLoading } = useCollection<Personnel>(personnelQuery);
 
@@ -116,11 +119,11 @@ export default function AirMonitoringPage() {
 
       try {
         if (isEditMode(newSampleData)) {
-            const sampleRef = doc(firestore, 'samples', newSampleData.id!);
+            const sampleRef = doc(firestore, 'orgs', ORG_ID, 'samples', newSampleData.id!);
             await updateDoc(sampleRef, finalSample);
             toast({ title: 'Sample Updated', description: 'The sample has been updated.' });
         } else {
-            await addDoc(collection(firestore, 'samples'), { ...finalSample, ownerId: user.uid });
+            await addDoc(collection(firestore, 'orgs', ORG_ID, 'samples'), { ...finalSample });
             toast({ title: 'Sample Added', description: 'A new sample has been created.' });
         }
       } catch (error) {
@@ -134,18 +137,17 @@ export default function AirMonitoringPage() {
 
   const handleImportSamples = async (importedSamples: (Omit<Sample, 'id'> & { resultData: any })[]) => {
       if (!user) return;
-      const newSamples: (Omit<Sample, 'id'> & { ownerId: string })[] = importedSamples.map((sampleData, index) => {
+      const newSamples: (Omit<Sample, 'id'>)[] = importedSamples.map((sampleData, index) => {
         const finalSample = processNewSample(sampleData);
         return {
             ...finalSample,
             id: `samp-${Date.now()}-${index}`, // temporary, Firestore will assign one
-            ownerId: user.uid
-        } as (Omit<Sample, 'id'> & { ownerId: string });
+        } as (Omit<Sample, 'id'>);
       });
 
       try {
         for (const newSample of newSamples) {
-          await addDoc(collection(firestore, 'samples'), { ...newSample, ownerId: user.uid });
+          await addDoc(collection(firestore, 'orgs', ORG_ID, 'samples'), newSample);
         }
         toast({ title: 'Import Successful', description: `${newSamples.length} samples imported.` });
       } catch (error) {
@@ -155,7 +157,7 @@ export default function AirMonitoringPage() {
 
   const handleDeleteSample = async (sampleId: string) => {
     try {
-        await deleteDoc(doc(firestore, 'samples', sampleId));
+        await deleteDoc(doc(firestore, 'orgs', ORG_ID, 'samples', sampleId));
         toast({
             title: 'Sample Deleted',
             description: `Sample ${sampleId} has been deleted.`,

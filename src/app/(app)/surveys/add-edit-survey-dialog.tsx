@@ -88,7 +88,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             return;
         }
 
-        const surveyData: Partial<Survey> = {
+        const surveyData: Partial<Survey> & {ownerId?: string} = {
             siteName,
             address,
             inspector,
@@ -100,6 +100,8 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
         
         if (isEditMode && survey) {
             surveyData.id = survey.id;
+        } else if (user) {
+            surveyData.ownerId = user.uid;
         }
 
         onSave(surveyData);

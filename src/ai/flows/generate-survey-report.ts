@@ -110,7 +110,6 @@ export type GenerateSurveyReportOutput = z.infer<typeof GenerateSurveyReportOutp
 const prompt = ai.definePrompt({
     name: 'generateSurveyReportPrompt',
     input: { schema: GenerateSurveyReportInputSchema },
-    model: 'googleai/gemini-1.5-flash',
     prompt: `
         You are an expert HTML and CSS developer creating a professional environmental survey report.
         Generate a single, complete HTML document based on the provided data.

@@ -10,7 +10,9 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'zod';
+import {z} from 'genkit';
+import type { SummarizeLabReportOutput as OutputType } from '@/lib/types';
+
 
 const SummarizeLabReportInputSchema = z.object({
   reportDataUri: z
@@ -31,7 +33,7 @@ const SummarizeLabReportOutputSchema = z.object({
 });
 export type SummarizeLabReportOutput = z.infer<typeof SummarizeLabReportOutputSchema>;
 
-export async function summarizeLabReport(input: SummarizeLabReportInput): Promise<SummarizeLabReportOutput> {
+export async function summarizeLabReport(input: SummarizeLabReportInput): Promise<OutputType> {
   return summarizeLabReportFlow(input);
 }
 

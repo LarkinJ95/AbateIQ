@@ -244,6 +244,8 @@ export type Document = {
   thumbnailHint: string;
   fileUrl?: string;
   ownerId?: string;
+  projectId?: string;
+  summary?: SummarizeLabReportOutput;
 };
 
 export type NavItem = {
@@ -252,4 +254,7 @@ export type NavItem = {
   icon: LucideIcon;
 };
 
-    
+export type SummarizeLabReportOutput = {
+    summary: string;
+    exceedances: string;
+};

@@ -8,14 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { useState, useRef, useMemo } from 'react';
-import type { Sample, Result, Survey, Project } from '@/lib/types';
+import type { Sample, Result, Survey, Project, Document, SummarizeLabReportOutput } from '@/lib/types';
 import { AddSampleDialog } from '@/app/(app)/samples/add-sample-dialog';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Eye, Pencil, Trash2, PlusCircle, Sparkles, Bot, Link as LinkIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { differenceInMinutes, parse } from 'date-fns';
-import { summarizeLabReport, SummarizeLabReportOutput } from '@/ai/flows/summarize-lab-report';
+import { differenceInMinutes, parse, format } from 'date-fns';
+import { summarizeLabReport } from '@/ai/flows/summarize-lab-report';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -25,12 +25,8 @@ import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@
 import { collection, query, where, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { exposureLimits } from '@/lib/data';
 import { createExceedance } from '@/ai/flows/create-exceedance';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-type LinkedReport = {
-  id: string;
-  fileName: string;
-  summaryResult: SummarizeLabReportOutput;
-}
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -48,8 +44,7 @@ export default function ProjectDetailsPage() {
   const { toast } = useToast();
   const reportFileRef = useRef<HTMLInputElement>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
-  const [linkedReports, setLinkedReports] = useState<LinkedReport[]>([]);
-  const [selectedReport, setSelectedReport] = useState<LinkedReport | null>(null);
+  const [selectedReport, setSelectedReport] = useState<Document | null>(null);
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
 
   // Samples for this project
@@ -58,6 +53,13 @@ export default function ProjectDetailsPage() {
     return query(collection(firestore, 'orgs', orgId, 'samples'), where('projectId', '==', id));
   }, [firestore, id, orgId]);
   const { data: samples, isLoading: samplesLoading } = useCollection<Sample>(projectSamplesQuery);
+  
+  // Documents for this project
+  const projectDocumentsQuery = useMemoFirebase(() => {
+      if(!orgId) return null;
+      return query(collection(firestore, 'orgs', orgId, 'documents'), where('projectId', '==', id));
+  }, [firestore, id, orgId]);
+  const { data: linkedReports } = useCollection<Document>(projectDocumentsQuery);
 
   // Personnel data (to resolve names)
   const personnelQuery = useMemoFirebase(() => {
@@ -230,13 +232,10 @@ const { data: tasks } = useCollection<any>(tasksQuery);
 
   const handleSummarizeReport = async () => {
     if (!reportFileRef.current?.files || reportFileRef.current.files.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'No file selected',
-        description: 'Please select a lab report file to summarize.',
-      });
+      toast({ variant: 'destructive', title: 'No file selected' });
       return;
     }
+    if (!orgId || !user) return;
 
     const file = reportFileRef.current.files[0];
     setIsSummarizing(true);
@@ -247,52 +246,50 @@ const { data: tasks } = useCollection<any>(tasksQuery);
       reader.onload = async () => {
         const reportDataUri = reader.result as string;
         try {
-          const result = await summarizeLabReport({ reportDataUri });
-          const newReport: LinkedReport = {
-            id: `report-${Date.now()}`,
-            fileName: file.name,
-            summaryResult: result,
+          const summaryResult = await summarizeLabReport({ reportDataUri });
+          
+          const defaultThumbnail = PlaceHolderImages.find(img => img.id === 'doc-thumb-4');
+
+          const newDocument: Omit<Document, 'id'> = {
+            name: file.name,
+            type: 'Lab Report',
+            uploadDate: format(new Date(), 'yyyy-MM-dd'),
+            thumbnailUrl: defaultThumbnail?.imageUrl || 'https://placehold.co/400x300',
+            thumbnailHint: defaultThumbnail?.imageHint || 'lab results',
+            fileUrl: reportDataUri,
+            ownerId: user.uid,
+            projectId: id,
+            summary: summaryResult,
           };
-          setLinkedReports(prev => [...prev, newReport]);
+          
+          await addDoc(collection(firestore, 'orgs', orgId, 'documents'), newDocument);
+
           toast({
             title: 'Summary Generated & Linked',
             description: `${file.name} has been analyzed and added to the project.`,
           });
+
           if (reportFileRef.current) {
             reportFileRef.current.value = '';
           }
         } catch (error) {
           console.error('Error summarizing report:', error);
-          toast({
-            variant: 'destructive',
-            title: 'Summarization Failed',
-            description: 'An error occurred while generating the AI summary.',
-          });
+          toast({ variant: 'destructive', title: 'Summarization Failed' });
         } finally {
           setIsSummarizing(false);
         }
       };
-      reader.onerror = (error) => {
-        console.error('Error reading file:', error);
-        toast({
-          variant: 'destructive',
-          title: 'File Read Error',
-          description: 'Could not read the selected file.',
-        });
+      reader.onerror = () => {
+        toast({ variant: 'destructive', title: 'File Read Error' });
         setIsSummarizing(false);
       }
     } catch (error) {
-      console.error('Error initiating summarization:', error);
-       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'An unexpected error occurred.',
-      });
+       toast({ variant: 'destructive', title: 'Error' });
       setIsSummarizing(false);
     }
   };
   
-  const handleViewSummary = (report: LinkedReport) => {
+  const handleViewSummary = (report: Document) => {
     setSelectedReport(report);
     setIsSummaryDialogOpen(true);
   }
@@ -515,7 +512,7 @@ const { data: tasks } = useCollection<any>(tasksQuery);
               </div>
             </div>
 
-            {linkedReports.length > 0 && (
+            {linkedReports && linkedReports.length > 0 && (
                 <div className="border-t pt-4 mt-4">
                     <h3 className="font-semibold text-lg mb-2">Linked Reports</h3>
                      <Table>
@@ -528,9 +525,9 @@ const { data: tasks } = useCollection<any>(tasksQuery);
                         <TableBody>
                             {linkedReports.map((report) => (
                                 <TableRow key={report.id}>
-                                    <TableCell className="font-medium">{report.fileName}</TableCell>
+                                    <TableCell className="font-medium">{report.name}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => handleViewSummary(report)}>
+                                        <Button variant="outline" size="sm" onClick={() => handleViewSummary(report)} disabled={!report.summary}>
                                             <Eye className="mr-2 h-4 w-4" />
                                             View Summary
                                         </Button>
@@ -549,25 +546,25 @@ const { data: tasks } = useCollection<any>(tasksQuery);
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 font-headline">
-                        <Bot /> AI Summary for {selectedReport?.fileName}
+                        <Bot /> AI Summary for {selectedReport?.name}
                     </DialogTitle>
                     <DialogDescription>
                         This summary was generated by AI. Always verify critical information against the original document.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[60vh] overflow-y-auto p-1 pr-4 space-y-6">
-                    {selectedReport?.summaryResult && (
+                    {selectedReport?.summary && (
                         <div>
                             <h3 className="font-semibold text-lg mb-2">Summary</h3>
                             <p className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
-                                {selectedReport.summaryResult.summary}
+                                {selectedReport.summary.summary}
                             </p>
 
                             <Separator className="my-4" />
 
                             <h3 className="font-semibold text-lg mb-2">Detected Exceedances</h3>
                              <p className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
-                                {selectedReport.summaryResult.exceedances || 'None'}
+                                {selectedReport.summary.exceedances || 'None'}
                             </p>
                         </div>
                     )}
@@ -580,5 +577,3 @@ const { data: tasks } = useCollection<any>(tasksQuery);
     </div>
   );
 }
-
-    

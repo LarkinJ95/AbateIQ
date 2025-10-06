@@ -17,31 +17,29 @@ import { doc, collection, query, where } from 'firebase/firestore';
 import type { Personnel, Sample, Project, Task } from '@/lib/types';
 import { useMemo } from 'react';
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export default function PersonnelDetailsPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
   const { user } = useUser();
+  const orgId = user?.orgId;
 
   const personRef = useMemoFirebase(() => {
-    if(!user) return null;
-    return doc(firestore, 'orgs', ORG_ID, 'personnel', id)
-  }, [firestore, id, user]);
+    if(!orgId) return null;
+    return doc(firestore, 'orgs', orgId, 'personnel', id)
+  }, [firestore, id, orgId]);
   const { data: person, isLoading: personLoading } = useDoc<Personnel>(personRef);
 
   const personSamplesQuery = useMemoFirebase(() => {
-    if (!id || !user) return null;
-    return query(collection(firestore, 'orgs', ORG_ID, 'samples'), where('personnelId', '==', id));
-  }, [firestore, id, user]);
+    if (!id || !orgId) return null;
+    return query(collection(firestore, 'orgs', orgId, 'samples'), where('personnelId', '==', id));
+  }, [firestore, id, orgId]);
   const { data: personSamples, isLoading: samplesLoading } = useCollection<Sample>(personSamplesQuery);
 
-  const projectsQuery = useMemoFirebase(() => user ? query(collection(firestore, 'orgs', ORG_ID, 'projects')) : null, [firestore, user]);
+  const projectsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'projects')) : null, [firestore, orgId]);
   const { data: projects } = useCollection<Project>(projectsQuery);
 
-  const tasksQuery = useMemoFirebase(() => user ? query(collection(firestore, 'orgs', ORG_ID, 'tasks')) : null, [firestore, user]);
+  const tasksQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'tasks')) : null, [firestore, orgId]);
   const { data: tasks } = useCollection<Task>(tasksQuery);
 
 

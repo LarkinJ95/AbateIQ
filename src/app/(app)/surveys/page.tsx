@@ -21,18 +21,16 @@ import { AddEditSurveyDialog } from "./add-edit-survey-dialog";
 import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, where, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export default function SurveysPage() {
   const firestore = useFirestore();
   const { user } = useUser();
+  const orgId = user?.orgId;
   const { toast } = useToast();
 
   const surveysQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, 'orgs', ORG_ID, 'surveys'));
-  }, [firestore, user]);
+    if (!orgId) return null;
+    return query(collection(firestore, 'orgs', orgId, 'surveys'));
+  }, [firestore, orgId]);
   const { data: surveys, isLoading } = useCollection<Survey>(surveysQuery);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,13 +42,13 @@ export default function SurveysPage() {
   const [sortBy, setSortBy] = useState<string>("date-desc");
 
   const handleSaveSurvey = async (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
-    if (!user) {
+    if (!user || !orgId) {
         toast({ title: "Not authenticated", variant: 'destructive' });
         return;
     }
     try {
         if (surveyData.id) {
-            const surveyRef = doc(firestore, 'orgs', ORG_ID, 'surveys', surveyData.id);
+            const surveyRef = doc(firestore, 'orgs', orgId, 'surveys', surveyData.id);
             await updateDoc(surveyRef, surveyData);
         } else {
             const newSurvey: Partial<Survey> = {
@@ -58,7 +56,7 @@ export default function SurveysPage() {
                 sitePhotoUrl: 'https://picsum.photos/seed/1/600/400',
                 sitePhotoHint: 'construction site',
             };
-            await addDoc(collection(firestore, 'orgs', ORG_ID, 'surveys'), newSurvey);
+            await addDoc(collection(firestore, 'orgs', orgId, 'surveys'), newSurvey);
         }
          toast({
             title: surveyData.id ? 'Survey Updated' : 'Survey Added',
@@ -84,8 +82,9 @@ export default function SurveysPage() {
         const confirmed = window.confirm(`Are you sure you want to delete ${selectedSurveys.length} surveys? This action cannot be undone.`);
         if (confirmed) {
             try {
+                if (!orgId) return;
                 for (const id of selectedSurveys) {
-                    await deleteDoc(doc(firestore, 'orgs', ORG_ID, 'surveys', id));
+                    await deleteDoc(doc(firestore, 'orgs', orgId, 'surveys', id));
                 }
                 toast({
                     title: 'Surveys Deleted',
@@ -484,7 +483,7 @@ export default function SurveysPage() {
                 </div>
                 </div>
             )}
-        </main>
+       </main>
     </div>
   );
 }

@@ -17,36 +17,34 @@ import type { ExistingNea, Sample, Project, Personnel } from '@/lib/types';
 import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { doc, query, collection, where, updateDoc } from 'firebase/firestore';
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export default function NeaDetailsPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
   const { user } = useUser();
+  const orgId = user?.orgId;
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const neaRef = useMemoFirebase(() => {
-    if(!user) return null;
-    return doc(firestore, 'orgs', ORG_ID, 'neas', id)
-  }, [firestore, id, user]);
+    if(!orgId) return null;
+    return doc(firestore, 'orgs', orgId, 'neas', id)
+  }, [firestore, id, orgId]);
   const { data: nea, isLoading: neaLoading } = useDoc<ExistingNea>(neaRef);
   
   const [documentUploaded, setDocumentUploaded] = useState(false); // This would be based on nea.documentPath in a real app
   
   const projectSamplesQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, 'orgs', ORG_ID, 'samples'));
-  }, [firestore, user]);
+    if (!orgId) return null;
+    return query(collection(firestore, 'orgs', orgId, 'samples'));
+  }, [firestore, orgId]);
 
   const { data: allSamples, isLoading: samplesLoading } = useCollection<Sample>(projectSamplesQuery);
 
   const personnelQuery = useMemoFirebase(() => {
-      if (!user) return null;
-      return query(collection(firestore, 'orgs', ORG_ID, 'personnel'));
-  }, [firestore, user]);
+      if (!orgId) return null;
+      return query(collection(firestore, 'orgs', orgId, 'personnel'));
+  }, [firestore, orgId]);
   const { data: allPersonnel } = useCollection<Personnel>(personnelQuery);
 
   if (neaLoading) {
@@ -96,8 +94,8 @@ export default function NeaDetailsPage() {
   };
 
   const handleSamplesLinked = async (sampleIds: string[]) => {
-    if (!user) return;
-    const neaRef = doc(firestore, 'orgs', ORG_ID, 'neas', id);
+    if (!orgId) return;
+    const neaRef = doc(firestore, 'orgs', orgId, 'neas', id);
     try {
         await updateDoc(neaRef, { supportingSampleIds: sampleIds });
         toast({

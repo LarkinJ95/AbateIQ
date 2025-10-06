@@ -9,32 +9,30 @@ import { doc } from 'firebase/firestore';
 import type { Sample, Project, Task, Personnel } from '@/lib/types';
 import { useMemo } from 'react';
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export default function SampleDetailsPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
   const { user } = useUser();
+  const orgId = user?.orgId;
 
   const sampleRef = useMemoFirebase(() => {
-    if(!user) return null;
-    return doc(firestore, 'orgs', ORG_ID, 'samples', id);
-  }, [firestore, id, user]);
+    if(!orgId) return null;
+    return doc(firestore, 'orgs', orgId, 'samples', id);
+  }, [firestore, id, orgId]);
   const { data: sample, isLoading: sampleLoading } = useDoc<Sample>(sampleRef);
 
   const projectId = sample?.projectId;
   const taskId = sample?.taskId;
   const personnelId = sample?.personnelId;
 
-  const projectRef = useMemoFirebase(() => projectId ? doc(firestore, 'orgs', ORG_ID, 'projects', projectId) : null, [firestore, projectId]);
+  const projectRef = useMemoFirebase(() => (projectId && orgId) ? doc(firestore, 'orgs', orgId, 'projects', projectId) : null, [firestore, projectId, orgId]);
   const { data: project } = useDoc<Project>(projectRef);
 
-  const taskRef = useMemoFirebase(() => taskId ? doc(firestore, 'orgs', ORG_ID, 'tasks', taskId) : null, [firestore, taskId]);
+  const taskRef = useMemoFirebase(() => (taskId && orgId) ? doc(firestore, 'orgs', orgId, 'tasks', taskId) : null, [firestore, taskId, orgId]);
   const { data: task } = useDoc<Task>(taskRef);
 
-  const personnelRef = useMemoFirebase(() => personnelId ? doc(firestore, 'orgs', ORG_ID, 'personnel', personnelId) : null, [firestore, personnelId]);
+  const personnelRef = useMemoFirebase(() => (personnelId && orgId) ? doc(firestore, 'orgs', orgId, 'personnel', personnelId) : null, [firestore, personnelId, orgId]);
   const { data: person } = useDoc<Personnel>(personnelRef);
 
   if (sampleLoading) {

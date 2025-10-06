@@ -14,19 +14,17 @@ import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebas
 import { collection, addDoc, query, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export default function NeaPage() {
     const router = useRouter();
     const firestore = useFirestore();
     const { user } = useUser();
+    const orgId = user?.orgId;
     const { toast } = useToast();
 
     const neasQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'orgs', ORG_ID, 'neas'));
-    }, [firestore, user]);
+        if (!orgId) return null;
+        return query(collection(firestore, 'orgs', orgId, 'neas'), where('ownerId', '==', user.uid));
+    }, [firestore, orgId, user?.uid]);
     const { data: existingNeas, isLoading } = useCollection<ExistingNea>(neasQuery);
 
     const getStatus = (effectiveDate: string) => {
@@ -51,9 +49,9 @@ export default function NeaPage() {
     }
 
     const handleNeaSaved = async (newNea: Omit<ExistingNea, 'id'>) => {
-        if (!firestore) return;
+        if (!orgId) return;
         try {
-            await addDoc(collection(firestore, 'orgs', ORG_ID, 'neas'), newNea);
+            await addDoc(collection(firestore, 'orgs', orgId, 'neas'), newNea);
         } catch (error) {
             toast({
                 title: 'Error Saving NEA',

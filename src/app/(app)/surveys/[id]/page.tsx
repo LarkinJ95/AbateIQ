@@ -24,19 +24,17 @@ import { generateSurveyReport, GenerateSurveyReportOutput } from '@/ai/flows/gen
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export default function SurveyDetailsPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
   const { user } = useUser();
+  const orgId = user?.orgId;
 
   const surveyRef = useMemoFirebase(() => {
-      if(!user) return null;
-      return doc(firestore, 'orgs', ORG_ID, 'surveys', id);
-  }, [firestore, id, user]);
+      if(!orgId) return null;
+      return doc(firestore, 'orgs', orgId, 'surveys', id);
+  }, [firestore, id, orgId]);
   const { data: survey, isLoading } = useDoc<Survey>(surveyRef);
   
   const [homogeneousAreas, setHomogeneousAreas] = useState<HomogeneousArea[]>([]);

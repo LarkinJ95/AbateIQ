@@ -28,18 +28,16 @@ import type { Project } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, deleteDoc, doc, query, where, addDoc, updateDoc } from 'firebase/firestore';
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export default function ProjectsPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
+  const orgId = user?.orgId;
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return query(collection(firestore, 'orgs', ORG_ID, 'projects'));
-  }, [firestore, user]);
+    if (!orgId) return null;
+    return query(collection(firestore, 'orgs', orgId, 'projects'));
+  }, [firestore, orgId]);
   const { data: projectsData, isLoading } = useCollection<Project>(projectsQuery);
 
   const projects = useMemo(() => {
@@ -48,17 +46,17 @@ export default function ProjectsPage() {
   }, [projectsData]);
 
   const handleSaveProject = async (projectData: Partial<Project>) => {
-    if (!user) {
+    if (!user || !orgId) {
         toast({ title: "Not authenticated", variant: 'destructive' });
         return;
     }
     try {
         if (projectData.id) {
-            const projectRef = doc(firestore, 'orgs', ORG_ID, 'projects', projectData.id);
+            const projectRef = doc(firestore, 'orgs', orgId, 'projects', projectData.id);
             await updateDoc(projectRef, projectData);
             toast({ title: 'Project Updated' });
         } else {
-            await addDoc(collection(firestore, 'orgs', ORG_ID, 'projects'), projectData);
+            await addDoc(collection(firestore, 'orgs', orgId, 'projects'), projectData);
             toast({ title: 'Project Added' });
         }
     } catch (error) {
@@ -82,9 +80,9 @@ export default function ProjectsPage() {
   };
 
   const handleDelete = async (projectToDelete: Project) => {
-    if (!firestore) return;
+    if (!firestore || !orgId) return;
     try {
-        await deleteDoc(doc(firestore, 'orgs', ORG_ID, 'projects', projectToDelete.id));
+        await deleteDoc(doc(firestore, 'orgs', orgId, 'projects', projectToDelete.id));
         toast({
             title: 'Project Deleted',
             description: `${projectToDelete.name} has been deleted.`,

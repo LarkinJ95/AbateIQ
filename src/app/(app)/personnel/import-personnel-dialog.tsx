@@ -21,18 +21,16 @@ import { Label } from '@/components/ui/label';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export function ImportPersonnelDialog() {
   const firestore = useFirestore();
   const { user } = useUser();
+  const orgId = user?.orgId;
   const [pasteData, setPasteData] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const handleImport = async () => {
-    if (!firestore || !user) return;
+    if (!firestore || !orgId) return;
     if (!pasteData.trim()) {
       toast({
         title: 'No Data to Import',
@@ -76,7 +74,7 @@ export function ImportPersonnelDialog() {
       });
 
       for (const person of newPersonnel) {
-        await addDoc(collection(firestore, 'orgs', ORG_ID, 'personnel'), person);
+        await addDoc(collection(firestore, 'orgs', orgId, 'personnel'), person);
       }
 
       toast({

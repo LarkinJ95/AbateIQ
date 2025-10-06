@@ -10,19 +10,17 @@ import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Exceedance } from '@/lib/types';
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export default function ExceedanceDetailsPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
   const { user } = useUser();
+  const orgId = user?.orgId;
 
   const exceedanceRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'orgs', ORG_ID, 'exceedances', id);
-  }, [firestore, id, user]);
+    if (!orgId) return null;
+    return doc(firestore, 'orgs', orgId, 'exceedances', id);
+  }, [firestore, id, orgId]);
   const { data: exceedance, isLoading } = useDoc<Exceedance>(exceedanceRef);
 
   const evidenceImage = PlaceHolderImages.find(img => img.id === 'doc-thumb-2');

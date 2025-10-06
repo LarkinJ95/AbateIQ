@@ -30,12 +30,10 @@ interface AddPersonnelDialogProps {
   children: React.ReactNode;
 }
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps) {
   const firestore = useFirestore();
   const { user } = useUser();
+  const orgId = user?.orgId;
   const [fitTestDate, setFitTestDate] = useState<Date>();
   const [medClearanceDate, setMedClearanceDate] = useState<Date>();
   const [name, setName] = useState('');
@@ -63,7 +61,7 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
   }, [person, isEditMode, isOpen]);
   
   const handleSave = async () => {
-    if (!firestore || !user) return;
+    if (!firestore || !orgId) return;
     if (!name || !employeeId || !fitTestDate || !medClearanceDate) {
         toast({
             title: 'Missing Fields',
@@ -83,10 +81,10 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
 
     try {
       if (isEditMode && person) {
-          const personRef = doc(firestore, 'orgs', ORG_ID, 'personnel', person.id);
+          const personRef = doc(firestore, 'orgs', orgId, 'personnel', person.id);
           await updateDoc(personRef, personData);
       } else {
-          await addDoc(collection(firestore, 'orgs', ORG_ID, 'personnel'), personData);
+          await addDoc(collection(firestore, 'orgs', orgId, 'personnel'), personData);
       }
       
       toast({

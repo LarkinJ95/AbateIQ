@@ -23,19 +23,18 @@ import { format, isPast, differenceInDays } from 'date-fns';
 import { AddPersonnelDialog } from './add-personnel-dialog';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 
 interface PersonnelListProps {
   personnel: Personnel[];
 }
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export function PersonnelList({ personnel }: PersonnelListProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user } = useUser();
+  const orgId = user?.orgId;
 
   const getStatus = (dateString: string) => {
     const date = new Date(dateString);
@@ -50,9 +49,9 @@ export function PersonnelList({ personnel }: PersonnelListProps) {
   };
 
   const handleDelete = async (person: Personnel) => {
-    if (!firestore) return;
+    if (!firestore || !orgId) return;
     try {
-        await deleteDoc(doc(firestore, 'orgs', ORG_ID, 'personnel', person.id));
+        await deleteDoc(doc(firestore, 'orgs', orgId, 'personnel', person.id));
         toast({
             title: 'Personnel Deleted',
             description: `${person.name} has been deleted.`,

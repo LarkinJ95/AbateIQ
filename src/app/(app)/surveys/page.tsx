@@ -49,7 +49,8 @@ export default function SurveysPage() {
         if (surveyData.id) {
             // Edit existing survey
             const surveyRef = doc(firestore, 'surveys', surveyData.id);
-            await updateDoc(surveyRef, surveyData);
+            const { id, ...dataToUpdate } = surveyData;
+            await updateDoc(surveyRef, dataToUpdate);
         } else {
             // Add new survey
             const newSurvey: Partial<Survey> & { ownerId: string } = {
@@ -81,20 +82,21 @@ export default function SurveysPage() {
     }
     
     if (action === 'delete') {
-      if (confirm(`Are you sure you want to delete ${selectedSurveys.length} surveys? This action cannot be undone.`)) {
-        try {
-            for (const id of selectedSurveys) {
-                await deleteDoc(doc(firestore, 'surveys', id));
+        const confirmed = window.confirm(`Are you sure you want to delete ${selectedSurveys.length} surveys? This action cannot be undone.`);
+        if (confirmed) {
+            try {
+                for (const id of selectedSurveys) {
+                    await deleteDoc(doc(firestore, 'surveys', id));
+                }
+                toast({
+                    title: 'Surveys Deleted',
+                    description: `Successfully deleted ${selectedSurveys.length} surveys.`,
+                });
+                setSelectedSurveys([]);
+            } catch (e) {
+                toast({ title: 'Error deleting surveys', variant: 'destructive' });
             }
-            toast({
-                title: 'Surveys Deleted',
-                description: `Successfully deleted ${selectedSurveys.length} surveys.`,
-            });
-            setSelectedSurveys([]);
-        } catch (e) {
-            toast({ title: 'Error deleting surveys', variant: 'destructive' });
         }
-      }
     } else {
        toast({
         title: 'Export Started',
@@ -105,7 +107,7 @@ export default function SurveysPage() {
   };
 
   const handleSelectAll = (checked: boolean | 'indeterminate') => {
-    if (checked === true) {
+    if (checked === true && filteredSurveys) {
       setSelectedSurveys(filteredSurveys.map(survey => survey.id));
     } else {
       setSelectedSurveys([]);
@@ -487,4 +489,3 @@ export default function SurveysPage() {
     </div>
   );
 }
-

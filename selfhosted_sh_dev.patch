@@ -1,0 +1,396 @@
+*** Begin Patch
+*** Add File: docker-compose.yml
++version: "3.9"
++services:
++  db:
++    image: postgres:16
++    container_name: abateiq_db
++    restart: unless-stopped
++    environment:
++      POSTGRES_USER: abateiq
++      POSTGRES_PASSWORD: abateiq
++      POSTGRES_DB: abateiq
++    ports:
++      - "5432:5432"
++    volumes:
++      - pgdata:/var/lib/postgresql/data
++
++  minio:
++    image: minio/minio:latest
++    container_name: abateiq_minio
++    command: server /data --console-address ":9001"
++    environment:
++      MINIO_ROOT_USER: minio
++      MINIO_ROOT_PASSWORD: minio12345
++    ports:
++      - "9000:9000"
++      - "9001:9001"
++    volumes:
++      - minio:/data
++
++  pgadmin:
++    image: dpage/pgadmin4:latest
++    container_name: abateiq_pgadmin
++    environment:
++      PGADMIN_DEFAULT_EMAIL: admin@local
++      PGADMIN_DEFAULT_PASSWORD: admin
++    ports:
++      - "5050:80"
++    depends_on:
++      - db
++
++volumes:
++  pgdata:
++  minio:
++
+*** End File
+*** Add File: .env.local.example
++# Copy to .env.local for dev
++DATABASE_URL="postgresql://abateiq:abateiq@localhost:5432/abateiq?schema=public"
++NEXTAUTH_URL="http://localhost:9002"
++NEXTAUTH_SECRET="replace-with-a-long-random-string"
++S3_ENDPOINT="http://localhost:9000"
++S3_REGION="us-east-1"
++S3_ACCESS_KEY="minio"
++S3_SECRET_KEY="minio12345"
++S3_BUCKET="abateiq"
++BCRYPT_ROUNDS=12
++
+*** End File
+*** Add File: prisma/schema.prisma
++generator client { provider = "prisma-client-js" }
++datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
++
++enum Role { admin editor auditor viewer }
++
++model Org {
++  id        String  @id @default(cuid())
++  name      String
++  users     User[]
++  jobs      Job[]
++  sites     Site[]
++  analytes  Analyte[]
++  instruments Instrument[]
++  samples   Sample[]
++  exceedances Exceedance[]
++  audits    Audit[]
++  createdAt DateTime @default(now())
++}
++
++model User {
++  id       String @id @default(cuid())
++  email    String @unique
++  password String
++  name     String?
++  role     Role    @default(viewer)
++  orgId    String
++  org      Org     @relation(fields: [orgId], references: [id])
++  createdAt DateTime @default(now())
++  @@index([orgId, role])
++}
++
++model Job {
++  id        String @id @default(cuid())
++  orgId     String
++  org       Org     @relation(fields: [orgId], references: [id])
++  clientName String
++  location   String?
++  status     String   @default("open")
++  startDate  DateTime?
++  endDate    DateTime?
++  createdAt  DateTime @default(now())
++  @@index([orgId, status])
++}
++
++model Site {
++  id        String @id @default(cuid())
++  orgId     String
++  org       Org     @relation(fields: [orgId], references: [id])
++  jobId     String
++  address   String?
++  zone      String?
++  createdAt DateTime @default(now())
++  @@index([orgId, jobId])
++}
++
++model Analyte {
++  id         String @id @default(cuid())
++  orgId      String
++  org        Org     @relation(fields: [orgId], references: [id])
++  name       String
++  method     String?
++  unit       String?
++  standardRef String?
++  createdAt  DateTime @default(now())
++  @@index([orgId, name])
++}
++
++model Instrument {
++  id        String @id @default(cuid())
++  orgId     String
++  org       Org     @relation(fields: [orgId], references: [id])
++  model     String?
++  serial    String?
++  calibrationLogs Json?
++  createdAt DateTime @default(now())
++  @@index([orgId, serial])
++}
++
++model Sample {
++  id           String   @id @default(cuid())
++  orgId        String
++  org          Org      @relation(fields: [orgId], references: [id])
++  jobId        String
++  siteId       String?
++  analyteId    String
++  method       String?
++  mediaType    String?
++  startTime    DateTime
++  stopTime     DateTime
++  preFlow      Float?
++  postFlow     Float?
++  labId        String?
++  resultValue  Float?
++  resultUnit   String?
++  resultQualifiers String?
++  createdById  String?
++  createdAt    DateTime @default(now())
++  @@index([orgId, jobId, startTime])
++  @@index([orgId, analyteId, startTime])
++}
++
++model Exceedance {
++  id           String   @id @default(cuid())
++  orgId        String
++  org          Org      @relation(fields: [orgId], references: [id])
++  jobId        String
++  sampleId     String
++  analyteId    String
++  standardRef  String
++  thresholdValue Float
++  comparisonOperator String
++  calculatedValue   Float
++  exceeded      Boolean
++  reviewerId    String?
++  reviewedAt    DateTime?
++  locked        Boolean @default(false)
++  createdAt     DateTime @default(now())
++  @@index([orgId, jobId, reviewedAt])
++  @@index([orgId, exceeded, reviewedAt])
++}
++
++model Audit {
++  id        String  @id @default(cuid())
++  orgId     String
++  org       Org     @relation(fields: [orgId], references: [id])
++  actorId   String?
++  action    String
++  path      String
++  beforeHash String?
++  afterHash  String?
++  at        DateTime @default(now())
++  @@index([orgId, at])
++}
++
+*** End File
+*** Add File: prisma/seed.ts
++import { PrismaClient } from "@prisma/client";
++import bcrypt from "bcrypt";
++const prisma = new PrismaClient();
++
++async function main() {
++  const org = await prisma.org.upsert({
++    where: { id: "bierlein" },
++    update: {},
++    create: { id: "bierlein", name: "Bierlein Companies, Inc." }
++  });
++
++  const hashed = await bcrypt.hash("ChangeMe123!", Number(process.env.BCRYPT_ROUNDS || 12));
++  await prisma.user.upsert({
++    where: { email: "jlarkin@bierlein.com" },
++    update: {},
++    create: { email: "jlarkin@bierlein.com", password: hashed, role: "admin", orgId: org.id, name: "Jason Larkin" }
++  });
++
++  await prisma.job.create({ data: { orgId: org.id, clientName: "Dow", status: "open" }});
++  await prisma.analyte.createMany({ data: [
++    { id: "asbestos", orgId: org.id, name: "Asbestos", method: "NIOSH 7400", unit: "f/cc" },
++    { id: "silica", orgId: org.id, name: "Respirable Silica", method: "NIOSH 7500", unit: "mg/m3" }
++  ], skipDuplicates: true });
++
++  console.log("Seeded org=bierlein, admin=jlarkin@bierlein.com / ChangeMe123!");
++}
++
++main().finally(() => prisma.$disconnect());
++
+*** End File
+*** Add File: src/lib/prisma.ts
++import { PrismaClient } from "@prisma/client";
++export const prisma = (global as any).prisma || new PrismaClient();
++if (process.env.NODE_ENV !== "production") (global as any).prisma = prisma;
++
+*** End File
+*** Add File: src/lib/auth.ts
++import NextAuth, { NextAuthConfig } from "next-auth";
++import Credentials from "next-auth/providers/credentials";
++import { prisma } from "./prisma";
++import bcrypt from "bcrypt";
++
++export const authConfig: NextAuthConfig = {
++  session: { strategy: "jwt" },
++  providers: [
++    Credentials({
++      credentials: { email: {}, password: {} },
++      authorize: async (creds) => {
++        const email = String(creds?.email || "");
++        const password = String(creds?.password || "");
++        const user = await prisma.user.findUnique({ where: { email } });
++        if (!user) return null;
++        const ok = await bcrypt.compare(password, user.password);
++        if (!ok) return null;
++        return { id: user.id, email: user.email, name: user.name, orgId: user.orgId, role: user.role };
++      }
++    })
++  ],
++  callbacks: {
++    jwt: async ({ token, user }) => {
++      if (user) { token.orgId = (user as any).orgId; token.role = (user as any).role; }
++      return token;
++    },
++    session: async ({ session, token }) => {
++      (session as any).user.orgId = token.orgId;
++      (session as any).user.role  = token.role;
++      return session;
++    }
++  },
++  pages: { signIn: "/login" }
++};
++
++export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
++
+*** End File
+*** Add File: src/lib/s3.ts
++import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
++
++export const s3 = new S3Client({
++  region: process.env.S3_REGION,
++  endpoint: process.env.S3_ENDPOINT,
++  forcePathStyle: true,
++  credentials: {
++    accessKeyId: process.env.S3_ACCESS_KEY || "",
++    secretAccessKey: process.env.S3_SECRET_KEY || ""
++  }
++});
++
++export async function putObject(key: string, body: Buffer | Uint8Array) {
++  await s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key, Body: body }));
++  return `/${key}`;
++}
++
+*** End File
+*** Add File: src/app/api/auth/[...nextauth]/route.ts
++export { handlers as GET, handlers as POST } from "@/lib/auth";
++
+*** End File
+*** Add File: src/app/api/exceedances/[id]/lock/route.ts
++import { auth } from "@/lib/auth";
++import { prisma } from "@/lib/prisma";
++import crypto from "crypto";
++
++export async function POST(_: Request, { params }: { params: { id: string } }) {
++  const session = await auth();
++  if (!session?.user) return new Response("unauthorized", { status: 401 });
++  const { orgId, role } = (session.user as any);
++  if (role !== "admin") return new Response("forbidden", { status: 403 });
++
++  const before = await prisma.exceedance.findFirst({ where: { id: params.id, orgId } });
++  if (!before || before.locked) return new Response("not found or locked", { status: 404 });
++
++  const updated = await prisma.exceedance.update({
++    where: { id: params.id },
++    data: { locked: true, reviewedAt: new Date() }
++  });
++
++  const h = (o: any) => crypto.createHash("sha256").update(JSON.stringify(o)).digest("hex");
++  await prisma.audit.create({
++    data: { orgId, actorId: (session.user as any).id, action: "LOCK_EXCEEDANCE",
++      path: `/exceedances/${params.id}`, beforeHash: h(before), afterHash: h(updated) }
++  });
++
++  return Response.json({ ok: true, id: params.id });
++}
++
+*** End File
+*** Add File: src/middleware.ts
++import { NextResponse } from "next/server";
++import { auth } from "@/lib/auth";
++
++const PROTECTED = ["/dashboard", "/admin", "/api/secure"];
++
++export async function middleware(req: Request) {
++  const url = new URL(req.url);
++  if (!PROTECTED.some(p => url.pathname.startsWith(p))) return NextResponse.next();
++  const session = await auth();
++  if (!session?.user) return NextResponse.redirect(new URL("/login", url));
++  return NextResponse.next();
++}
++
+*** End File
+*** Add File: src/app/login/page.tsx
++"use client";
++import { signIn } from "next-auth/react";
++import { useState } from "react";
++
++export default function Login() {
++  const [email, setEmail] = useState("");
++  const [password, setPassword] = useState("");
++  return (
++    <main className="min-h-screen grid place-items-center p-6">
++      <div className="w-full max-w-sm space-y-3">
++        <h1 className="text-2xl font-semibold">Sign in</h1>
++        <input className="border p-2 w-full" placeholder="email" value={email} onChange={e=>setEmail(e.target.value)} />
++        <input className="border p-2 w-full" type="password" placeholder="password" value={password} onChange={e=>setPassword(e.target.value)} />
++        <button className="border p-2 w-full" onClick={() => signIn("credentials", { email, password, callbackUrl: "/dashboard" })}>
++          Continue
++        </button>
++      </div>
++    </main>
++  );
++}
++
+*** End File
+*** Add File: scripts/postinstall.cjs
++// Ensure Prisma client is generated on install
++const { execSync } = require("node:child_process");
++try { execSync("npx prisma generate", { stdio: "inherit" }); } catch {}
++
+*** End File
+*** Update File: package.json
+@@
+-  "scripts": {
+-    "dev": "next dev",
+-    "build": "next build",
+-    "start": "next start"
+-  }
++  "scripts": {
++    "dev": "next dev -p 9002",
++    "build": "next build",
++    "start": "next start",
++    "db:up": "docker compose up -d",
++    "db:down": "docker compose down",
++    "prisma:generate": "prisma generate",
++    "prisma:migrate": "prisma migrate dev",
++    "seed": "ts-node prisma/seed.ts",
++    "postinstall": "node scripts/postinstall.cjs"
++  },
++  "dependencies": {
++    "@aws-sdk/client-s3": "^3.670.0",
++    "@prisma/client": "^5.20.0",
++    "bcrypt": "^5.1.1",
++    "next-auth": "^4.24.7"
++  },
++  "devDependencies": {
++    "prisma": "^5.20.0",
++    "ts-node": "^10.9.2"
++  }
+*** End Patch

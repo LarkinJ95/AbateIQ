@@ -26,6 +26,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import type { Project } from '@/lib/types';
+import { DialogTrigger } from '@/components/ui/dialog';
 
 export default function ProjectsPage() {
   const { toast } = useToast();
@@ -78,9 +79,9 @@ export default function ProjectsPage() {
             Manage Projects
           </h2>
           <AddProjectDialog project={null} onSave={handleSaveProject}>
-             <Button>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                New Project
+            <Button>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              New Project
             </Button>
           </AddProjectDialog>
         </div>

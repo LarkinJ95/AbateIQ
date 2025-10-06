@@ -31,33 +31,6 @@ export default function SignUpPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // One-time super user creation
-    const createSuperUser = async () => {
-        if (auth) {
-            try {
-                // This is a special, one-time operation.
-                await createUserWithEmailAndPassword(auth, "jlarkin@bierlein.com", "Larkin0!");
-                toast({
-                    title: 'Super User Created',
-                    description: 'The user jlarkin@bierlein.com has been created.',
-                });
-            } catch (error: any) {
-                if (error.code === 'auth/email-already-in-use') {
-                    // This is expected if the user already exists. We can ignore it.
-                } else {
-                     toast({
-                        title: 'Super User Creation Failed',
-                        description: error.message,
-                        variant: 'destructive',
-                    });
-                }
-            }
-        }
-    };
-    createSuperUser();
-  }, [auth, toast]);
-
-  useEffect(() => {
     if (user && !isUserLoading) {
       router.push('/dashboard');
     }

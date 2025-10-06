@@ -19,6 +19,7 @@ import { AddPersonnelDialog } from '../personnel/add-personnel-dialog';
 import { ImportPersonnelDialog } from '../personnel/import-personnel-dialog';
 import { ImportSamplesDialog } from './import-samples-dialog';
 import { differenceInMinutes, parse } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AirMonitoringPage() {
   const [samples, setSamples] = useState(initialSamples);
@@ -28,6 +29,7 @@ export default function AirMonitoringPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [analyteFilter, setAnalyteFilter] = useState<string>("all");
   const [sampleTypeFilter, setSampleTypeFilter] = useState<string>("all");
+  const { toast } = useToast();
 
   const processNewSample = (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, resultData?: { analyte: string; concentration: number; }}) => {
     const getMinutes = (start: string, stop: string) => {
@@ -120,6 +122,11 @@ export default function AirMonitoringPage() {
 
   const handleDeleteSample = (sampleId: string) => {
     setSamples(prevSamples => prevSamples.filter(s => s.id !== sampleId));
+     toast({
+        title: 'Sample Deleted',
+        description: `Sample ${sampleId} has been deleted.`,
+        variant: 'destructive'
+    });
   };
 
   const handleSavePersonnel = (personData: Omit<Personnel, 'id'> & { id?: string }) => {
@@ -182,7 +189,7 @@ export default function AirMonitoringPage() {
       const sQuery = searchQuery.toLowerCase();
       const matchesSearch = sQuery === "" ||
         person.name.toLowerCase().includes(sQuery) ||
-        person.employeeId.toLowerCase().includes(sQuery);
+        (person.employeeId && person.employeeId.toLowerCase().includes(sQuery));
       return matchesSearch;
     });
   }, [personnel, searchQuery]);
@@ -279,7 +286,7 @@ export default function AirMonitoringPage() {
             
             <Card>
               <CardContent className="p-0">
-                  <SamplesDataTable columns={sampleColumns} data={filteredSamples} />
+                  <SamplesDataTable columns={sampleColumns({ onEdit: handleSaveSample, onDelete: handleDeleteSample })} data={filteredSamples} />
               </CardContent>
             </Card>
 

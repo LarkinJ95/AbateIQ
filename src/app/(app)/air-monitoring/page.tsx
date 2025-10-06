@@ -20,17 +20,24 @@ import { ImportPersonnelDialog } from '../personnel/import-personnel-dialog';
 import { ImportSamplesDialog } from './import-samples-dialog';
 import { differenceInMinutes, parse } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, addDoc, updateDoc, doc, deleteDoc, query, where } from 'firebase/firestore';
 
 export default function AirMonitoringPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
-  const samplesQuery = useMemoFirebase(() => collection(firestore, 'samples'), [firestore]);
+  const samplesQuery = useMemoFirebase(() => {
+      if (!user) return null;
+      return query(collection(firestore, 'samples'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
   const { data: samples, isLoading: samplesLoading } = useCollection<Sample>(samplesQuery);
 
-  const personnelQuery = useMemoFirebase(() => collection(firestore, 'personnel'), [firestore]);
+  const personnelQuery = useMemoFirebase(() => {
+      if (!user) return null;
+      return query(collection(firestore, 'personnel'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
   const { data: personnel, isLoading: personnelLoading } = useCollection<Personnel>(personnelQuery);
 
   const [activeTab, setActiveTab] = useState<string>("samples");
@@ -88,7 +95,7 @@ export default function AirMonitoringPage() {
         }
     }
 
-    const finalSample = {
+    const finalSample: Omit<Sample, 'id'> & { ownerId?: string } = {
       ...newSampleData,
       duration,
       volume,
@@ -97,20 +104,27 @@ export default function AirMonitoringPage() {
 
     // remove temporary property
     delete (finalSample as any).resultData;
+    if (user && !isEditMode) {
+        finalSample.ownerId = user.uid;
+    }
+
 
     return finalSample;
   }
+  const isEditMode = (newSampleData: any) => newSampleData && newSampleData.id;
 
   const handleSaveSample = async (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
+      if (!user) return;
+      
       const finalSample = processNewSample(newSampleData);
 
       try {
-        if (newSampleData.id) {
-            const sampleRef = doc(firestore, 'samples', newSampleData.id);
+        if (isEditMode(newSampleData)) {
+            const sampleRef = doc(firestore, 'samples', newSampleData.id!);
             await updateDoc(sampleRef, finalSample);
             toast({ title: 'Sample Updated', description: 'The sample has been updated.' });
         } else {
-            await addDoc(collection(firestore, 'samples'), finalSample);
+            await addDoc(collection(firestore, 'samples'), { ...finalSample, ownerId: user.uid });
             toast({ title: 'Sample Added', description: 'A new sample has been created.' });
         }
       } catch (error) {
@@ -123,14 +137,14 @@ export default function AirMonitoringPage() {
   };
 
   const handleImportSamples = async (importedSamples: (Omit<Sample, 'id'> & { resultData: any })[]) => {
-      const newSamples: Sample[] = importedSamples.map((sampleData, index) => {
+      if (!user) return;
+      const newSamples: (Omit<Sample, 'id'> & { ownerId: string })[] = importedSamples.map((sampleData, index) => {
         const finalSample = processNewSample(sampleData);
-        const newSampleWithId = {
+        return {
             ...finalSample,
-            id: `samp-${Date.now()}-${index}`,
-        };
-        if(newSampleWithId.result) newSampleWithId.result.sampleId = newSampleWithId.id;
-        return newSampleWithId as Sample;
+            id: `samp-${Date.now()}-${index}`, // temporary, Firestore will assign one
+            ownerId: user.uid
+        } as (Omit<Sample, 'id'> & { ownerId: string });
       });
 
       try {
@@ -327,12 +341,4 @@ export default function AirMonitoringPage() {
                           personnel={filteredPersonnel}
                       />
                   </CardContent>
-              </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
-  );
-}
-
-    
+              </Card

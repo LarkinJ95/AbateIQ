@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,7 @@ import { useEffect, useState } from 'react';
 import type { Personnel } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 
 interface AddPersonnelDialogProps {
@@ -32,6 +31,7 @@ interface AddPersonnelDialogProps {
 
 export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const [fitTestDate, setFitTestDate] = useState<Date>();
   const [medClearanceDate, setMedClearanceDate] = useState<Date>();
   const [name, setName] = useState('');
@@ -59,7 +59,7 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
   }, [person, isEditMode, isOpen]);
   
   const handleSave = async () => {
-    if (!firestore) return;
+    if (!firestore || !user) return;
     if (!name || !employeeId || !fitTestDate || !medClearanceDate) {
         toast({
             title: 'Missing Fields',
@@ -69,7 +69,7 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
         return;
     }
 
-    const personData = {
+    const personData: Partial<Personnel> & { ownerId?: string } = {
         name,
         employeeId,
         fitTestDueDate: format(fitTestDate, 'yyyy-MM-dd'),
@@ -82,6 +82,7 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
           const personRef = doc(firestore, 'personnel', person.id);
           await updateDoc(personRef, personData);
       } else {
+          personData.ownerId = user.uid;
           await addDoc(collection(firestore, 'personnel'), personData);
       }
       
@@ -200,5 +201,3 @@ export function AddPersonnelDialog({ person, children }: AddPersonnelDialogProps
     </Dialog>
   );
 }
-
-    

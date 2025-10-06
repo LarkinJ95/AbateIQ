@@ -8,27 +8,43 @@ import { OverviewChart } from '@/components/dashboard/overview-chart';
 import Link from 'next/link';
 import { Users, Briefcase, AlertTriangle, FlaskConical, FileText, CheckCircle } from 'lucide-react';
 import { differenceInDays, isPast } from 'date-fns';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import type { Exceedance, Project, Sample, Survey, ExistingNea } from '@/lib/types';
 import { useMemo } from 'react';
 
 export default function DashboardPage() {
     const firestore = useFirestore();
+    const { user } = useUser();
 
-    const projectsQuery = useMemoFirebase(() => collection(firestore, 'projects'), [firestore]);
+    const projectsQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
+    }, [firestore, user]);
     const { data: projectsData } = useCollection<Project>(projectsQuery);
 
-    const samplesQuery = useMemoFirebase(() => collection(firestore, 'samples'), [firestore]);
+    const samplesQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return query(collection(firestore, 'samples'), where('ownerId', '==', user.uid));
+    }, [firestore, user]);
     const { data: samplesData } = useCollection<Sample>(samplesQuery);
 
-    const surveysQuery = useMemoFirebase(() => collection(firestore, 'surveys'), [firestore]);
+    const surveysQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return query(collection(firestore, 'surveys'), where('ownerId', '==', user.uid));
+    }, [firestore, user]);
     const { data: surveysData } = useCollection<Survey>(surveysQuery);
 
-    const neasQuery = useMemoFirebase(() => collection(firestore, 'neas'), [firestore]);
+    const neasQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return query(collection(firestore, 'neas'), where('ownerId', '==', user.uid));
+    }, [firestore, user]);
     const { data: neasData } = useCollection<ExistingNea>(neasQuery);
     
-    const exceedancesQuery = useMemoFirebase(() => collection(firestore, 'exceedances'), [firestore]);
+    const exceedancesQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return query(collection(firestore, 'exceedances'), where('ownerId', '==', user.uid));
+    }, [firestore, user]);
     const { data: exceedancesData } = useCollection<Exceedance>(exceedancesQuery);
 
 

@@ -25,14 +25,18 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useMemo } from 'react';
 import type { Project } from '@/lib/types';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, deleteDoc, doc } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, deleteDoc, doc, query, where } from 'firebase/firestore';
 
 export default function ProjectsPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  const projectsQuery = useMemoFirebase(() => collection(firestore, 'projects'), [firestore]);
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'projects'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
   const { data: projectsData, isLoading } = useCollection<Project>(projectsQuery);
 
   const projects = useMemo(() => {
@@ -166,9 +170,3 @@ export default function ProjectsPage() {
                     )}
                 </TableBody>
               </Table>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
-  );
-}

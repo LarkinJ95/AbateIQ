@@ -23,7 +23,7 @@ import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 
 
@@ -34,6 +34,7 @@ interface AddProjectDialogProps {
 
 export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
     const firestore = useFirestore();
+    const { user } = useUser();
     const [name, setName] = useState('');
     const [jobNumber, setJobNumber] = useState('');
     const [location, setLocation] = useState('');
@@ -65,7 +66,7 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
 
 
     const handleSave = async () => {
-        if (!firestore) return;
+        if (!firestore || !user) return;
         if (!name || !location || !status || !startDate || !endDate) {
             toast({
                 title: 'Missing Information',
@@ -75,7 +76,7 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
             return;
         }
 
-        const projectData = {
+        const projectData: Partial<Project> & { ownerId?: string } = {
             name,
             jobNumber,
             location,
@@ -89,6 +90,7 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
                 const projectRef = doc(firestore, 'projects', project.id);
                 await updateDoc(projectRef, projectData);
             } else {
+                projectData.ownerId = user.uid;
                 await addDoc(collection(firestore, 'projects'), projectData);
             }
             toast({
@@ -227,7 +229,4 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
           </DialogClose>
           <Button onClick={handleSave}>Save Project</Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
+      

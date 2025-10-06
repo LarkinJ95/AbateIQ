@@ -30,11 +30,10 @@ import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 interface AddProjectDialogProps {
   project?: Project | null;
   children: React.ReactNode;
+  onSave: (projectData: Partial<Project>) => void;
 }
 
-export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
-    const firestore = useFirestore();
-    const { user } = useUser();
+export function AddProjectDialog({ project, children, onSave }: AddProjectDialogProps) {
     const [name, setName] = useState('');
     const [jobNumber, setJobNumber] = useState('');
     const [location, setLocation] = useState('');
@@ -66,7 +65,6 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
 
 
     const handleSave = async () => {
-        if (!firestore || !user) return;
         if (!name || !location || !status || !startDate || !endDate) {
             toast({
                 title: 'Missing Information',
@@ -76,7 +74,7 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
             return;
         }
 
-        const projectData: Partial<Project> & { ownerId?: string } = {
+        const projectData: Partial<Project> = {
             name,
             jobNumber,
             location,
@@ -85,26 +83,12 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
             endDate: format(endDate, 'yyyy-MM-dd'),
         };
 
-        try {
-            if (isEditMode && project) {
-                const projectRef = doc(firestore, 'projects', project.id);
-                await updateDoc(projectRef, projectData);
-            } else {
-                projectData.ownerId = user.uid;
-                await addDoc(collection(firestore, 'projects'), projectData);
-            }
-            toast({
-                title: isEditMode ? 'Project Updated' : 'Project Added',
-                description: `${name} has been ${isEditMode ? 'updated' : 'saved'}.`,
-            });
-            setIsOpen(false);
-        } catch (error) {
-            toast({
-                title: 'Error Saving Project',
-                description: 'An error occurred while saving the project.',
-                variant: 'destructive',
-            });
+        if (isEditMode && project) {
+            projectData.id = project.id;
         }
+        
+        onSave(projectData);
+        setIsOpen(false);
     }
 
   return (

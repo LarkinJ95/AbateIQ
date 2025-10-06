@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useMemo } from 'react';
 import type { Project } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc, query, where, addDoc, updateDoc } from 'firebase/firestore';
 
 export default function ProjectsPage() {
   const { toast } = useToast();
@@ -43,6 +43,26 @@ export default function ProjectsPage() {
     if (!projectsData) return [];
     return projectsData.sort((a, b) => (a.jobNumber || '').localeCompare(b.jobNumber || ''));
   }, [projectsData]);
+
+  const handleSaveProject = async (projectData: Partial<Project>) => {
+    if (!user) {
+        toast({ title: "Not authenticated", variant: 'destructive' });
+        return;
+    }
+    try {
+        if (projectData.id) {
+            const projectRef = doc(firestore, 'projects', projectData.id);
+            await updateDoc(projectRef, projectData);
+            toast({ title: 'Project Updated' });
+        } else {
+            await addDoc(collection(firestore, 'projects'), { ...projectData, ownerId: user.uid });
+            toast({ title: 'Project Added' });
+        }
+    } catch (error) {
+        console.error("Error saving project: ", error);
+        toast({ title: 'Error saving project', variant: 'destructive' });
+    }
+  };
 
 
   const getStatusVariant = (status: 'Active' | 'Completed' | 'On Hold') => {
@@ -84,7 +104,7 @@ export default function ProjectsPage() {
           <h2 className="text-2xl font-headline font-bold tracking-tight">
             Manage Projects
           </h2>
-          <AddProjectDialog project={null}>
+          <AddProjectDialog project={null} onSave={handleSaveProject}>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
               New Project
@@ -146,7 +166,7 @@ export default function ProjectsPage() {
                                   View Details
                                 </Link>
                               </DropdownMenuItem>
-                              <AddProjectDialog project={project}>
+                              <AddProjectDialog project={project} onSave={handleSaveProject}>
                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                     <Pencil className="mr-2 h-4 w-4" />
                                     Edit

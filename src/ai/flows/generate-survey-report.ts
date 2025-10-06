@@ -120,7 +120,7 @@ const prompt = ai.definePrompt({
         - Primary Color (for headers, table borders): {{{primaryColor}}}
         - Accent Color (for sub-headers): {{{accentColor}}}
         - Use semantic HTML tags and well-structured tables. Photos should be responsive.
-        
+        -Generate for printing
         **Data for Report:**
         \`\`\`json
         {{{json this}}}

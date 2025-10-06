@@ -18,6 +18,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { exposureLimits } from '@/lib/data';
 
+// Read the environment variable at the top level of the module
+const weatherApiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
 
 type TwaSample = {
   id: number;
@@ -647,10 +649,10 @@ function HeatStressChart({ wbgt }: { wbgt: number | null }) {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <div
-                                    className="absolute top-[-25%] -translate-x-1/2 h-[150%] w-px bg-foreground transition-all duration-300 ease-in-out"
+                                    className="absolute top-[-50%] -translate-x-1/2 h-[200%] w-px bg-foreground transition-all duration-300 ease-in-out"
                                     style={{ left: getIndicatorPosition() }}
                                 >
-                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-foreground border-2 border-background" />
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-foreground border-2 border-background" />
                                 </div>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -716,8 +718,7 @@ function WbgtCalculator() {
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const { latitude, longitude } = position.coords;
-                const apiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
-                if (!apiKey) {
+                if (!weatherApiKey) {
                     toast({
                         title: "API Key Missing",
                         description: "Weather API key is not configured.",
@@ -727,7 +728,7 @@ function WbgtCalculator() {
                     return;
                 }
 
-                const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${latitude},${longitude}&aqi=no`;
+                const url = `https://api.weatherapi.com/v1/current.json?key=${weatherApiKey}&q=${latitude},${longitude}&aqi=no`;
                 
                 try {
                     const response = await fetch(url);

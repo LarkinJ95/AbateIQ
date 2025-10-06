@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { Company } from "@/lib/types";
 
 interface User {
   id: string;
@@ -83,6 +84,16 @@ const mockUsers: User[] = [
     }
 ];
 
+const mockCompany: Company = {
+    id: 'comp-1', 
+    name: 'Bierlein Companies', 
+    contactName: 'John Larkin', 
+    contactEmail: 'jlarkin@bierlein.com', 
+    status: 'active', 
+    createdAt: '2024-01-01T10:00:00Z', 
+    weatherApiKey: '9567e2b1ebb94c4989c131321250610'
+};
+
 export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -92,6 +103,7 @@ export default function AdminDashboard() {
 
   const [systemStats] = useState<SystemStats>(mockSystemStats);
   const [users, setUsers] = useState<User[]>(mockUsers);
+  const [company, setCompany] = useState<Company>(mockCompany);
 
 
   const [newUserData, setNewUserData] = useState({
@@ -190,6 +202,19 @@ export default function AdminDashboard() {
         description: "System data export has been initiated. You will receive a download link via email.",
       });
   }
+  
+  const handleSaveCompanySettings = () => {
+      // In a real app, this would save to a database.
+      // We are just updating local state for this mock.
+      toast({
+          title: "Company Settings Saved",
+          description: "Your company information and API keys have been updated.",
+      });
+      // A "real" implementation might also store this in localStorage
+      // to persist across page loads in this mock environment.
+      localStorage.setItem("companyName", company.name);
+      localStorage.setItem("companyLogo", company.logoUrl || '');
+  }
 
 
   const getRoleColor = (role: string) => {
@@ -269,9 +294,10 @@ export default function AdminDashboard() {
       <Tabs defaultValue="users" className="space-y-4">
         <TabsList>
           <TabsTrigger value="users">User Management</TabsTrigger>
+          <TabsTrigger value="company">Company Settings</TabsTrigger>
           <TabsTrigger value="system">System Health</TabsTrigger>
           <TabsTrigger value="super-admin">Super Admin</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="settings">Global Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
@@ -280,7 +306,7 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle>User Management</CardTitle>
               <CardDescription>
-                Manage user accounts, roles, and permissions
+                Manage user accounts, roles, and permissions within your company.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -308,7 +334,7 @@ export default function AdminDashboard() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>User</TableHead>
-                      <TableHead>Organization</TableHead>
+                      <TableHead>Job Title</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Last Login</TableHead>
@@ -324,9 +350,8 @@ export default function AdminDashboard() {
                             <div className="text-sm text-muted-foreground">{user.email}</div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                         <TableCell>
                           <div>
-                            <div className="font-medium">{user.organization}</div>
                             <div className="text-sm text-muted-foreground">{user.jobTitle}</div>
                           </div>
                         </TableCell>
@@ -388,6 +413,45 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
         
+         <TabsContent value="company" className="space-y-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Company Settings</CardTitle>
+                    <CardDescription>Manage your company's branding and API key integrations.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                            <div>
+                                <Label htmlFor="companyName">Company Name</Label>
+                                <Input id="companyName" value={company.name} onChange={(e) => setCompany({...company, name: e.target.value})} />
+                            </div>
+                            <div>
+                                <Label htmlFor="logoUrl">Logo URL</Label>
+                                <Input id="logoUrl" value={company.logoUrl || ''} onChange={(e) => setCompany({...company, logoUrl: e.target.value})} placeholder="https://example.com/logo.png" />
+                            </div>
+                        </div>
+                         <div className="space-y-4">
+                             <div>
+                                <Label htmlFor="weatherApiKey">Weather API Key</Label>
+                                <Input id="weatherApiKey" type="password" value={company.weatherApiKey || ''} onChange={(e) => setCompany({...company, weatherApiKey: e.target.value})} />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Used for the WBGT Calculator's "Use Current Location" feature.
+                                </p>
+                            </div>
+                            <div>
+                                <Label htmlFor="primaryColor">Primary Brand Color</Label>
+                                <Input id="primaryColor" value={company.primaryColor || ''} onChange={(e) => setCompany({...company, primaryColor: e.target.value})} placeholder="#00BFFF" />
+                            </div>
+                         </div>
+                    </div>
+                     <div className="pt-4 border-t">
+                        <Button onClick={handleSaveCompanySettings}>Save Company Settings</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
         <TabsContent value="super-admin">
             <Card>
                 <CardHeader>
@@ -474,9 +538,9 @@ export default function AdminDashboard() {
         <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>System Configuration</CardTitle>
+              <CardTitle>Global Configuration</CardTitle>
               <CardDescription>
-                Configure global system settings and preferences
+                Configure global system settings and preferences. These settings affect all companies.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -811,3 +875,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    

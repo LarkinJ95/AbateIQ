@@ -77,13 +77,13 @@ const GenerateSurveyReportInputSchema = z.object({
   
   // Branding & Customization
   companyName: z.string(),
-  logoUrl: z.string().optional(),
+  logoUrl: z.string().optional().nullable(),
   primaryColor: z.string().optional().default('#00BFFF'), // Deep Sky Blue
   accentColor: z.string().optional().default('#708090'), // Slate Blue
   
   // Photos
-  mainPhotoUrl: z.string().optional(),
-  floorPlanUrl: z.string().optional(),
+  mainPhotoUrl: z.string().optional().nullable(),
+  floorPlanUrl: z.string().optional().nullable(),
   positiveMaterialPhotoUrls: z.array(z.string()).optional(),
 });
 export type GenerateSurveyReportInput = z.infer<typeof GenerateSurveyReportInputSchema>;

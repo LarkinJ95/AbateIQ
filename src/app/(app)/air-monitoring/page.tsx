@@ -95,7 +95,7 @@ export default function AirMonitoringPage() {
         }
     }
 
-    const finalSample: Omit<Sample, 'id'> & { ownerId?: string } = {
+    const finalSample: Omit<Sample, 'id'> = {
       ...newSampleData,
       duration,
       volume,
@@ -104,10 +104,6 @@ export default function AirMonitoringPage() {
 
     // remove temporary property
     delete (finalSample as any).resultData;
-    if (user && !isEditMode) {
-        finalSample.ownerId = user.uid;
-    }
-
 
     return finalSample;
   }
@@ -149,7 +145,7 @@ export default function AirMonitoringPage() {
 
       try {
         for (const newSample of newSamples) {
-          await addDoc(collection(firestore, 'samples'), newSample);
+          await addDoc(collection(firestore, 'samples'), { ...newSample, ownerId: user.uid });
         }
         toast({ title: 'Import Successful', description: `${newSamples.length} samples imported.` });
       } catch (error) {

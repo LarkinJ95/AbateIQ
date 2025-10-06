@@ -229,4 +229,7 @@ export function AddProjectDialog({ project, children }: AddProjectDialogProps) {
           </DialogClose>
           <Button onClick={handleSave}>Save Project</Button>
         </DialogFooter>
-      
+      </DialogContent>
+    </Dialog>
+  );
+}

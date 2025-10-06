@@ -10,13 +10,17 @@ import { PlusCircle } from 'lucide-react';
 import { useMemo } from 'react';
 import type { Personnel } from '@/lib/types';
 import { ImportPersonnelDialog } from './import-personnel-dialog';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 export default function PersonnelPage() {
   const firestore = useFirestore();
+  const { user } = useUser();
 
-  const personnelQuery = useMemoFirebase(() => collection(firestore, 'personnel'), [firestore]);
+  const personnelQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'personnel'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
   const { data: personnel, isLoading } = useCollection<Personnel>(personnelQuery);
 
   const sortedPersonnel = useMemo(() => {
@@ -58,5 +62,3 @@ export default function PersonnelPage() {
     </div>
   );
 }
-
-    

@@ -170,3 +170,9 @@ export default function ProjectsPage() {
                     )}
                 </TableBody>
               </Table>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+}

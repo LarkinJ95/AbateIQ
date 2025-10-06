@@ -1,254 +1,84 @@
-/**
- * @file Firebase Security Rules for AbateIQ Firestore database.
- *
- * Core Philosophy:
- * This ruleset implements a strict ownership model for most collections, with some public read access where appropriate.
- * Data is organized hierarchically, with root collections for core entities (Clients, Projects, etc.) and subcollections for related data.
- *
- * Data Structure:
- * - /clients/{clientId}: Stores client information.
- * - /projects/{projectId}: Stores project information.
- * - /locations/{locationId}: Stores location information.
- * - /tasks/{taskId}: Stores task information.
- * - /personnel/{personnelId}: Stores personnel information.
- * - /equipment/{equipmentId}: Stores equipment information.
- * - /samples/{sampleId}: Stores sample information.
- * - /samples/{sampleId}/results/{resultId}: Stores result information for samples.
- * - /exposureLimits/{exposureLimitId}: Stores exposure limits information.
- * - /results/{resultId}/exceedance: Stores exceedance information for results.
- * - /projects/{projectId}/negativeExposureAssessments/{neaId}: Stores negative exposure assessments.
- * - /samples/{sampleId}/attachments/{attachmentId}: Stores attachments for samples.
- *
- * Key Security Decisions:
- * - Clients, Projects, Locations, Tasks, Personnel and Equipment entities will be stored as root collections with public read access and owner-only writes.
- * - Samples, Results, Exceedances, Negative Exposure Assessments, and Attachments are structured as subcollections to maintain data integrity and simplify querying with owner-only access.
- * - No user listing is allowed.
- *
- * Denormalization for Authorization:
- *  Relationships:
- *    - Projects MUST have a clientId field matching a document ID in /clients.
- *    - Samples MUST have projectId, taskId, personnelId, and equipmentId fields matching document IDs in /projects, /tasks, /personnel, and /equipment, respectively.
- *    - Results MUST have a sampleId field matching a document ID in /samples.
- *    - Exceedances MUST have a resultId field matching a document ID in /results.
- *    - NegativeExposureAssessments MUST have projectId and taskId fields matching document IDs in /projects and /tasks, respectively.
- *    - Attachments MUST have a sampleId field matching a document ID in /samples.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Controls access to client documents.
-     * @path /clients/{clientId}
-     * @allow get, list: Anyone can read client information.
-     * @allow create: Only the owner can create a client document, and the document ID must match their UID.
-     * @allow update, delete: Only the owner can modify or delete client information.
-     * @deny create: If the client ID doesn't match the authenticated user's ID.
-     * @deny update, delete: If the client document doesn't exist.
-     * @principle Public read, owner-only write for clients.
-     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Clients: Any signed-in user can read/write
     match /clients/{clientId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && request.auth.uid == clientId;
-      allow update, delete: if isSignedIn() && request.auth.uid == clientId;
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
-    /**
-     * @description Controls access to project documents.
-     * @path /projects/{projectId}
-     * @allow get, list: Anyone can read project information.
-     * @allow create: Only the owner can create a project document.
-     * @allow update, delete: Only the owner can modify or delete project information.
-     * @deny create: If the project does not contain a clientId.
-     * @deny update, delete: If the project document doesn't exist.
-     * @principle Public read, owner-only write for projects.
-     */
+    // Projects: Any signed-in user can read/write
     match /projects/{projectId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn();
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
-    /**
-     * @description Controls access to location documents.
-     * @path /locations/{locationId}
-     * @allow get, list: Anyone can read location information.
-     * @allow create: Only the owner can create a location document.
-     * @allow update, delete: Only the owner can modify or delete location information.
-     * @deny create: If the location does not contain a projectId.
-     * @deny update, delete: If the location document doesn't exist.
-     * @principle Public read, owner-only write for locations.
-     */
+    // Locations: Any signed-in user can read/write
     match /locations/{locationId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn();
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
-    /**
-     * @description Controls access to task documents.
-     * @path /tasks/{taskId}
-     * @allow get, list: Anyone can read task information.
-     * @allow create: Only the owner can create a task document.
-     * @allow update, delete: Only the owner can modify or delete task information.
-     * @deny create: If the task does not contain a projectId.
-     * @deny update, delete: If the task document doesn't exist.
-     * @principle Public read, owner-only write for tasks.
-     */
+    // Tasks: Any signed-in user can read/write
     match /tasks/{taskId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn();
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
-    /**
-     * @description Controls access to personnel documents.
-     * @path /personnel/{personnelId}
-     * @allow get, list: Anyone can read personnel information.
-     * @allow create: Only the owner can create a personnel document.
-     * @allow update, delete: Only the owner can modify or delete personnel information.
-     * @deny update, delete: If the personnel document doesn't exist.
-     * @principle Public read, owner-only write for personnel.
-     */
+    // Personnel: Any signed-in user can read/write
     match /personnel/{personnelId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn();
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
-    /**
-     * @description Controls access to equipment documents.
-     * @path /equipment/{equipmentId}
-     * @allow get, list: Anyone can read equipment information.
-     * @allow create: Only the owner can create a equipment document.
-     * @allow update, delete: Only the owner can modify or delete equipment information.
-     * @deny update, delete: If the equipment document doesn't exist.
-     * @principle Public read, owner-only write for equipment.
-     */
+    // Equipment: Any signed-in user can read/write
     match /equipment/{equipmentId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn();
+      allow get, list, create, update, delete: if isSignedIn();
     }
 
-    /**
-     * @description Controls access to sample documents.
-     * @path /samples/{sampleId}
-     * @allow get, list: if isSampleAccessible();
-     * @allow create: if isSignedIn();
-     * @allow update, delete: if isSignedIn() && isExistingSampleAccessible();
-     * @deny get, list: If the user is not authorized to access the sample.
-     * @deny create: If the sample does not contain a projectId, taskId, personnelId, or equipmentId.
-     * @deny update, delete: If the sample document doesn't exist.
-     * @principle Owner-only access for samples.
-     */
+    // Samples: Any signed-in user can read/write
     match /samples/{sampleId} {
-      allow get, list: if isSampleAccessible();
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && isExistingSampleAccessible();
+      allow get, list, create, update, delete: if isSignedIn();
 
-      /**
-       * @description Controls access to result documents nested under sample documents.
-       * @path /samples/{sampleId}/results/{resultId}
-       * @allow get, list: if isSampleAccessible();
-       * @allow create: if isSignedIn();
-       * @allow update, delete: if isSignedIn() && isExistingSampleAccessible();
-       * @deny create: If the result does not contain a sampleId.
-       * @deny update, delete: If the result document doesn't exist.
-       * @principle Owner-only access for results.
-       */
+      // Results (nested under Samples): Any signed-in user can read/write
       match /results/{resultId} {
-        allow get, list: if isSampleAccessible();
-        allow create: if isSignedIn();
-        allow update, delete: if isSignedIn() && isExistingSampleAccessible();
+        allow get, list, create, update, delete: if isSignedIn();
       }
-      /**
-       * @description Controls access to attachment documents nested under sample documents.
-       * @path /samples/{sampleId}/attachments/{attachmentId}
-       * @allow get, list: if isSampleAccessible();
-       * @allow create: if isSignedIn();
-       * @allow update, delete: if isSignedIn() && isExistingSampleAccessible();
-       * @deny create: If the attachment does not contain a sampleId.
-       * @deny update, delete: If the attachment document doesn't exist.
-       * @principle Owner-only access for attachments.
-       */
+
+      // Attachments (nested under Samples): Any signed-in user can read/write
       match /attachments/{attachmentId} {
-        allow get, list: if isSampleAccessible();
-        allow create: if isSignedIn();
-        allow update, delete: if isSignedIn() && isExistingSampleAccessible();
+        allow get, list, create, update, delete: if isSignedIn();
       }
     }
 
-    /**
-     * @description Controls access to exposureLimit documents.
-     * @path /exposureLimits/{exposureLimitId}
-     * @allow get, list: Anyone can read exposureLimit information.
-     * @allow create: Only the owner can create a exposureLimit document.
-     * @allow update, delete: Only the owner can modify or delete exposureLimit information.
-     * @deny update, delete: If the exposureLimit document doesn't exist.
-     * @principle Public read, owner-only write for exposureLimits.
-     */
+    // Exposure Limits: Any signed-in user can read/write
     match /exposureLimits/{exposureLimitId} {
+      allow get, list, create, update, delete: if isSignedIn();
+    }
+
+    // Exceedances: Any signed-in user can read/write.  Read is open for prototyping
+    match /exceedances/{exceedanceId} {
       allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
     }
 
-    /**
-     * @description Controls access to exceedance documents nested under result documents.
-     * @path /results/{resultId}/exceedance/{exceedanceId}
-     * @allow get, list: if isSampleAccessible();
-     * @allow create: if isSignedIn();
-     * @allow update, delete: if isSignedIn() && isExistingSampleAccessible();
-     * @deny create: If the exceedance does not contain a resultId.
-     * @deny update, delete: If the exceedance document doesn't exist.
-     * @principle Owner-only access for exceedances.
-     */
-    match /samples/{sampleId}/results/{resultId}/exceedance/{exceedanceId} {
-      allow get, list: if isSampleAccessible();
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && isExistingSampleAccessible();
-    }
-
-    /**
-     * @description Controls access to negativeExposureAssessment documents nested under project documents.
-     * @path /projects/{projectId}/negativeExposureAssessments/{neaId}
-     * @allow get, list: if isProjectAccessible(projectId);
-     * @allow create: if isSignedIn();
-     * @allow update, delete: if isSignedIn() && isExistingProjectAccessible(projectId);
-     * @deny create: If the negativeExposureAssessment does not contain a projectId or taskId.
-     * @deny update, delete: If the negativeExposureAssessment document doesn't exist.
-     * @principle Owner-only access for negativeExposureAssessments.
-     */
+    // Negative Exposure Assessments (nested under Projects): Any signed-in user can read/write
     match /projects/{projectId}/negativeExposureAssessments/{neaId} {
-      allow get, list: if isProjectAccessible(projectId);
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && isExistingProjectAccessible(projectId);
+      allow get, list, create, update, delete: if isSignedIn();
     }
-  }
 
-  // Helper functions
-  function isSignedIn() {
-    return request.auth != null;
-  }
+    // Results: Any signed-in user can read/write
+    match /results/{resultId} {
+        allow get, list, create, update, delete: if isSignedIn();
 
-  function isOwner(userId) {
-    return request.auth.uid == userId;
-  }
-
-  function isSampleAccessible() {
-    return isSignedIn();
-  }
-
-  function isExistingSampleAccessible() {
-    return isSignedIn();
-  }
-
-  function isProjectAccessible(projectId) {
-    return isSignedIn();
-  }
-
-  function isExistingProjectAccessible(projectId) {
-    return isSignedIn();
+        // Exceedance (nested under Results): Any signed-in user can read/write
+        match /exceedances/{exceedanceId} {
+            allow get, list, create, update, delete: if isSignedIn();
+        }
+    }
   }
 }

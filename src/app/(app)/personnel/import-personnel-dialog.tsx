@@ -18,17 +18,18 @@ import { useToast } from '@/hooks/use-toast';
 import { FileDown } from 'lucide-react';
 import type { Personnel } from '@/lib/types';
 import { Label } from '@/components/ui/label';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
 
 export function ImportPersonnelDialog() {
   const firestore = useFirestore();
+  const { user } = useUser();
   const [pasteData, setPasteData] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const handleImport = async () => {
-    if (!firestore) return;
+    if (!firestore || !user) return;
     if (!pasteData.trim()) {
       toast({
         title: 'No Data to Import',
@@ -50,7 +51,7 @@ export function ImportPersonnelDialog() {
         return;
       }
 
-      const newPersonnel: Omit<Personnel, 'id'>[] = dataRows.map((row, i) => {
+      const newPersonnel: (Omit<Personnel, 'id'> & { ownerId: string })[] = dataRows.map((row, i) => {
         const columns = row.split('\t');
         if (columns.length < 4) {
           throw new Error(`Row ${i + 1} has fewer than 4 columns. Expected: Name, Employee ID, Fit Test Due Date, Medical Clearance Due Date.`);
@@ -68,6 +69,7 @@ export function ImportPersonnelDialog() {
           employeeId: columns[1],
           fitTestDueDate: fitTestDate.toISOString().split('T')[0],
           medicalClearanceDueDate: medClearanceDate.toISOString().split('T')[0],
+          ownerId: user.uid,
         };
       });
 
@@ -128,5 +130,3 @@ export function ImportPersonnelDialog() {
     </Dialog>
   );
 }
-
-    

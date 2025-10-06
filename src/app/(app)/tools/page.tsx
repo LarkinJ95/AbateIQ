@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, PlusCircle, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type TwaSample = {
   id: number;
@@ -20,6 +22,7 @@ function TwaCalculator() {
   const [samples, setSamples] = useState<TwaSample[]>([
     { id: 1, concentration: '', duration: '' },
   ]);
+  const [shiftDuration, setShiftDuration] = useState<number>(480);
   const { toast } = useToast();
 
   const handleAddSample = () => {
@@ -47,7 +50,7 @@ function TwaCalculator() {
   };
 
   const twaResult = useMemo(() => {
-    const totalMinutesInShift = 480;
+    const totalMinutesInShift = shiftDuration;
     let sumOfConcentrationTimesDuration = 0;
     
     for (const sample of samples) {
@@ -59,7 +62,7 @@ function TwaCalculator() {
       }
     }
 
-    if (sumOfConcentrationTimesDuration === 0) {
+    if (sumOfConcentrationTimesDuration === 0 || totalMinutesInShift === 0) {
         return { twa: 0, sum: 0 };
     }
 
@@ -67,17 +70,33 @@ function TwaCalculator() {
         twa: sumOfConcentrationTimesDuration / totalMinutesInShift,
         sum: sumOfConcentrationTimesDuration,
     };
-  }, [samples]);
+  }, [samples, shiftDuration]);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">8-Hour Time-Weighted Average (TWA) Calculator</CardTitle>
+        <CardTitle className="font-headline">Time-Weighted Average (TWA) Calculator</CardTitle>
         <CardDescription>
-          Enter sample concentrations and durations to calculate the 8-hour TWA. The calculation assumes a standard 480-minute shift.
+          Enter sample concentrations and durations to calculate the TWA for a selected shift duration.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <div className="space-y-2 max-w-xs">
+          <Label htmlFor="shift-duration">Shift Duration</Label>
+          <Select
+            value={String(shiftDuration)}
+            onValueChange={(value) => setShiftDuration(Number(value))}
+          >
+            <SelectTrigger id="shift-duration">
+              <SelectValue placeholder="Select shift duration" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="240">4 Hours</SelectItem>
+              <SelectItem value="480">8 Hours</SelectItem>
+              <SelectItem value="600">10 Hours</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="space-y-4">
           <div className="grid grid-cols-12 gap-4 items-center">
             <Label className="col-span-5">Concentration</Label>
@@ -131,7 +150,7 @@ function TwaCalculator() {
                     <p className="text-2xl font-bold">{twaResult.sum.toFixed(4)}</p>
                 </div>
                 <div>
-                    <p className="text-sm text-muted-foreground">8-Hour TWA</p>
+                    <p className="text-sm text-muted-foreground">{shiftDuration / 60}-Hour TWA</p>
                     <p className="text-2xl font-bold text-primary">{twaResult.twa.toFixed(4)}</p>
                 </div>
             </div>

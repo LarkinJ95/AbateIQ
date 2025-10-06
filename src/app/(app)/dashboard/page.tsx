@@ -3,15 +3,15 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RecentExceedances } from '@/components/dashboard/recent-exceedances';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
 import Link from 'next/link';
-import { Users, Briefcase, AlertTriangle, FlaskConical, FileText, CheckCircle } from 'lucide-react';
-import { differenceInDays, isPast } from 'date-fns';
+import { Briefcase, FlaskConical, FileText, CheckCircle } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Exceedance, Project, Sample, Survey, ExistingNea } from '@/lib/types';
 import { useMemo } from 'react';
+import { RecentExceedances } from '@/components/dashboard/recent-exceedances';
 
 export default function DashboardPage() {
     const firestore = useFirestore();
@@ -166,3 +166,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

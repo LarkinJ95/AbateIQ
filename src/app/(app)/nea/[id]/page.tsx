@@ -3,7 +3,6 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { existingNeas, samples as allSamples, personnel as allPersonnel, projects as allProjects } from '@/lib/data';
 import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,29 +10,50 @@ import { CheckCircle, FileUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useRef, useState } from 'react';
+import { useRef, useState, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LinkSamplesDialog } from '@/app/(app)/nea/link-samples-dialog';
+import type { ExistingNea, Sample, Project, Personnel } from '@/lib/types';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { doc, query, collection, where, updateDoc } from 'firebase/firestore';
 
 export default function NeaDetailsPage() {
   const params = useParams();
   const id = params.id as string;
-  const nea = existingNeas.find(e => e.id === id);
+  const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [documentUploaded, setDocumentUploaded] = useState(false);
-  const [linkedSampleIds, setLinkedSampleIds] = useState(nea?.supportingSampleIds || []);
 
+  const neaRef = useMemoFirebase(() => doc(firestore, 'neas', id), [firestore, id]);
+  const { data: nea, isLoading: neaLoading } = useDoc<ExistingNea>(neaRef);
+  
+  const [documentUploaded, setDocumentUploaded] = useState(false); // This would be based on nea.documentPath in a real app
+  
+  const projectSamplesQuery = useMemoFirebase(() => {
+    if (!user || !nea?.project) return null; // Assuming nea.project stores a project ID or name
+    // This is a simplification. A real query might be more complex
+    return query(collection(firestore, 'samples'), where('ownerId', '==', user.uid));
+  }, [firestore, user, nea]);
+
+  const { data: allSamples, isLoading: samplesLoading } = useCollection<Sample>(projectSamplesQuery);
+
+  const personnelQuery = useMemoFirebase(() => {
+      if (!user) return null;
+      return query(collection(firestore, 'personnel'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: allPersonnel } = useCollection<Personnel>(personnelQuery);
+
+  if (neaLoading) {
+    return <div>Loading...</div>;
+  }
 
   if (!nea) {
     notFound();
   }
   
-  const project = allProjects.find(p => p.name === nea.project);
-  const projectSamples = project ? allSamples.filter(s => s.projectId === project.id) : [];
-
   const effectiveDate = new Date(nea.effectiveDate);
-  const reviewDate = new Date(effectiveDate.setFullYear(effectiveDate.getFullYear() + 1));
+  const reviewDate = new Date(new Date(nea.effectiveDate).setFullYear(effectiveDate.getFullYear() + 1));
   const isExpired = new Date() > reviewDate;
   const status = isExpired ? 'Expired' : 'Active';
 
@@ -41,15 +61,18 @@ export default function NeaDetailsPage() {
     return status === "Active" ? "default" : "outline";
   };
 
-  const supportingSamples = linkedSampleIds.map(id => {
-      const sample = allSamples.find(s => s.id === id);
-      if (!sample) return null;
-      const personnel = allPersonnel.find(p => p.id === sample.personnelId);
-      return {
-          ...sample,
-          personnelName: personnel?.name || 'Unknown',
-      };
-  }).filter(Boolean);
+  const supportingSamples = useMemo(() => {
+      if (!nea.supportingSampleIds || !allSamples || !allPersonnel) return [];
+      return nea.supportingSampleIds.map(id => {
+        const sample = allSamples.find(s => s.id === id);
+        if (!sample) return null;
+        const personnel = allPersonnel.find(p => p.id === sample.personnelId);
+        return {
+            ...sample,
+            personnelName: personnel?.name || 'Unknown',
+        };
+    }).filter(Boolean);
+  }, [nea.supportingSampleIds, allSamples, allPersonnel]);
   
   const handleUploadClick = () => {
     if (fileInputRef.current?.files && fileInputRef.current.files.length > 0) {
@@ -67,8 +90,17 @@ export default function NeaDetailsPage() {
     }
   };
 
-  const handleSamplesLinked = (sampleIds: string[]) => {
-    setLinkedSampleIds(sampleIds);
+  const handleSamplesLinked = async (sampleIds: string[]) => {
+    const neaRef = doc(firestore, 'neas', id);
+    try {
+        await updateDoc(neaRef, { supportingSampleIds: sampleIds });
+        toast({
+            title: "Samples Linked",
+            description: `${sampleIds.length} samples have been linked to this NEA.`,
+        });
+    } catch (e) {
+        toast({ title: "Error linking samples", variant: 'destructive' });
+    }
   }
 
 
@@ -147,13 +179,13 @@ export default function NeaDetailsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="font-headline">Supporting Samples</CardTitle>
                 <LinkSamplesDialog 
-                    allSamples={projectSamples} 
-                    linkedSampleIds={linkedSampleIds}
+                    allSamples={allSamples || []} 
+                    linkedSampleIds={nea.supportingSampleIds || []}
                     onSamplesLinked={handleSamplesLinked}
                 />
             </CardHeader>
             <CardContent>
-                {supportingSamples && supportingSamples.length > 0 ? (
+                {samplesLoading ? <p>Loading samples...</p> : supportingSamples && supportingSamples.length > 0 ? (
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -181,3 +213,5 @@ export default function NeaDetailsPage() {
     </div>
   );
 }
+
+    

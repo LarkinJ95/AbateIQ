@@ -1,11 +1,9 @@
 
-
 'use client';
 
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { Header } from '@/components/header';
 import { notFound, useParams } from 'next/navigation';
-import { surveys as allSurveys } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Survey, AsbestosSample, PaintSample, FunctionalArea, HomogeneousArea } from '@/lib/types';
@@ -23,29 +21,28 @@ import { useToast } from '@/hooks/use-toast';
 import { AddEditSurveyDialog } from '../add-edit-survey-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { generateSurveyReport, GenerateSurveyReportOutput } from '@/ai/flows/generate-survey-report';
-import { useUser } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 
 export default function SurveyDetailsPage() {
   const params = useParams();
   const id = params.id as string;
-  const initialSurvey = allSurveys.find(s => s.id === id);
+  const firestore = useFirestore();
+
+  const surveyRef = useMemoFirebase(() => doc(firestore, 'surveys', id), [firestore, id]);
+  const { data: survey, isLoading } = useDoc<Survey>(surveyRef);
   
-  if (!initialSurvey) {
-    notFound();
-  }
+  const [homogeneousAreas, setHomogeneousAreas] = useState<HomogeneousArea[]>([]);
+  const [asbestosSamples, setAsbestosSamples] = useState<AsbestosSample[]>([]);
+  const [paintSamples, setPaintSamples] = useState<PaintSample[]>([]);
+  const [functionalAreas, setFunctionalAreas] = useState<FunctionalArea[]>([]);
 
-  const [survey, setSurvey] = useState<Survey>(initialSurvey);
-  const [homogeneousAreas, setHomogeneousAreas] = useState<HomogeneousArea[]>(survey?.homogeneousAreas || []);
-  const [asbestosSamples, setAsbestosSamples] = useState<AsbestosSample[]>(survey?.asbestosSamples || []);
-  const [paintSamples, setPaintSamples] = useState<PaintSample[]>(survey?.paintSamples || []);
-  const [functionalAreas, setFunctionalAreas] = useState<FunctionalArea[]>(survey?.functionalAreas || []);
-
-  const [mainPhoto, setMainPhoto] = useState<string | null>(survey?.sitePhotoUrl || null);
-  const [floorPlan, setFloorPlan] = useState<string | null>(survey?.floorPlanUrl || null);
-  const [exteriorPhotos, setExteriorPhotos] = useState<string[]>(survey?.exteriorPhotoUrls || []);
-  const [interiorPhotos, setInteriorPhotos] = useState<string[]>(survey?.interiorPhotoUrls || []);
-  const [samplePhotos, setSamplePhotos] = useState<string[]>(survey?.samplePhotoUrls || []);
+  const [mainPhoto, setMainPhoto] = useState<string | null>(null);
+  const [floorPlan, setFloorPlan] = useState<string | null>(null);
+  const [exteriorPhotos, setExteriorPhotos] = useState<string[]>([]);
+  const [interiorPhotos, setInteriorPhotos] = useState<string[]>([]);
+  const [samplePhotos, setSamplePhotos] = useState<string[]>([]);
 
   const asbestosFileInputRef = useRef<HTMLInputElement>(null);
   const paintFileInputRef = useRef<HTMLInputElement>(null);
@@ -60,28 +57,43 @@ export default function SurveyDetailsPage() {
   const { user } = useUser();
   const { toast } = useToast();
 
-  // Sync state if initial survey changes (e.g. on navigation)
+  // Sync state when survey data is loaded from Firestore
   useEffect(() => {
-    const currentSurvey = allSurveys.find(s => s.id === id);
-    if (currentSurvey) {
-      setSurvey(currentSurvey);
-      setHomogeneousAreas(currentSurvey.homogeneousAreas || []);
-      setAsbestosSamples(currentSurvey.asbestosSamples || []);
-      setPaintSamples(currentSurvey.paintSamples || []);
-      setFunctionalAreas(currentSurvey.functionalAreas || []);
-      setMainPhoto(currentSurvey.sitePhotoUrl || null);
-      setFloorPlan(currentSurvey.floorPlanUrl || null);
-      setExteriorPhotos(currentSurvey.exteriorPhotoUrls || []);
-      setInteriorPhotos(currentSurvey.interiorPhotoUrls || []);
-      setSamplePhotos(currentSurvey.samplePhotoUrls || []);
+    if (survey) {
+      setHomogeneousAreas(survey.homogeneousAreas || []);
+      setAsbestosSamples(survey.asbestosSamples || []);
+      setPaintSamples(survey.paintSamples || []);
+      setFunctionalAreas(survey.functionalAreas || []);
+      setMainPhoto(survey.sitePhotoUrl || null);
+      setFloorPlan(survey.floorPlanUrl || null);
+      setExteriorPhotos(survey.exteriorPhotoUrls || []);
+      setInteriorPhotos(survey.interiorPhotoUrls || []);
+      setSamplePhotos(survey.samplePhotoUrls || []);
     }
-  }, [id]);
+  }, [survey]);
 
+  const updateSurveyInFirestore = async (updatedData: Partial<Survey>) => {
+    try {
+      await updateDoc(surveyRef, updatedData);
+      toast({
+        title: "Survey Updated",
+        description: "Your changes have been saved to the database.",
+      });
+    } catch (error) {
+      console.error("Failed to update survey:", error);
+      toast({
+        title: "Update Failed",
+        description: "Could not save changes to the database.",
+        variant: "destructive",
+      });
+    }
+  };
   
   const handleSinglePhotoUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
     setter: React.Dispatch<React.SetStateAction<string | null>>,
-    category: string
+    category: string,
+    fieldName: keyof Survey
   ) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -89,6 +101,7 @@ export default function SurveyDetailsPage() {
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setter(result);
+        updateSurveyInFirestore({ [fieldName]: result });
         toast({
           title: `Photo Uploaded`,
           description: `${file.name} added to ${category}.`,
@@ -101,14 +114,19 @@ export default function SurveyDetailsPage() {
   const handleMultiplePhotoUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
     setter: React.Dispatch<React.SetStateAction<string[]>>,
-    category: string
+    category: string,
+    fieldName: keyof Survey
   ) => {
      const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        setter(prev => [...prev, result]);
+        setter(prev => {
+            const updatedPhotos = [...prev, result];
+            updateSurveyInFirestore({ [fieldName]: updatedPhotos });
+            return updatedPhotos;
+        });
         toast({
           title: `Photo Added`,
           description: `${file.name} added to ${category} gallery.`,
@@ -120,9 +138,14 @@ export default function SurveyDetailsPage() {
 
   const handleRemovePhoto = (
       index: number,
-      setter: React.Dispatch<React.SetStateAction<string[]>>
+      setter: React.Dispatch<React.SetStateAction<string[]>>,
+      fieldName: keyof Survey
   ) => {
-      setter(prev => prev.filter((_, i) => i !== index));
+      setter(prev => {
+          const updatedPhotos = prev.filter((_, i) => i !== index);
+          updateSurveyInFirestore({ [fieldName]: updatedPhotos });
+          return updatedPhotos;
+      });
   }
 
 
@@ -138,7 +161,7 @@ export default function SurveyDetailsPage() {
                 title: 'Report Uploaded',
                 description: `${file.name} has been added to ${reportType} reports.`
             });
-            // Clear file input
+            // In a real app, you would upload this file to storage and save the path
             if(fileInputRef.current) fileInputRef.current.value = '';
         } else {
              toast({
@@ -152,11 +175,13 @@ export default function SurveyDetailsPage() {
     const PhotoUploader = ({
     title,
     currentPhoto,
-    onUpload
+    onUpload,
+    fieldName
     }: {
     title: string;
     currentPhoto?: string | null;
-    onUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onUpload: (event: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string | null>>, category: string, fieldName: keyof Survey) => void;
+    fieldName: keyof Survey;
     }) => {
         const inputRef = useRef<HTMLInputElement>(null);
         return (
@@ -170,7 +195,7 @@ export default function SurveyDetailsPage() {
                     <p className="text-muted-foreground">No {title} uploaded</p>
                 </div>
             )}
-            <Input type="file" accept="image/*" className="hidden" ref={inputRef} onChange={onUpload} />
+            <Input type="file" accept="image/*" className="hidden" ref={inputRef} onChange={(e) => onUpload(e, title === 'Main Photo' ? setMainPhoto : setFloorPlan, title, fieldName)} />
             <Button variant="outline" onClick={() => inputRef.current?.click()}>
                 <Upload className="mr-2 h-4 w-4" />
                 {currentPhoto ? 'Change' : 'Upload'} {title}
@@ -183,14 +208,21 @@ export default function SurveyDetailsPage() {
         title,
         photos,
         onUpload,
-        onRemove
+        onRemove,
+        fieldName
     }: {
         title: string;
         photos: string[];
-        onUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-        onRemove: (index: number) => void;
+        onUpload: (event: React.ChangeEvent<HTMLInputElement>, setter: React.Dispatch<React.SetStateAction<string[]>>, category: string, fieldName: keyof Survey) => void;
+        onRemove: (index: number, setter: React.Dispatch<React.SetStateAction<string[]>>, fieldName: keyof Survey) => void;
+        fieldName: keyof Survey;
     }) => {
         const inputRef = useRef<HTMLInputElement>(null);
+        const setSetter = () => {
+            if (fieldName === 'exteriorPhotoUrls') return setExteriorPhotos;
+            if (fieldName === 'interiorPhotoUrls') return setInteriorPhotos;
+            return setSamplePhotos;
+        }
 
         return (
             <div className="space-y-4">
@@ -199,7 +231,7 @@ export default function SurveyDetailsPage() {
                         <div key={index} className="aspect-square relative group rounded-md overflow-hidden border">
                             <Image src={photo} alt={`${title} photo ${index + 1}`} fill className="object-cover" />
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button variant="destructive" size="icon" onClick={() => onRemove(index)}>
+                                <Button variant="destructive" size="icon" onClick={() => onRemove(index, setSetter(), fieldName)}>
                                     <X className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -211,7 +243,7 @@ export default function SurveyDetailsPage() {
                         </div>
                     )}
                 </div>
-                <Input type="file" accept="image/*" className="hidden" ref={inputRef} onChange={onUpload} />
+                <Input type="file" accept="image/*" className="hidden" ref={inputRef} onChange={(e) => onUpload(e, setSetter(), title, fieldName)} />
                 <Button variant="outline" onClick={() => inputRef.current?.click()}>
                     <Upload className="mr-2 h-4 w-4" />
                     Add {title} Photo
@@ -226,15 +258,17 @@ export default function SurveyDetailsPage() {
           case 'Completed': return 'default';
           case 'In Progress': return 'secondary';
           case 'On Hold': return 'destructive';
-          default: return 'outline';
+          default: 'outline';
       }
+      return 'outline';
   }
   
-  const handleSaveSurvey = (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
-     setSurvey(prev => ({...prev, ...surveyData} as Survey));
+  const handleSaveSurvey = async (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
+     await updateSurveyInFirestore(surveyData);
   }
 
   const handleGenerateReport = async () => {
+    if (!survey) return;
     setIsGeneratingReport(true);
     setGeneratedReport(null);
     try {
@@ -290,6 +324,13 @@ export default function SurveyDetailsPage() {
           navigator.clipboard.writeText(generatedReport.reportHtml);
           toast({ title: 'Report HTML Copied' });
       }
+  }
+
+  if (isLoading) {
+    return <div>Loading survey...</div>;
+  }
+  if (!survey) {
+    notFound();
   }
 
 
@@ -364,38 +405,43 @@ export default function SurveyDetailsPage() {
                             <PhotoUploader 
                               title="Main Photo"
                               currentPhoto={mainPhoto}
-                              onUpload={(e) => handleSinglePhotoUpload(e, setMainPhoto, 'Main Photo')}
+                              onUpload={handleSinglePhotoUpload}
+                              fieldName="sitePhotoUrl"
                           />
                       </TabsContent>
                       <TabsContent value="floor-plan" className="mt-4">
                             <PhotoUploader 
                               title="Floor Plan"
                               currentPhoto={floorPlan}
-                              onUpload={(e) => handleSinglePhotoUpload(e, setFloorPlan, 'Floor Plan')}
+                              onUpload={handleSinglePhotoUpload}
+                              fieldName="floorPlanUrl"
                           />
                       </TabsContent>
                         <TabsContent value="exterior" className="mt-4">
                             <PhotoGalleryUploader
                                 title="Exterior"
                                 photos={exteriorPhotos}
-                                onUpload={(e) => handleMultiplePhotoUpload(e, setExteriorPhotos, 'Exterior')}
-                                onRemove={(index) => handleRemovePhoto(index, setExteriorPhotos)}
+                                onUpload={handleMultiplePhotoUpload}
+                                onRemove={handleRemovePhoto}
+                                fieldName="exteriorPhotoUrls"
                             />
                         </TabsContent>
                         <TabsContent value="interior" className="mt-4">
                             <PhotoGalleryUploader
                                 title="Interior"
                                 photos={interiorPhotos}
-                                onUpload={(e) => handleMultiplePhotoUpload(e, setInteriorPhotos, 'Interior')}
-                                onRemove={(index) => handleRemovePhoto(index, setInteriorPhotos)}
+                                onUpload={handleMultiplePhotoUpload}
+                                onRemove={handleRemovePhoto}
+                                fieldName="interiorPhotoUrls"
                             />
                         </TabsContent>
                         <TabsContent value="samples" className="mt-4">
                             <PhotoGalleryUploader
                                 title="Sample"
                                 photos={samplePhotos}
-                                onUpload={(e) => handleMultiplePhotoUpload(e, setSamplePhotos, 'Sample')}
-                                onRemove={(index) => handleRemovePhoto(index, setSamplePhotos)}
+                                onUpload={handleMultiplePhotoUpload}
+                                onRemove={handleRemovePhoto}
+                                fieldName="samplePhotoUrls"
                             />
                         </TabsContent>
                   </Tabs>
@@ -426,7 +472,7 @@ export default function SurveyDetailsPage() {
                                 areas={homogeneousAreas} 
                                 functionalAreas={functionalAreas}
                                 asbestosSamples={asbestosSamples}
-                                onSave={setHomogeneousAreas} 
+                                onSave={(data) => { setHomogeneousAreas(data); updateSurveyInFirestore({ homogeneousAreas: data }); }} 
                             />
                         </TabsContent>
                          <TabsContent value="asbestos-samples" className="mt-4">
@@ -434,15 +480,15 @@ export default function SurveyDetailsPage() {
                                 samples={asbestosSamples} 
                                 homogeneousAreas={homogeneousAreas} 
                                 functionalAreas={functionalAreas}
-                                onSave={setAsbestosSamples}
-                                onHaCreated={setHomogeneousAreas} 
+                                onSave={(data) => { setAsbestosSamples(data); updateSurveyInFirestore({ asbestosSamples: data }); }}
+                                onHaCreated={(data) => { setHomogeneousAreas(data); updateSurveyInFirestore({ homogeneousAreas: data }); }} 
                             />
                         </TabsContent>
                         <TabsContent value="functional-areas" className="mt-4">
-                            <FunctionalAreasTable areas={functionalAreas} onSave={setFunctionalAreas} />
+                            <FunctionalAreasTable areas={functionalAreas} onSave={(data) => { setFunctionalAreas(data); updateSurveyInFirestore({ functionalAreas: data }); }} />
                         </TabsContent>
                         <TabsContent value="paint-samples" className="mt-4">
-                            <PaintTable samples={paintSamples} onSave={setPaintSamples} />
+                            <PaintTable samples={paintSamples} onSave={(data) => { setPaintSamples(data); updateSurveyInFirestore({ paintSamples: data }); }} />
                         </TabsContent>
                         <TabsContent value="lab-reports" className="mt-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -526,3 +572,5 @@ export default function SurveyDetailsPage() {
     </div>
   );
 }
+
+    

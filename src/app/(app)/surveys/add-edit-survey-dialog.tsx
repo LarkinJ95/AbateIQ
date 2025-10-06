@@ -9,12 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
-import type { Survey } from '@/lib/types';
+import type { Survey, Personnel } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -22,8 +21,9 @@ import { CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { personnel } from '@/lib/data';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 
 interface AddEditSurveyDialogProps {
@@ -33,9 +33,18 @@ interface AddEditSurveyDialogProps {
 }
 
 const surveyTypeOptions = ['Asbestos', 'Lead', 'Cadmium'];
-const inspectors = personnel.filter(p => p.isInspector);
 
 export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyDialogProps) {
+    const { user } = useUser();
+    const firestore = useFirestore();
+
+    const inspectorsQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        return query(collection(firestore, 'personnel'), where('ownerId', '==', user.uid), where('isInspector', '==', true));
+    }, [firestore, user]);
+    const { data: inspectors, isLoading } = useCollection<Personnel>(inspectorsQuery);
+
+
     const [siteName, setSiteName] = useState('');
     const [address, setAddress] = useState('');
     const [inspector, setInspector] = useState('');
@@ -95,11 +104,6 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             onSave(surveyData as any);
         }
 
-
-        toast({
-            title: isEditMode ? 'Survey Updated' : 'Survey Added',
-            description: `${siteName} has been ${isEditMode ? 'updated' : 'saved'}.`,
-        });
         setIsOpen(false);
     }
     
@@ -136,12 +140,12 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
           </div>
           <div className="space-y-2">
             <Label htmlFor="inspector">Inspector</Label>
-            <Select onValueChange={setInspector} value={inspector}>
+            <Select onValueChange={setInspector} value={inspector} disabled={isLoading}>
               <SelectTrigger id="inspector">
                 <SelectValue placeholder="Select an inspector" />
               </SelectTrigger>
               <SelectContent>
-                {inspectors.map(p => (
+                {inspectors?.map(p => (
                     <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
                 ))}
               </SelectContent>
@@ -213,3 +217,5 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
     </Dialog>
   );
 }
+
+    

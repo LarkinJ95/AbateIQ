@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo } from "react";
@@ -13,45 +12,65 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { surveys as initialSurveys } from "@/lib/data";
 import { Search, Plus, MapPin, Calendar, User, Edit, FileText, Filter, Download, Trash2, X, CalendarDays, FileDown, FileUp } from "lucide-react";
 import { format } from "date-fns";
 import type { Survey } from "@/lib/types";
 import Link from "next/link";
 import Image from 'next/image';
 import { AddEditSurveyDialog } from "./add-edit-survey-dialog";
+import { useFirestore, useCollection, useMemoFirebase, useUser } from "@/firebase";
+import { collection, query, where, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
 
 export default function SurveysPage() {
-  const [surveys, setSurveys] = useState<Survey[]>(initialSurveys);
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
+
+  const surveysQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'surveys'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: surveys, isLoading } = useCollection<Survey>(surveysQuery);
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [editSurvey, setEditSurvey] = useState<Survey | null>(null);
   const [selectedSurveys, setSelectedSurveys] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>();
   const [sortBy, setSortBy] = useState<string>("date-desc");
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false); // Simulate loading
 
-  const handleSaveSurvey = (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
-    if (surveyData.id) {
-        // Edit existing survey
-        setSurveys(prev => prev.map(s => s.id === surveyData.id ? { ...(s as Survey), ...surveyData } : s));
-    } else {
-        // Add new survey
-        const newSurvey: Survey = {
-            ...surveyData,
-            id: `surv-${Date.now()}`,
-            sitePhotoUrl: 'https://picsum.photos/seed/1/600/400',
-            sitePhotoHint: 'construction site',
-        };
-        setSurveys(prev => [newSurvey, ...prev]);
+  const handleSaveSurvey = async (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => {
+    if (!user) {
+        toast({ title: "Not authenticated", variant: 'destructive' });
+        return;
+    }
+    try {
+        if (surveyData.id) {
+            // Edit existing survey
+            const surveyRef = doc(firestore, 'surveys', surveyData.id);
+            await updateDoc(surveyRef, surveyData);
+        } else {
+            // Add new survey
+            const newSurvey: Partial<Survey> & { ownerId: string } = {
+                ...surveyData,
+                sitePhotoUrl: 'https://picsum.photos/seed/1/600/400',
+                sitePhotoHint: 'construction site',
+                ownerId: user.uid,
+            };
+            await addDoc(collection(firestore, 'surveys'), newSurvey);
+        }
+         toast({
+            title: surveyData.id ? 'Survey Updated' : 'Survey Added',
+        });
+    } catch (e) {
+        console.error(e);
+        toast({ title: 'Error saving survey', variant: 'destructive'});
     }
   };
 
 
-  const handleBulkAction = (action: 'excel' | 'pdf' | 'delete') => {
+  const handleBulkAction = async (action: 'excel' | 'pdf' | 'delete') => {
     if (selectedSurveys.length === 0) {
       toast({
         title: 'No Surveys Selected',
@@ -63,12 +82,18 @@ export default function SurveysPage() {
     
     if (action === 'delete') {
       if (confirm(`Are you sure you want to delete ${selectedSurveys.length} surveys? This action cannot be undone.`)) {
-        setSurveys(prev => prev.filter(s => !selectedSurveys.includes(s.id)));
-        toast({
-          title: 'Surveys Deleted',
-          description: `Successfully deleted ${selectedSurveys.length} surveys.`,
-        });
-        setSelectedSurveys([]);
+        try {
+            for (const id of selectedSurveys) {
+                await deleteDoc(doc(firestore, 'surveys', id));
+            }
+            toast({
+                title: 'Surveys Deleted',
+                description: `Successfully deleted ${selectedSurveys.length} surveys.`,
+            });
+            setSelectedSurveys([]);
+        } catch (e) {
+            toast({ title: 'Error deleting surveys', variant: 'destructive' });
+        }
       }
     } else {
        toast({
@@ -96,6 +121,7 @@ export default function SurveysPage() {
   };
 
   const filteredSurveys = useMemo(() => {
+    if (!surveys) return [];
     let filtered = surveys.filter((survey) =>
       survey.siteName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       survey.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -341,13 +367,13 @@ export default function SurveysPage() {
                 </Card>
             )}
 
-            {filteredSurveys.length === 0 ? (
+            {!surveys || filteredSurveys.length === 0 ? (
                 <Card>
                 <CardContent className="text-center py-12">
                     <p className="text-muted-foreground">
-                    {searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || dateRange ? "No surveys found matching your filters." : "No surveys created yet."}
+                    {isLoading ? "Loading surveys..." : (searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || dateRange ? "No surveys found matching your filters." : "No surveys created yet.")}
                     </p>
-                    {!searchQuery && statusFilter === 'all' && typeFilter === 'all' && !dateRange && (
+                    {!isLoading && !searchQuery && statusFilter === 'all' && typeFilter === 'all' && !dateRange && (
                     <AddEditSurveyDialog onSave={handleSaveSurvey} survey={null}>
                         <Button 
                             className="mt-4"
@@ -461,3 +487,5 @@ export default function SurveysPage() {
     </div>
   );
 }
+
+    

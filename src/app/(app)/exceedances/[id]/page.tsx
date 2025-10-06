@@ -3,16 +3,26 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { exceedances } from '@/lib/data';
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { Exceedance } from '@/lib/types';
 
 export default function ExceedanceDetailsPage() {
   const params = useParams();
   const id = params.id as string;
-  const exceedance = exceedances.find(e => e.id === id);
+  const firestore = useFirestore();
+
+  const exceedanceRef = useMemoFirebase(() => doc(firestore, 'exceedances', id), [firestore, id]);
+  const { data: exceedance, isLoading } = useDoc<Exceedance>(exceedanceRef);
+
   const evidenceImage = PlaceHolderImages.find(img => img.id === 'doc-thumb-2');
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   if (!exceedance) {
     notFound();
@@ -85,3 +95,5 @@ export default function ExceedanceDetailsPage() {
     </div>
   );
 }
+
+    

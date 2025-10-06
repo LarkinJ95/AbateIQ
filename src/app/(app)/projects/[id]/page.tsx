@@ -3,13 +3,12 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { projects, samples as initialSamples, tasks, personnel, exposureLimits } from '@/lib/data';
 import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { useState, useRef, useMemo } from 'react';
-import type { Sample, Result, Survey } from '@/lib/types';
+import type { Sample, Result, Survey, Project } from '@/lib/types';
 import { AddSampleDialog } from '@/app/(app)/samples/add-sample-dialog';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -22,8 +21,9 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, where, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { exposureLimits } from '@/lib/data';
 
 
 type LinkedReport = {
@@ -35,41 +35,63 @@ type LinkedReport = {
 export default function ProjectDetailsPage() {
   const params = useParams();
   const id = params.id as string;
-  const project = projects.find(p => p.id === id);
   const firestore = useFirestore();
+  const { user } = useUser();
   
-  if (!project) {
-    notFound();
-  }
-
+  const projectRef = useMemoFirebase(() => doc(firestore, 'projects', id), [firestore, id]);
+  const { data: project, isLoading: projectLoading } = useDoc<Project>(projectRef);
+  
   const { toast } = useToast();
-  const [samples, setSamples] = useState(initialSamples.filter(s => s.projectId === project.id));
   const reportFileRef = useRef<HTMLInputElement>(null);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [linkedReports, setLinkedReports] = useState<LinkedReport[]>([]);
   const [selectedReport, setSelectedReport] = useState<LinkedReport | null>(null);
   const [isSummaryDialogOpen, setIsSummaryDialogOpen] = useState(false);
 
-  const projectTasks = tasks.filter(t => t.projectId === project.id);
-  
-  const projectSamples = samples
-    .map(sample => {
-        const task = tasks.find(t => t.id === sample.taskId);
-        const person = personnel.find(p => p.id === sample.personnelId);
-        return {
-            ...sample,
-            taskName: task?.name || 'N/A',
-            personnelName: person?.name || 'N/A',
-            status: sample.result?.status || 'Pending',
-        }
-    });
+  // Samples for this project
+  const projectSamplesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'samples'), where('projectId', '==', id), where('ownerId', '==', user.uid));
+  }, [firestore, id, user]);
+  const { data: samples, isLoading: samplesLoading } = useCollection<Sample>(projectSamplesQuery);
+
+  // Personnel data (to resolve names)
+  const personnelQuery = useMemoFirebase(() => {
+      if (!user) return null;
+      return query(collection(firestore, 'personnel'), where('ownerId', '==', user.uid));
+  }, [firestore, user]);
+  const { data: personnel } = useCollection<any>(personnelQuery);
+
+   // Task data (to resolve names)
+   const tasksQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'tasks'), where('ownerId', '==', user.uid));
+}, [firestore, user]);
+const { data: tasks } = useCollection<any>(tasksQuery);
+
+
+  const projectSamplesWithDetails = useMemo(() => {
+    if (!samples || !personnel || !tasks) return [];
+    return samples
+        .map(sample => {
+            const task = tasks.find(t => t.id === sample.taskId);
+            const person = personnel.find(p => p.id === sample.personnelId);
+            return {
+                ...sample,
+                taskName: task?.name || 'N/A',
+                personnelName: person?.name || 'N/A',
+                status: sample.result?.status || 'Pending',
+            }
+        });
+  }, [samples, personnel, tasks]);
+    
 
   // Filter surveys related to this project (matching by name for this example)
   const surveysQuery = useMemoFirebase(() => {
-      if (!firestore) return null;
+      if (!firestore || !project) return null;
       // This is a simple query, in a real app you might have a projectId on the survey
       return query(collection(firestore, 'surveys'), where('siteName', '>=', project.name), where('siteName', '<=', project.name + '\uf8ff'));
-  }, [firestore, project.name]);
+  }, [firestore, project]);
   const { data: linkedSurveys } = useCollection<Survey>(surveysQuery);
 
 
@@ -100,7 +122,9 @@ export default function ProjectDetailsPage() {
     }
   };
   
- const handleSaveSample = (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
+ const handleSaveSample = async (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
+      if (!user) return;
+      
       const getMinutes = (start: string, stop: string) => {
         if (start && stop) {
           try {
@@ -119,7 +143,7 @@ export default function ProjectDetailsPage() {
       
       let resultPayload: Result | undefined = undefined;
       if(newSampleData.result?.analyte) {
-          const existingResult = newSampleData.id ? samples.find(s => s.id === newSampleData.id)?.result : undefined;
+          const existingResult = newSampleData.id ? samples?.find(s => s.id === newSampleData.id)?.result : undefined;
           
           let status: Result['status'] = 'Pending';
           const concentration = newSampleData.result.concentration;
@@ -147,37 +171,40 @@ export default function ProjectDetailsPage() {
           }
       }
 
-      if (newSampleData.id) {
-          // Edit existing sample
-          setSamples(prevSamples => prevSamples.map(s => s.id === newSampleData.id ? { 
-              ...s, 
-              ...newSampleData, 
-              duration,
-              volume,
-              result: resultPayload ? {...s.result, ...resultPayload} as Result : s.result,
-          } as Sample : s));
-      } else {
-          // Add new sample
-          const newSample: Sample = {
-              ...newSampleData,
-              projectId: project.id, // Ensure it's for the current project
-              id: `samp-${Math.floor(Math.random() * 10000)}`,
-              duration,
-              volume,
-              result: resultPayload,
-          };
-          if(resultPayload) resultPayload.sampleId = newSample.id;
-          setSamples(prevSamples => [newSample, ...prevSamples]);
+      const finalSample = {
+          ...newSampleData,
+          projectId: id, // Ensure it's for the current project
+          duration,
+          volume,
+          result: resultPayload,
+      };
+
+      try {
+        if (newSampleData.id) {
+            const sampleRef = doc(firestore, 'samples', newSampleData.id);
+            await updateDoc(sampleRef, finalSample);
+            toast({ title: 'Sample Updated' });
+        } else {
+            await addDoc(collection(firestore, 'samples'), { ...finalSample, ownerId: user.uid });
+            toast({ title: 'Sample Added' });
+        }
+      } catch (e) {
+          console.error(e);
+          toast({ title: 'Error Saving Sample', variant: 'destructive'});
       }
   };
 
-  const handleDeleteSample = (sampleId: string) => {
-      setSamples(prevSamples => prevSamples.filter(s => s.id !== sampleId));
-       toast({
-        title: 'Sample Deleted',
-        description: `Sample ${sampleId} has been deleted.`,
-        variant: 'destructive'
-    });
+  const handleDeleteSample = async (sampleId: string) => {
+       try {
+        await deleteDoc(doc(firestore, 'samples', sampleId));
+         toast({
+            title: 'Sample Deleted',
+            description: `Sample ${sampleId} has been deleted.`,
+            variant: 'destructive'
+        });
+       } catch (e) {
+            toast({ title: 'Error Deleting Sample', variant: 'destructive'});
+       }
   };
 
   const handleSummarizeReport = async () => {
@@ -258,6 +285,13 @@ export default function ProjectDetailsPage() {
       }
   }
 
+  if (projectLoading) {
+    return <div>Loading project...</div>;
+  }
+
+  if (!project) {
+    notFound();
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -361,7 +395,7 @@ export default function ProjectDetailsPage() {
                                 </Button>
                             </AddSampleDialog>
                         </div>
-                         {projectSamples.length > 0 ? (
+                         {samplesLoading ? <p>Loading samples...</p> : projectSamplesWithDetails.length > 0 ? (
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -377,7 +411,7 @@ export default function ProjectDetailsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {projectSamples.map(sample => (
+                                    {projectSamplesWithDetails.map(sample => (
                                         <TableRow key={sample.id}>
                                             <TableCell className="font-medium">
                                                 <Link href={`/samples/${sample.id}`} className="hover:underline">
@@ -525,3 +559,5 @@ export default function ProjectDetailsPage() {
     </div>
   );
 }
+
+    

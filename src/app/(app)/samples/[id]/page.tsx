@@ -3,21 +3,41 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { samples, projects, tasks, personnel } from '@/lib/data';
 import { notFound, useParams } from 'next/navigation';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { Sample, Project, Task, Personnel } from '@/lib/types';
+import { useMemo } from 'react';
 
 export default function SampleDetailsPage() {
   const params = useParams();
   const id = params.id as string;
-  const sample = samples.find(s => s.id === id);
+  const firestore = useFirestore();
+
+  const sampleRef = useMemoFirebase(() => doc(firestore, 'samples', id), [firestore, id]);
+  const { data: sample, isLoading: sampleLoading } = useDoc<Sample>(sampleRef);
+
+  const projectId = sample?.projectId;
+  const taskId = sample?.taskId;
+  const personnelId = sample?.personnelId;
+
+  const projectRef = useMemoFirebase(() => projectId ? doc(firestore, 'projects', projectId) : null, [firestore, projectId]);
+  const { data: project } = useDoc<Project>(projectRef);
+
+  const taskRef = useMemoFirebase(() => taskId ? doc(firestore, 'tasks', taskId) : null, [firestore, taskId]);
+  const { data: task } = useDoc<Task>(taskRef);
+
+  const personnelRef = useMemoFirebase(() => personnelId ? doc(firestore, 'personnel', personnelId) : null, [firestore, personnelId]);
+  const { data: person } = useDoc<Personnel>(personnelRef);
+
+  if (sampleLoading) {
+    return <div>Loading...</div>;
+  }
 
   if (!sample) {
     notFound();
   }
 
-  const project = projects.find(p => p.id === sample.projectId);
-  const task = tasks.find(t => t.id === sample.taskId);
-  const person = personnel.find(p => p.id === sample.personnelId);
   const result = sample.result;
 
   return (
@@ -35,15 +55,15 @@ export default function SampleDetailsPage() {
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Project</p>
-                <p className="text-lg font-semibold">{project?.name}</p>
+                <p className="text-lg font-semibold">{project?.name || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Task</p>
-                <p className="text-lg font-semibold">{task?.name}</p>
+                <p className="text-lg font-semibold">{task?.name || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Personnel</p>
-                <p className="text-lg font-semibold">{person?.name}</p>
+                <p className="text-lg font-semibold">{person?.name || 'Loading...'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Start Time</p>
@@ -111,3 +131,5 @@ export default function SampleDetailsPage() {
     </div>
   );
 }
+
+    

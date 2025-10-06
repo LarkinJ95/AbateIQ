@@ -645,11 +645,11 @@ function HeatStressChart({ wbgt }: { wbgt: number | null }) {
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <div 
-                                    className="absolute top-0 h-full w-1 bg-foreground -translate-x-1/2 transition-all duration-300 ease-in-out"
+                                <div
+                                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-[150%] w-px bg-foreground transition-all duration-300 ease-in-out"
                                     style={{ left: getIndicatorPosition() }}
                                 >
-                                     <div className="absolute -top-3 -translate-x-1/2 left-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-foreground"></div>
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-foreground border-2 border-background" />
                                 </div>
                             </TooltipTrigger>
                             <TooltipContent>

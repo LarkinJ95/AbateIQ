@@ -77,14 +77,14 @@ const GenerateSurveyReportInputSchema = z.object({
   
   // Branding & Customization
   companyName: z.string(),
-  logoDataUri: z.string().optional(),
+  logoUrl: z.string().optional(),
   primaryColor: z.string().optional().default('#00BFFF'), // Deep Sky Blue
   accentColor: z.string().optional().default('#708090'), // Slate Blue
   
   // Photos
-  mainPhotoDataUri: z.string().optional(),
-  floorPlanDataUri: z.string().optional(),
-  positiveMaterialPhotoDataUris: z.array(z.string()).optional(),
+  mainPhotoUrl: z.string().optional(),
+  floorPlanUrl: z.string().optional(),
+  positiveMaterialPhotoUrls: z.array(z.string()).optional(),
 });
 export type GenerateSurveyReportInput = z.infer<typeof GenerateSurveyReportInputSchema>;
 
@@ -142,7 +142,7 @@ const prompt = ai.definePrompt({
         7.  **Asbestos Results**: A table for Asbestos Samples. Columns must be in this order: Sample #, HA ID, Location, Material, Result.
         8.  **Paint Results**: Create a separate table for EACH analyte (e.g., "Lead Paint Sample Results"). Columns: Sample Location, Paint Color, Result (mg/kg), Result (% by weight). Calculate '% by weight' as (mg/kg) / 10000.
         9.  **Floor Plan**: Display the floor plan image under a clear heading.
-        10. **Positive Material Photos**: Display all provided photos in a gallery under a clear heading. If there are multiple photos in \`positiveMaterialPhotoDataUris\`, create a grid or flexbox layout to show them all.
+        10. **Positive Material Photos**: Display all provided photos in a gallery under a clear heading. If there are multiple photos in \`positiveMaterialPhotoUrls\`, create a grid or flexbox layout to show them all.
         11. **Conclusions**: Provide clear next steps based on the findings.
         12. **Disclaimer**: Include a standard disclaimer text, inserting the company name.
 

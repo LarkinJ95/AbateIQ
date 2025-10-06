@@ -25,18 +25,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { generateSurveyReport, GenerateSurveyReportOutput } from '@/ai/flows/generate-survey-report';
 import { useUser } from '@/firebase';
 
-// Helper to convert an image URL to a data URI
-async function toDataUri(url: string): Promise<string> {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-    });
-}
-
 
 export default function SurveyDetailsPage() {
   const params = useParams();
@@ -250,23 +238,7 @@ export default function SurveyDetailsPage() {
     setIsGeneratingReport(true);
     setGeneratedReport(null);
     try {
-        const [
-            mainPhotoDataUri, 
-            floorPlanDataUri,
-            exteriorPhotoUris,
-            interiorPhotoUris,
-            samplePhotoUris,
-            logoDataUri
-        ] = await Promise.all([
-            mainPhoto ? toDataUri(mainPhoto) : Promise.resolve(undefined),
-            floorPlan ? toDataUri(floorPlan) : Promise.resolve(undefined),
-            Promise.all(exteriorPhotos.map(url => toDataUri(url))),
-            Promise.all(interiorPhotos.map(url => toDataUri(url))),
-            Promise.all(samplePhotos.map(url => toDataUri(url))),
-            user?.photoURL ? toDataUri(user.photoURL) : Promise.resolve(undefined),
-        ]);
-
-        const positiveMaterialPhotoDataUris = [...exteriorPhotoUris, ...interiorPhotoUris, ...samplePhotoUris];
+        const positiveMaterialPhotoDataUris = [...exteriorPhotos, ...interiorPhotos, ...samplePhotos];
 
         const serializableFAs = functionalAreas.map(fa => ({ id: fa.id, faId: fa.faId, faUse: fa.faUse, length: fa.length, width: fa.width, height: fa.height }));
         const serializableHAs = homogeneousAreas.map(ha => ({ id: ha.id, haId: ha.haId, description: ha.description, functionalAreaIds: ha.functionalAreaIds }));
@@ -285,10 +257,10 @@ export default function SurveyDetailsPage() {
             asbestosSamples: serializableAsbestos,
             paintSamples: serializablePaint,
             companyName: 'Bierlein', // This should be dynamic in a real app
-            logoDataUri,
-            mainPhotoDataUri,
-            floorPlanDataUri,
-            positiveMaterialPhotoDataUris,
+            logoUrl: user?.photoURL,
+            mainPhotoUrl: mainPhoto,
+            floorPlanUrl: floorPlan,
+            positiveMaterialPhotoUrls: positiveMaterialPhotoDataUris,
         };
 
         const result = await generateSurveyReport(reportInput);

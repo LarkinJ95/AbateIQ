@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -8,11 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type TwaSample = {
   id: number;
@@ -446,6 +448,12 @@ function VentilationCalculator() {
         return (cfm * 60) / roomVolume;
 
     }, [roomVolume, cfmSelection, customCfm, machineCfmOptions]);
+    
+    const showAchWarning = useMemo(() => {
+        const ach = parseFloat(targetAch);
+        return !isNaN(ach) && ach > 0 && ach < 6;
+    }, [targetAch]);
+
 
     return (
         <Card>
@@ -476,7 +484,19 @@ function VentilationCalculator() {
                     <div className="space-y-4">
                          <div className="space-y-2">
                             <Label htmlFor="ach">Target Air Changes per Hour (ACH)</Label>
-                            <Input id="ach" type="number" value={targetAch} onChange={e => setTargetAch(e.target.value)} placeholder="e.g., 4 or 6" />
+                            <TooltipProvider>
+                                <Tooltip open={showAchWarning}>
+                                    <TooltipTrigger asChild>
+                                        <Input id="ach" type="number" value={targetAch} onChange={e => setTargetAch(e.target.value)} placeholder="e.g., 6" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="flex items-center gap-2">
+                                            <AlertTriangle className="h-4 w-4 text-destructive"/>
+                                            <p>A minimum of 6 ACH is recommended.</p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
                         <div className="border-t pt-4">
                             <h3 className="text-lg font-semibold flex items-center mb-2">
@@ -649,3 +669,5 @@ export default function ToolsPage() {
     </div>
   );
 }
+
+    

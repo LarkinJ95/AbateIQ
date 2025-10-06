@@ -36,6 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { Company, User, AppFeature } from "@/lib/types";
+import { useAuth, initiateEmailSignUp } from "@/firebase";
 
 interface SystemStats {
   totalUsers: number;
@@ -101,6 +102,7 @@ export default function AdminDashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const { toast } = useToast();
+  const auth = useAuth();
 
   const [systemStats] = useState<SystemStats>(mockSystemStats);
   const [users, setUsers] = useState<User[]>(mockUsers);
@@ -167,6 +169,8 @@ export default function AdminDashboard() {
   };
 
   const handleAddUser = () => {
+    initiateEmailSignUp(auth, newUserData.email, newUserData.password);
+    // This part is for local state update, the actual user is created in Firebase Auth.
     const newUser: User = {
         id: `user-${Date.now()}`,
         createdAt: new Date().toISOString(),
@@ -578,7 +582,7 @@ export default function AdminDashboard() {
                       <Label htmlFor="email-verification">Require Email Verification</Label>
                       <p className="text-sm text-muted-foreground">New users must verify their email</p>
                     </div>
-                    <Switch id="email-verification" />
+                    <Switch id="email-verification" defaultChecked={false} />
                   </div>
 
                   <div className="flex items-center justify-between">

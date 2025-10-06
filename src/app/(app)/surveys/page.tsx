@@ -46,7 +46,7 @@ export default function SurveysPage() {
         return;
     }
     try {
-        const dataToSave = {
+        const dataToSave: Partial<Survey> & {ownerId: string} = {
             ...surveyData,
             ownerId: user.uid,
         };
@@ -491,3 +491,5 @@ export default function SurveysPage() {
     </div>
   );
 }
+
+    

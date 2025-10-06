@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets } from 'lucide-react';
+import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -173,12 +173,156 @@ function TwaCalculator() {
   );
 }
 
+type PaintSampleRow = {
+  id: number;
+  sampleNumber: string;
+  location: string;
+  resultMgKg: string;
+};
+
+function PaintConverter() {
+  const [rows, setRows] = useState<PaintSampleRow[]>([
+    { id: 1, sampleNumber: '', location: '', resultMgKg: '' },
+  ]);
+  const { toast } = useToast();
+
+  const handleAddRow = () => {
+    setRows([...rows, { id: Date.now(), sampleNumber: '', location: '', resultMgKg: '' }]);
+  };
+
+  const handleRemoveRow = (id: number) => {
+    if (rows.length === 1) return;
+    setRows(rows.filter(row => row.id !== id));
+  };
+
+  const handleRowChange = (id: number, field: keyof PaintSampleRow, value: string) => {
+    setRows(rows.map(row => (row.id === id ? { ...row, [field]: value } : row)));
+  };
+
+  const stats = useMemo(() => {
+    const validRows = rows.filter(row => row.resultMgKg && !isNaN(parseFloat(row.resultMgKg)));
+    if (validRows.length === 0) return { max: null, min: null };
+    
+    let maxRow = validRows[0];
+    let minRow = validRows[0];
+
+    for(const row of validRows) {
+        if(parseFloat(row.resultMgKg) > parseFloat(maxRow.resultMgKg)) {
+            maxRow = row;
+        }
+        if(parseFloat(row.resultMgKg) < parseFloat(minRow.resultMgKg)) {
+            minRow = row;
+        }
+    }
+
+    return { max: maxRow, min: minRow };
+  }, [rows]);
+
+  const handleCopyAll = () => {
+    const header = "Sample #\tLocation\tResult (mg/kg)\t% by Weight\n";
+    const data = rows.map(row => {
+        const mgKg = parseFloat(row.resultMgKg);
+        const percent = !isNaN(mgKg) ? (mgKg / 10000).toFixed(4) : '';
+        return `${row.sampleNumber}\t${row.location}\t${row.resultMgKg}\t${percent}`;
+    }).join('\n');
+    navigator.clipboard.writeText(header + data);
+    toast({
+        title: 'Data Copied',
+        description: `${rows.length} rows copied to clipboard for Excel.`
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+        <div className="grid grid-cols-12 gap-2 font-medium text-sm text-muted-foreground">
+            <div className="col-span-2">Sample #</div>
+            <div className="col-span-3">Location</div>
+            <div className="col-span-3">Result (mg/kg)</div>
+            <div className="col-span-3">% by Weight</div>
+        </div>
+      {rows.map((row, index) => (
+        <div key={row.id} className="grid grid-cols-12 gap-2 items-center">
+          <div className="col-span-2">
+            <Input
+              placeholder={`Sample ${index + 1}`}
+              value={row.sampleNumber}
+              onChange={(e) => handleRowChange(row.id, 'sampleNumber', e.target.value)}
+            />
+          </div>
+          <div className="col-span-3">
+            <Input
+              placeholder="e.g., North wall"
+              value={row.location}
+              onChange={(e) => handleRowChange(row.id, 'location', e.target.value)}
+            />
+          </div>
+          <div className="col-span-3">
+             <Input
+                type="number"
+                placeholder="e.g., 5000"
+                value={row.resultMgKg}
+                onChange={(e) => handleRowChange(row.id, 'resultMgKg', e.target.value)}
+                />
+          </div>
+          <div className="col-span-3">
+            <Input
+              value={row.resultMgKg && !isNaN(parseFloat(row.resultMgKg)) ? (parseFloat(row.resultMgKg) / 10000).toFixed(4) : ''}
+              readOnly
+              disabled
+              className="font-medium bg-muted"
+            />
+          </div>
+          <div className="col-span-1">
+            <Button variant="ghost" size="icon" onClick={() => handleRemoveRow(row.id)} disabled={rows.length === 1}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        </div>
+      ))}
+      <div className="flex justify-between">
+          <Button variant="outline" onClick={handleAddRow}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Row
+          </Button>
+          <Button onClick={handleCopyAll} disabled={rows.length === 0}>
+             <Copy className="mr-2 h-4 w-4" /> Copy for Excel
+          </Button>
+      </div>
+
+       {(stats.max || stats.min) && (
+            <div className="border-t pt-6 space-y-4">
+                <h3 className="text-lg font-semibold flex items-center">
+                    <Calculator className="mr-2 h-5 w-5" />
+                    Summary
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                    {stats.max && (
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                             <p className="text-sm text-muted-foreground flex items-center"><ArrowUp className="text-red-500 mr-1"/> Max Concentration</p>
+                             <p className="text-lg font-bold">{stats.max.sampleNumber || 'N/A'}</p>
+                             <p className="text-primary">{stats.max.resultMgKg} mg/kg</p>
+                        </div>
+                    )}
+                    {stats.min && (
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                             <p className="text-sm text-muted-foreground flex items-center"><ArrowDown className="text-green-500 mr-1"/> Min Concentration</p>
+                             <p className="text-lg font-bold">{stats.min.sampleNumber || 'N/A'}</p>
+                             <p className="text-primary">{stats.min.resultMgKg} mg/kg</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+       )}
+    </div>
+  );
+}
+
+
 function UnitConverter() {
     const [conversionType, setConversionType] = useState('mg-to-ppm');
     const [inputValue, setInputValue] = useState('');
     const [molecularWeight, setMolecularWeight] = useState('');
     
-    const result = useMemo(() => {
+    const simpleResult = useMemo(() => {
         const input = parseFloat(inputValue);
         const mw = parseFloat(molecularWeight);
 
@@ -212,37 +356,44 @@ function UnitConverter() {
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="mg-to-ppm">mg/m³ to ppm</SelectItem>
-                            <SelectItem value="ppm-to-mg">ppm to mg/m³</SelectItem>
-                            <SelectItem value="fcc-to-fm3">f/cc to f/m³</SelectItem>
+                            <SelectItem value="mg-to-ppm">mg/m³ <ChevronsRight className="inline h-4 w-4 mx-1"/> ppm</SelectItem>
+                            <SelectItem value="ppm-to-mg">ppm <ChevronsRight className="inline h-4 w-4 mx-1"/> mg/m³</SelectItem>
+                            <SelectItem value="fcc-to-fm3">f/cc <ChevronsRight className="inline h-4 w-4 mx-1"/> f/m³</SelectItem>
+                            <SelectItem value="paint-percent">Paint (mg/kg <ChevronsRight className="inline h-4 w-4 mx-1"/> % by weight)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="flex gap-4">
-                    <div className="space-y-2 flex-1">
-                        <Label htmlFor="input-value">Input Value</Label>
-                        <Input id="input-value" type="number" value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
-                    </div>
-                    {(conversionType === 'mg-to-ppm' || conversionType === 'ppm-to-mg') && (
-                        <div className="space-y-2">
-                            <Label htmlFor="mw">Molecular Weight</Label>
-                            <Input id="mw" type="number" value={molecularWeight} onChange={(e) => setMolecularWeight(e.target.value)} placeholder="e.g., 28.01" />
+                {conversionType === 'paint-percent' ? (
+                    <PaintConverter />
+                ) : (
+                    <>
+                        <div className="flex gap-4">
+                            <div className="space-y-2 flex-1">
+                                <Label htmlFor="input-value">Input Value</Label>
+                                <Input id="input-value" type="number" value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
+                            </div>
+                            {(conversionType === 'mg-to-ppm' || conversionType === 'ppm-to-mg') && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="mw">Molecular Weight (g/mol)</Label>
+                                    <Input id="mw" type="number" value={molecularWeight} onChange={(e) => setMolecularWeight(e.target.value)} placeholder="e.g., 28.01" />
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-                 <div className="border-t pt-6 space-y-4">
-                    <h3 className="text-lg font-semibold flex items-center">
-                        <RefreshCw className="mr-2 h-5 w-5" />
-                        Result
-                    </h3>
-                    <div className="p-4 bg-muted/50 rounded-lg min-h-[80px] flex items-center">
-                        {result ? (
-                            <p className="text-2xl font-bold text-primary">{result}</p>
-                        ): (
-                            <p className="text-muted-foreground">Enter values to see the result.</p>
-                        )}
-                    </div>
-                </div>
+                        <div className="border-t pt-6 space-y-4">
+                            <h3 className="text-lg font-semibold flex items-center">
+                                <RefreshCw className="mr-2 h-5 w-5" />
+                                Result
+                            </h3>
+                            <div className="p-4 bg-muted/50 rounded-lg min-h-[80px] flex items-center">
+                                {simpleResult ? (
+                                    <p className="text-2xl font-bold text-primary">{simpleResult}</p>
+                                ): (
+                                    <p className="text-muted-foreground">Enter values to see the result.</p>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                )}
             </CardContent>
         </Card>
     );
@@ -424,5 +575,3 @@ export default function ToolsPage() {
     </div>
   );
 }
-
-    

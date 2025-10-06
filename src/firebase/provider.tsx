@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
@@ -16,9 +17,16 @@ interface FirebaseProviderProps {
   auth: Auth;
 }
 
+// Augment the User type from Firebase to include our custom claims
+interface AppUser extends User {
+    orgId?: string;
+    role?: 'admin' | 'editor' | 'viewer';
+}
+
+
 // Internal state for user authentication
 interface UserAuthState {
-  user: User | null;
+  user: AppUser | null;
   isUserLoading: boolean;
   userError: Error | null;
 }
@@ -30,7 +38,7 @@ export interface FirebaseContextState {
   firestore: Firestore | null;
   auth: Auth | null; // The Auth service instance
   // User authentication state
-  user: User | null;
+  user: AppUser | null;
   isUserLoading: boolean; // True during initial auth check
   userError: Error | null; // Error from auth listener
 }
@@ -40,14 +48,14 @@ export interface FirebaseServicesAndUser {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   auth: Auth;
-  user: User | null;
+  user: AppUser | null;
   isUserLoading: boolean;
   userError: Error | null;
 }
 
 // Return type for useUser() - specific to user auth state
 export interface UserHookResult { // Renamed from UserAuthHookResult for consistency if desired, or keep as UserAuthHookResult
-  user: User | null;
+  user: AppUser | null;
   isUserLoading: boolean;
   userError: Error | null;
 }
@@ -87,14 +95,32 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         .then(() => {
             const unsubscribe = onAuthStateChanged(
                 auth,
-                (firebaseUser) => { // Auth state determined
-                    setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
-                    if(firebaseUser) {
-                      toast({
-                        title: 'Login Successful',
-                        description: `Welcome back, ${firebaseUser.email}`,
-                      });
-                      router.push('/dashboard');
+                async (firebaseUser) => { // Auth state determined
+                    if (firebaseUser) {
+                        try {
+                            const idTokenResult = await firebaseUser.getIdTokenResult(true); // Force refresh to get latest claims
+                            const claims = idTokenResult.claims;
+                            
+                            const appUser: AppUser = {
+                                ...firebaseUser,
+                                orgId: (claims.orgId as string) || 'org_placeholder_123', // Fallback for development
+                                role: (claims.role as any) || 'admin', // Fallback for development
+                            };
+
+                            setUserAuthState({ user: appUser, isUserLoading: false, userError: null });
+                            
+                            toast({
+                                title: 'Login Successful',
+                                description: `Welcome back, ${appUser.email}`,
+                            });
+                            router.push('/dashboard');
+
+                        } catch (error) {
+                            console.error("Error getting user claims:", error);
+                            setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: new Error("Failed to get user claims.") });
+                        }
+                    } else {
+                         setUserAuthState({ user: null, isUserLoading: false, userError: null });
                     }
                 },
                 (error) => { // Auth listener error

@@ -18,21 +18,7 @@ export const documents: Document[] = [];
 export const companies: Company[] = [];
 
 
-export const exposureLimits: ExposureLimit[] = [
-    { id: 'lim-1', analyte: 'Asbestos', units: 'f/cc', al: 0.1, pel: 0.1, stel: 1.0, el: 1.0 },
-    { id: 'lim-2', analyte: 'Respirable Crystalline Silica', units: 'µg/m³', al: 25, pel: 50, stel: 0, el: 0 },
-    { id: 'lim-3', analyte: 'Lead (Pb)', units: 'µg/m³', al: 30, pel: 50, stel: 0, el: 0 },
-    { id: 'lim-4', analyte: 'Cadmium (Cd)', units: 'µg/m³', al: 2.5, pel: 5, stel: 0, el: 0 },
-    { id: 'lim-5', analyte: 'Inorganic Arsenic', units: 'µg/m³', al: 5, pel: 10, stel: 0, el: 0 },
-    { id: 'lim-6', analyte: 'Benzene', units: 'ppm', al: 0.5, pel: 1, stel: 5, el: 5 },
-    { id: 'lim-7', analyte: 'Hexavalent Chromium', units: 'µg/m³', al: 2.5, pel: 5, stel: 0, el: 0 },
-    { id: 'lim-8', analyte: 'Carbon Monoxide', units: 'ppm', al: 25, pel: 50, stel: 0, el: 0 },
-    { id: 'lim-9', analyte: 'Manganese', units: 'mg/m³', al: 0, pel: 5, stel: 0, el: 0 },
-    { id: 'lim-10', analyte: 'Nickel (metal)', units: 'mg/m³', al: 0, pel: 1, stel: 0, el: 0 },
-    { id: 'lim-11', analyte: 'Total Dust', units: 'mg/m³', al: 0, pel: 15, stel: 0, el: 0 },
-    { id: 'lim-12', analyte: 'Respirable Dust', units: 'mg/m³', al: 0, pel: 5, stel: 0, el: 0 },
-    { id: 'lim-13', analyte: 'Hydrogen Sulfide', units: 'ppm', al: 0, pel: 20, stel: 50, el: 50 },
-];
+export const exposureLimits: ExposureLimit[] = [];
 
 export const checklistTemplates: ChecklistTemplate[] = [
     {

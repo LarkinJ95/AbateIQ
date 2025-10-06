@@ -10,8 +10,10 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ExceedanceSchema } from '@/lib/types';
-import { collection, addDoc } from 'firebase/firestore';
+import { getCurrentUser } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { initializeFirebase } from '@/firebase';
+
 
 // Define the input schema, omitting fields that should be set by the server
 const CreateExceedanceInputSchema = ExceedanceSchema.omit({ 
@@ -34,12 +36,29 @@ const createExceedanceFlow = ai.defineFlow(
     name: 'createExceedanceFlow',
     inputSchema: CreateExceedanceInputSchema,
     outputSchema: CreateExceedanceOutputSchema,
+    // Add auth policy to ensure only authenticated users can call this flow.
+    auth: async (input, auth) => {
+        if (!auth) {
+            throw new Error("Not authenticated.");
+        }
+        // In a real app, you might check roles from custom claims:
+        // if (auth.customClaims?.role !== 'admin' && auth.customClaims?.role !== 'editor') {
+        //   throw new Error("Not authorized.");
+        // }
+    }
   },
-  async (input) => {
-    // In a real app, you would get the orgId and userId from the user's auth claims.
-    // We will simulate this for now.
-    const orgId = "org_placeholder_123"; 
-    const ownerId = "user_placeholder_456";
+  async (input, context) => {
+    const auth = context.auth;
+    if (!auth) {
+      throw new Error("Authentication context not available.");
+    }
+    const orgId = auth.customClaims?.orgId;
+    const ownerId = auth.uid;
+
+    if (!orgId) {
+        throw new Error("Organization ID not found in user claims.");
+    }
+
 
     const firestore = getFirestore();
 

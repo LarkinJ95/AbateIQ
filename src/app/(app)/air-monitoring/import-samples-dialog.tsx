@@ -16,9 +16,11 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { FileDown } from 'lucide-react';
-import type { Sample, Result } from '@/lib/types';
+import type { Sample, Project, Task, Personnel, ExposureLimit } from '@/lib/types';
 import { Label } from '@/components/ui/label';
-import { projects, tasks, personnel, exposureLimits } from '@/lib/data';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+
 
 interface ImportSamplesDialogProps {
   onImport: (newSamples: Omit<Sample, 'id'>[]) => void;
@@ -28,12 +30,33 @@ export function ImportSamplesDialog({ onImport }: ImportSamplesDialogProps) {
   const [pasteData, setPasteData] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser();
+  const orgId = user?.orgId;
+  const firestore = useFirestore();
+
+  const projectsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'projects')) : null, [firestore, orgId]);
+  const { data: projects } = useCollection<Project>(projectsQuery);
+
+  const tasksQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'tasks')) : null, [firestore, orgId]);
+  const { data: tasks } = useCollection<Task>(tasksQuery);
+
+  const personnelQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'personnel')) : null, [firestore, orgId]);
+  const { data: personnel } = useCollection<Personnel>(personnelQuery);
+
 
   const handleImport = () => {
     if (!pasteData.trim()) {
       toast({
         title: 'No Data to Import',
         description: 'Please paste data into the text area.',
+        variant: 'destructive',
+      });
+      return;
+    }
+     if (!projects || !tasks || !personnel) {
+      toast({
+        title: 'Data Not Loaded',
+        description: 'Project, task, or personnel data is not yet available. Please wait a moment and try again.',
         variant: 'destructive',
       });
       return;

@@ -15,13 +15,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox, ComboboxOption } from '@/components/ui/combobox';
-import { projects, tasks, personnel, exposureLimits } from '@/lib/data';
 import { useEffect, useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import type { Sample } from '@/lib/types';
+import type { Sample, Project, Task, Personnel, ExposureLimit } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { differenceInMinutes, parse } from 'date-fns';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+
 
 interface AddSampleDialogProps {
   onSave: (sampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string }) => void;
@@ -29,22 +31,24 @@ interface AddSampleDialogProps {
   children: React.ReactNode;
 }
 
-const defaultAnalyteOptions: ComboboxOption[] = [
-    { value: 'asbestos', label: 'Asbestos' },
-    { value: 'lead', label: 'Lead' },
-    { value: 'cadmium', label: 'Cadmium' },
-    { value: 'silica', label: 'Silica' },
-    { value: 'mold', label: 'Mold' },
-];
-
 const unitOptions: string[] = ['mg/m³', 'µg/m³', 'f/cc', 'ppm'];
 
 
 export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogProps) {
-  const [projectOptions, setProjectOptions] = useState<ComboboxOption[]>(projects.map(p => ({ value: p.id, label: p.name })));
-  const [taskOptions, setTaskOptions] = useState<ComboboxOption[]>(tasks.map(t => ({ value: t.id, label: t.name })));
-  const [personnelOptions, setPersonnelOptions] = useState<ComboboxOption[]>(personnel.map(p => ({ value: p.id, label: p.name })));
-  const [analyteOptions, setAnalyteOptions] = useState<ComboboxOption[]>(defaultAnalyteOptions);
+    const { user } = useUser();
+    const orgId = user?.orgId;
+    const firestore = useFirestore();
+
+    const { data: projects } = useCollection<Project>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'projects')) : null, [firestore, orgId]));
+    const { data: tasks } = useCollection<Task>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'tasks')) : null, [firestore, orgId]));
+    const { data: personnel } = useCollection<Personnel>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'personnel')) : null, [firestore, orgId]));
+    const { data: exposureLimits } = useCollection<ExposureLimit>(useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'exposureLimits')) : null, [firestore, orgId]));
+
+    const projectOptions = useMemo(() => projects?.map(p => ({ value: p.id, label: p.name })) || [], [projects]);
+    const taskOptions = useMemo(() => tasks?.map(t => ({ value: t.id, label: t.name })) || [], [tasks]);
+    const personnelOptions = useMemo(() => personnel?.map(p => ({ value: p.id, label: p.name })) || [], [personnel]);
+    const analyteOptions = useMemo(() => exposureLimits?.map(l => ({ value: l.analyte.toLowerCase(), label: l.analyte })) || [], [exposureLimits]);
+
   
   const [projectId, setProjectId] = useState('');
   const [taskId, setTaskId] = useState('');
@@ -90,10 +94,6 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
         setFlowRate(sample.flowRate);
         
         const currentAnalyte = sample.result?.analyte || '';
-        // Ensure the current analyte is in the options list
-        if (currentAnalyte && !analyteOptions.some(opt => opt.label.toLowerCase() === currentAnalyte.toLowerCase())) {
-            setAnalyteOptions(prev => [...prev, { value: currentAnalyte.toLowerCase(), label: currentAnalyte}]);
-        }
         setAnalyte(currentAnalyte ? currentAnalyte.toLowerCase() : '');
         setConcentration(sample.result?.concentration ?? '');
         setUnits(sample.result?.units || '');
@@ -110,7 +110,6 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
         setAnalyte('');
         setConcentration('');
         setUnits('');
-        setAnalyteOptions(defaultAnalyteOptions);
     }
   }, [sample, isEditMode, isOpen]);
 
@@ -174,7 +173,6 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
             <Label htmlFor="project">Project</Label>
             <Combobox 
               options={projectOptions}
-              setOptions={setProjectOptions}
               value={projectId}
               onValueChange={setProjectId}
               placeholder="Select a project"
@@ -186,7 +184,6 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
             <Label htmlFor="task">Task</Label>
             <Combobox 
               options={taskOptions}
-              setOptions={setTaskOptions}
               value={taskId}
               onValueChange={setTaskId}
               placeholder="Select a task"
@@ -217,7 +214,6 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
             <Label htmlFor="personnel">Personnel</Label>
             <Combobox 
               options={personnelOptions}
-              setOptions={setPersonnelOptions}
               value={personnelId}
               onValueChange={setPersonnelId}
               placeholder="Select personnel"
@@ -250,7 +246,6 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
                     <Label htmlFor="analyte">Analyte</Label>
                     <Combobox
                         options={analyteOptions}
-                        setOptions={setAnalyteOptions}
                         value={analyte}
                         onValueChange={setAnalyte}
                         placeholder="Select analyte"
@@ -287,5 +282,3 @@ export function AddSampleDialog({ onSave, sample, children }: AddSampleDialogPro
     </Dialog>
   );
 }
-
-    

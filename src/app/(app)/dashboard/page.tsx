@@ -6,58 +6,54 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OverviewChart } from '@/components/dashboard/overview-chart';
 import Link from 'next/link';
 import { Briefcase, FlaskConical, FileText, CheckCircle } from 'lucide-react';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, subDays } from 'date-fns';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Exceedance, Project, Sample, Survey, ExistingNea } from '@/lib/types';
 import { useMemo } from 'react';
 import { RecentExceedances } from '@/components/dashboard/recent-exceedances';
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
 
 export default function DashboardPage() {
     const firestore = useFirestore();
     const { user } = useUser();
+    const orgId = user?.orgId;
 
     const projectsQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'orgs', ORG_ID, 'projects'));
-    }, [firestore, user]);
+        if (!orgId) return null;
+        return query(collection(firestore, 'orgs', orgId, 'projects'));
+    }, [firestore, orgId]);
     const { data: projectsData } = useCollection<Project>(projectsQuery);
 
     const samplesQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'orgs', ORG_ID, 'samples'));
-    }, [firestore, user]);
+        if (!orgId) return null;
+        return query(collection(firestore, 'orgs', orgId, 'samples'));
+    }, [firestore, orgId]);
     const { data: samplesData } = useCollection<Sample>(samplesQuery);
 
     const surveysQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'orgs', ORG_ID, 'surveys'));
-    }, [firestore, user]);
+        if (!orgId) return null;
+        return query(collection(firestore, 'orgs', orgId, 'surveys'));
+    }, [firestore, orgId]);
     const { data: surveysData } = useCollection<Survey>(surveysQuery);
 
     const neasQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'orgs', ORG_ID, 'neas'));
-    }, [firestore, user]);
+        if (!orgId) return null;
+        return query(collection(firestore, 'orgs', orgId, 'neas'));
+    }, [firestore, orgId]);
     const { data: neasData } = useCollection<ExistingNea>(neasQuery);
     
+    const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
     const exceedancesQuery = useMemoFirebase(() => {
-        if (!user) return null;
-        return query(collection(firestore, 'orgs', ORG_ID, 'exceedances'));
-    }, [firestore, user]);
-    const { data: exceedancesData } = useCollection<Exceedance>(exceedancesQuery);
+        if (!orgId) return null;
+        return query(
+            collection(firestore, 'orgs', orgId, 'exceedances'),
+            where('exceedanceDate', '>=', thirtyDaysAgo),
+            orderBy('exceedanceDate', 'desc')
+        );
+    }, [firestore, orgId, thirtyDaysAgo]);
+    const { data: recentExceedances } = useCollection<Exceedance>(exceedancesQuery);
 
-
-    const recentExceedances = useMemo(() => {
-        if (!exceedancesData) return [];
-        return exceedancesData.filter(e => {
-            const exceedanceDate = new Date(e.exceedanceDate);
-            return differenceInDays(new Date(), exceedanceDate) <= 30;
-        });
-    }, [exceedancesData]);
 
     const activeProjectsCount = useMemo(() => {
         if (!projectsData) return 0;
@@ -163,7 +159,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-4 md:gap-8">
-            <RecentExceedances exceedances={recentExceedances} />
+            <RecentExceedances exceedances={recentExceedances || []} />
         </div>
       </main>
     </div>

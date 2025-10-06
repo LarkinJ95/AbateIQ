@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -10,8 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, Search } from 'lucide-react';
-import { projects, tasks, exposureLimits } from '@/lib/data';
-import type { Sample, Result, Personnel, Project, Task as TaskType } from '@/lib/types';
+import type { Sample, Result, Personnel, Project, Task as TaskType, ExposureLimit } from '@/lib/types';
 import { SamplesDataTable } from '../samples/samples-data-table';
 import { columns as sampleColumns } from '../samples/columns';
 import { PersonnelList } from '../personnel/personnel-list';
@@ -25,32 +23,32 @@ import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebas
 import { collection, addDoc, updateDoc, doc, deleteDoc, query, where } from 'firebase/firestore';
 import { createExceedance } from '@/ai/flows/create-exceedance';
 
-// TODO: Replace with actual orgId from user's custom claims
-const ORG_ID = "org_placeholder_123";
-
 export default function AirMonitoringPage() {
   const firestore = useFirestore();
   const { user } = useUser();
+  const orgId = user?.orgId;
   const { toast } = useToast();
 
   const samplesQuery = useMemoFirebase(() => {
-      if (!user) return null;
-      return query(collection(firestore, 'orgs', ORG_ID, 'samples'), where('ownerId', '==', user.uid));
-  }, [firestore, user]);
+      if (!orgId) return null;
+      return query(collection(firestore, 'orgs', orgId, 'samples'), where('ownerId', '==', user.uid));
+  }, [firestore, orgId, user?.uid]);
   const { data: samples, isLoading: samplesLoading } = useCollection<Sample>(samplesQuery);
 
   const personnelQuery = useMemoFirebase(() => {
-      if (!user) return null;
-      return query(collection(firestore, 'orgs', ORG_ID, 'personnel'));
-  }, [firestore, user]);
+      if (!orgId) return null;
+      return query(collection(firestore, 'orgs', orgId, 'personnel'));
+  }, [firestore, orgId]);
   const { data: personnel, isLoading: personnelLoading } = useCollection<Personnel>(personnelQuery);
 
-  const projectsQuery = useMemoFirebase(() => user ? query(collection(firestore, 'orgs', ORG_ID, 'projects')) : null, [firestore, user]);
+  const projectsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'projects')) : null, [firestore, orgId]);
   const { data: projectsData } = useCollection<Project>(projectsQuery);
 
-  const tasksQuery = useMemoFirebase(() => user ? query(collection(firestore, 'orgs', ORG_ID, 'tasks')) : null, [firestore, user]);
+  const tasksQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'tasks')) : null, [firestore, orgId]);
   const { data: tasksData } = useCollection<TaskType>(tasksQuery);
-
+  
+  const limitsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'exposureLimits')) : null, [firestore, orgId]);
+  const { data: exposureLimits } = useCollection<ExposureLimit>(limitsQuery);
 
   const [activeTab, setActiveTab] = useState<string>("samples");
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,7 +82,7 @@ export default function AirMonitoringPage() {
         let status: Result['status'] = 'Pending';
         const concentration = resultData.concentration;
         if(concentration !== undefined && concentration !== null) {
-            const limit = exposureLimits.find(l => l.analyte.toLowerCase() === resultData!.analyte!.toLowerCase());
+            const limit = exposureLimits?.find(l => l.analyte.toLowerCase() === resultData!.analyte!.toLowerCase());
             if(limit) {
               if (concentration > limit.pel) {
                 status = '>PEL';
@@ -93,7 +91,7 @@ export default function AirMonitoringPage() {
                 const project = projectsData?.find(p => p.id === newSampleData.projectId);
                 const person = personnel?.find(p => p.id === newSampleData.personnelId);
 
-                if (project && person && newSampleData.id) {
+                if (project && person && user && orgId) {
                     await createExceedance({
                         resultId: existingResult?.id || `res-${Date.now()}`,
                         analyte: limit.analyte,
@@ -125,7 +123,7 @@ export default function AirMonitoringPage() {
             concentration: resultData.concentration ?? 0,
             status: status,
             method: existingResult?.method || '',
-            units: existingResult?.units || exposureLimits.find(l => l.analyte.toLowerCase() === resultData!.analyte!.toLowerCase())?.units || '',
+            units: existingResult?.units || exposureLimits?.find(l => l.analyte.toLowerCase() === resultData!.analyte!.toLowerCase())?.units || '',
             reportingLimit: existingResult?.reportingLimit || 0,
             lab: existingResult?.lab || '',
         }
@@ -146,17 +144,17 @@ export default function AirMonitoringPage() {
   const isEditMode = (newSampleData: any) => newSampleData && newSampleData.id;
 
   const handleSaveSample = async (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
-      if (!user) return;
+      if (!user || !orgId) return;
       
       const finalSample = await processNewSample(newSampleData);
 
       try {
         if (isEditMode(newSampleData)) {
-            const sampleRef = doc(firestore, 'orgs', ORG_ID, 'samples', newSampleData.id!);
+            const sampleRef = doc(firestore, 'orgs', orgId, 'samples', newSampleData.id!);
             await updateDoc(sampleRef, finalSample);
             toast({ title: 'Sample Updated', description: 'The sample has been updated.' });
         } else {
-            await addDoc(collection(firestore, 'orgs', ORG_ID, 'samples'), { ...finalSample, ownerId: user.uid });
+            await addDoc(collection(firestore, 'orgs', orgId, 'samples'), { ...finalSample, ownerId: user.uid });
             toast({ title: 'Sample Added', description: 'A new sample has been created.' });
         }
       } catch (error) {
@@ -169,12 +167,12 @@ export default function AirMonitoringPage() {
   };
 
   const handleImportSamples = async (importedSamples: (Omit<Sample, 'id'> & { resultData: any })[]) => {
-      if (!user) return;
+      if (!user || !orgId) return;
       
       try {
         for (const sampleData of importedSamples) {
           const finalSample = await processNewSample(sampleData);
-          await addDoc(collection(firestore, 'orgs', ORG_ID, 'samples'), { ...finalSample, ownerId: user.uid });
+          await addDoc(collection(firestore, 'orgs', orgId, 'samples'), { ...finalSample, ownerId: user.uid });
         }
         toast({ title: 'Import Successful', description: `${importedSamples.length} samples imported.` });
       } catch (error) {
@@ -183,8 +181,9 @@ export default function AirMonitoringPage() {
   }
 
   const handleDeleteSample = async (sampleId: string) => {
+    if (!orgId) return;
     try {
-        await deleteDoc(doc(firestore, 'orgs', ORG_ID, 'samples', sampleId));
+        await deleteDoc(doc(firestore, 'orgs', orgId, 'samples', sampleId));
         toast({
             title: 'Sample Deleted',
             description: `Sample ${sampleId} has been deleted.`,

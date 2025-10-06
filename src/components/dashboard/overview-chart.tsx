@@ -7,8 +7,10 @@ import {
   ChartTooltipContent,
   ChartContainer,
 } from '@/components/ui/chart';
-import type { Sample } from '@/lib/types';
-import { exposureLimits } from '@/lib/data';
+import type { Sample, ExposureLimit } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+
 
 const chartConfig = {
   average: {
@@ -22,8 +24,16 @@ interface OverviewChartProps {
 }
 
 export function OverviewChart({ samples }: OverviewChartProps) {
+  const { user } = useUser();
+  const orgId = user?.orgId;
+  const firestore = useFirestore();
+
+  const limitsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'exposureLimits')) : null, [firestore, orgId]);
+  const { data: exposureLimits } = useCollection<ExposureLimit>(limitsQuery);
+
   const averageResultsData = useMemo(() => {
     if (!samples || samples.length === 0) {
+      if (!exposureLimits) return [];
       // Find the first 4 exposure limits to show as example data
       return exposureLimits.slice(0, 4).map(limit => ({
         analyte: limit.analyte,
@@ -50,7 +60,7 @@ export function OverviewChart({ samples }: OverviewChartProps) {
       average: resultsByAnalyte[analyte].total / resultsByAnalyte[analyte].count,
       units: resultsByAnalyte[analyte].units,
     }));
-  }, [samples]);
+  }, [samples, exposureLimits]);
 
   return (
     <ChartContainer

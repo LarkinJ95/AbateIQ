@@ -2,12 +2,12 @@
 'use client';
 
 import { AppShell } from '@/components/app-shell';
+import { useUser } from '@/firebase';
+import { ShieldAlert } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  // All authentication checks have been removed to allow for development.
-  // The app will no longer redirect to the login page.
-  // The useUser hook and related logic have been commented out.
-  /*
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
@@ -27,7 +27,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
     );
   }
-  */
 
   return <AppShell>{children}</AppShell>;
 }

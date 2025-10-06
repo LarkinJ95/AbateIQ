@@ -16,7 +16,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { exposureLimits } from '@/lib/data';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import type { ExposureLimit } from '@/lib/types';
+
 
 const weatherApiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
 
@@ -871,6 +874,12 @@ function PpeCalculator() {
         { id: 1, analyteId: '', concentration: '', apf: '', duration: '' },
     ]);
     const { toast } = useToast();
+    const { user } = useUser();
+    const orgId = user?.orgId;
+    const firestore = useFirestore();
+
+    const limitsQuery = useMemoFirebase(() => orgId ? query(collection(firestore, 'orgs', orgId, 'exposureLimits')) : null, [firestore, orgId]);
+    const { data: exposureLimits } = useCollection<ExposureLimit>(limitsQuery);
 
     const handleAddSample = () => {
         setSamples([
@@ -929,6 +938,7 @@ function PpeCalculator() {
             <tbody>
               ${samples
                 .map((sample) => {
+                    if (!exposureLimits) return '';
                     const analyte = exposureLimits.find((l) => l.id === sample.analyteId);
                     const conc = parseFloat(sample.concentration);
                     const protectionFactor = parseInt(sample.apf, 10);
@@ -995,7 +1005,7 @@ function PpeCalculator() {
                                             <SelectValue placeholder="Select..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {exposureLimits.map((limit) => (
+                                            {exposureLimits?.map((limit) => (
                                                 <SelectItem key={limit.id} value={limit.id}>{limit.analyte}</SelectItem>
                                             ))}
                                         </SelectContent>
@@ -1054,7 +1064,7 @@ function PpeCalculator() {
                     <Button variant="outline" onClick={handleAddSample}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Sample
                     </Button>
-                    <Button onClick={generateReport} disabled={samples.length === 0}>
+                    <Button onClick={generateReport} disabled={samples.length === 0 || !exposureLimits}>
                         <Printer className="mr-2 h-4 w-4" /> Generate PDF Report
                     </Button>
                 </div>

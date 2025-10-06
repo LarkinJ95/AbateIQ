@@ -1,52 +1,121 @@
 # AbateIQ - Industrial Hygiene Platform
 
-Welcome to AbateIQ, a modern, AI-powered platform designed for industrial hygienists and environmental consultants. This application, built with Next.js and Firebase, streamlines project management, data collection, and report generation, allowing you to focus on what matters most: ensuring workplace safety.
+Welcome to AbateIQ, a modern, AI-powered platform designed for industrial hygienists and environmental consultants. This application is built on a secure, organization-scoped architecture using Next.js for the frontend and Firebase (Firestore, Authentication, Genkit) for the backend. It provides a robust solution for project management, data collection, and AI-powered report generation.
 
-## Key Features
+## Prerequisites
 
-- **Dashboard**: Get an at-a-glance overview of active projects, recent air sample results, and critical exposure exceedances as soon as you log in.
+Before you begin, ensure you have the following installed:
+- [Node.js](https://nodejs.org/) (v18 or later)
+- [npm](https://www.npmjs.com/) (usually comes with Node.js)
+- [Firebase CLI](https://firebase.google.com/docs/cli) for local development and deployment.
+- [Java Development Kit (JDK)](https://www.oracle.com/java/technologies/downloads/) (required for Firestore emulator).
 
-- **Project Management**: Create and manage client projects, track key dates, and link all relevant data, including air samples and surveys, in one centralized location.
+It's recommended to use a node version manager like `nvm`. If you have `nvm` installed, you can run `nvm use` in the project root to switch to the recommended Node.js version specified in `.nvmrc`.
 
-- **Air Monitoring**: A comprehensive module to log, import, and manage air monitoring samples. Filter and search through extensive datasets with ease. Supports bulk import from Excel to save time.
+## 1. Local Development Setup
 
-- **Personnel Management**: Keep track of all personnel, including their certifications, fit test due dates, and exposure history.
+### Installation
+Clone the repository and install the dependencies:
+```bash
+npm install
+```
 
-- **Hazardous Material Surveys**: Conduct detailed surveys for materials like asbestos and lead. The system includes dynamic tables to manage:
-    - Functional Areas (e.g., kitchens, offices)
-    - Homogeneous Areas (e.g., "12x12 Vinyl Floor Tile")
-    - Asbestos & Paint Sample Logs
+### Running with Firebase Emulators
+For a complete local development experience that mirrors the production Firebase environment, use the Firebase Emulators.
 
-- **AI-Powered Reporting**: Leverage the power of generative AI to instantly create professional, comprehensive survey reports from the data you've collected.
-
-- **AI-Powered NEA Tool**: Generate draft Negative Exposure Assessments (NEAs) in seconds by providing project and task descriptions.
-
-- **AI Document Analysis**: Upload lab reports in PDF format and receive an AI-generated summary, including a list of any detected exceedances, saving you valuable review time.
-
-- **Industrial Hygiene Tools**: A suite of built-in calculators to assist with daily tasks:
-    - **TWA Calculator**: For calculating Time-Weighted Averages.
-    - **Unit Converter**: Convert between common IH units like mg/m³ and ppm.
-    - **Ventilation Calculator**: Determine required CFM for a target ACH.
-    - **Heat Stress (WBGT) Calculator**: Assess heat stress risk with optional weather data integration.
-    - **PPE Calculator**: Estimate in-mask concentrations and effective TWA.
-
-- **Robust Settings & Admin Panel**:
-    - Manage company branding, including logos and colors.
-    - Control user accounts, roles, and feature-level permissions.
-    - Configure system-wide settings and integrations.
-
-## Getting Started
-
-1.  **Run the application**:
+1.  **Start the Emulators and Development Server:**
+    This single command will start the Firebase emulators (for Auth, Firestore, and Functions) and the Next.js development server.
     ```bash
     npm run dev
     ```
-    This will start the development server, typically on `http://localhost:9002`.
+    The application will be available at `http://localhost:9002`, and the Firebase Emulator UI will be at `http://localhost:4000`.
 
-2.  **Explore the App**:
-    - Navigate to the **Dashboard** to see an overview.
-    - Go to **Projects** to create or view a project.
-    - Visit the **Surveys** page to start a new survey or manage existing ones.
-    - Check out the **Tools** section for helpful calculators.
+2.  **Seed the Database (Optional but Recommended):**
+    To populate the emulated Firestore database with initial test data (an organization, a sample user, projects, etc.), run the seeding script in a separate terminal:
+    ```bash
+    npm run seed
+    ```
+    This script creates a test organization, a sample user, and associated project data. It also provides instructions for setting custom claims on the test user.
 
-This application is built on a modern tech stack, including Next.js, React, Tailwind CSS, and Firebase for the backend and authentication.
+## 2. Authentication and Authorization
+
+AbateIQ uses Firebase Authentication with a role-based access control (RBAC) system enforced by Firestore Security Rules.
+
+### Role Matrix
+| Role      | Permissions                                                                    |
+| :-------- | :----------------------------------------------------------------------------- |
+| `admin`   | Full read/write/delete access within their organization. Can manage users.     |
+| `editor`  | Can create and update records (e.g., projects, samples) but cannot delete them.|
+| `viewer`  | Read-only access to all data within their organization.                        |
+
+### Setting Custom Claims
+Custom claims (`orgId` and `role`) are essential for the security rules to work. In a production environment, these would be set by a trusted server process after a user signs up or is invited to an organization.
+
+For local development, you can use the Firebase Admin SDK to set claims for a test user. A utility script for this is planned for a future release. In the meantime, you can use a simple Node.js script:
+
+1. Create a `set-claims.js` file (make sure to **not** commit this file):
+   ```javascript
+   // set-claims.js
+   const admin = require('firebase-admin');
+   const serviceAccount = require('./path/to/your/service-account-key.json'); // Download from Firebase Console
+
+   admin.initializeApp({
+     credential: admin.credential.cert(serviceAccount)
+   });
+
+   const uid = 'USER_UID_TO_SET_CLAIMS_FOR'; // UID of your test user
+   const claims = { orgId: 'bierlein', role: 'admin' };
+
+   admin.auth().setCustomUserClaims(uid, claims)
+     .then(() => {
+       console.log('Custom claims set successfully!');
+       process.exit(0);
+     })
+     .catch(error => {
+       console.error('Error setting custom claims:', error);
+       process.exit(1);
+     });
+   ```
+2. Run the script: `node set-claims.js`. The user will need to log out and log back in for the claims to take effect.
+
+## 3. Deployment
+
+This application is configured for deployment to **Firebase App Hosting**.
+
+1.  **Login to Firebase:**
+    ```bash
+    firebase login
+    ```
+
+2.  **Deploy to a Preview Channel (for Pull Requests):**
+    This command will build and deploy your application to a temporary, shareable URL.
+    ```bash
+    firebase apphosting:backends:deploy --project YOUR_FIREBASE_PROJECT_ID
+    ```
+
+3.  **Deploy to Production:**
+    To deploy to your live site, merge your changes into the `main` branch. A GitHub Action (to be configured) should automatically handle the production deployment. Manual deployment can be done via:
+    ```bash
+    firebase deploy --only apphosting --project YOUR_FIREBASE_PROJECT_ID
+    ```
+
+## 4. Security and Environment Variables
+
+### Environment Variables
+- Create a `.env.local` file for local development. You can copy it from `.env.local.example`.
+- **NEVER** commit secret keys or sensitive information to Git.
+- For production, store secrets using Firebase App Hosting's secret management:
+  ```bash
+  firebase apphosting:secrets:set SECRET_NAME
+  ```
+  These secrets will be automatically available as environment variables in your deployed application.
+
+### Key Rotation
+If an API key or service account key is compromised:
+1.  **Generate a new key:** Go to the relevant service's console (e.g., Google Cloud for a service account, your weather API provider) and generate a new key.
+2.  **Update the secret:** Update the secret in Firebase App Hosting with the new key value.
+    ```bash
+    firebase apphosting:secrets:set SECRET_NAME
+    ```
+3.  **Redeploy:** A new deployment may be required for the updated secret to take effect.
+4.  **Revoke the old key:** Once you have confirmed the new key is working, revoke the compromised key from the provider's console to prevent further unauthorized access.

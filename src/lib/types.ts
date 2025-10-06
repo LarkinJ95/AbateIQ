@@ -1,5 +1,7 @@
 
+
 import type { LucideIcon } from "lucide-react";
+import { z } from 'zod';
 
 export type Org = {
   id: string;
@@ -44,6 +46,7 @@ export type Project = {
   status: "Active" | "Completed" | "On Hold";
   startDate: string;
   endDate: string;
+  ownerId?: string;
 };
 
 export type Location = {
@@ -82,6 +85,7 @@ export type Sample = {
     duration: number; 
     volume: number;
     result?: Result;
+    ownerId?: string;
 };
 
 export type Result = {
@@ -113,20 +117,26 @@ export type ExistingNea = {
   analyte: string;
   effectiveDate: string;
   supportingSampleIds?: string[];
+  ownerId?: string;
 }
 
-export type Exceedance = {
-  id: string;
-  resultId: string;
-  analyte: string;
-  concentration: string;
-  limit: string;
-  personnel: string;
-  location: string;
-  correctiveAction: string;
-  exceedanceDate: string;
-  evidence?: string;
-};
+export const ExceedanceSchema = z.object({
+  id: z.string(),
+  resultId: z.string(),
+  analyte: z.string(),
+  concentration: z.string(),
+  limit: z.string(),
+  personnel: z.string(),
+  location: z.string(),
+  correctiveAction: z.string(),
+  exceedanceDate: z.string(),
+  evidence: z.string().optional(),
+  ownerId: z.string(),
+  orgId: z.string(),
+});
+
+export type Exceedance = z.infer<typeof ExceedanceSchema>;
+
 
 export type Survey = {
   id: string;
@@ -152,6 +162,7 @@ export type Survey = {
   paintSamples?: PaintSample[];
   functionalAreas?: FunctionalArea[];
   checklistTemplates?: string[];
+  ownerId?: string;
 };
 
 export type HomogeneousArea = {

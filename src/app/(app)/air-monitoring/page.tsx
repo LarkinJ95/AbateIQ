@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusCircle, Search } from 'lucide-react';
 import { projects, tasks, exposureLimits } from '@/lib/data';
-import type { Sample, Result, Personnel } from '@/lib/types';
+import type { Sample, Result, Personnel, Project, Task as TaskType } from '@/lib/types';
 import { SamplesDataTable } from '../samples/samples-data-table';
 import { columns as sampleColumns } from '../samples/columns';
 import { PersonnelList } from '../personnel/personnel-list';
@@ -22,6 +23,7 @@ import { differenceInMinutes, parse } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, addDoc, updateDoc, doc, deleteDoc, query, where } from 'firebase/firestore';
+import { createExceedance } from '@/ai/flows/create-exceedance';
 
 // TODO: Replace with actual orgId from user's custom claims
 const ORG_ID = "org_placeholder_123";
@@ -33,7 +35,7 @@ export default function AirMonitoringPage() {
 
   const samplesQuery = useMemoFirebase(() => {
       if (!user) return null;
-      return query(collection(firestore, 'orgs', ORG_ID, 'samples'));
+      return query(collection(firestore, 'orgs', ORG_ID, 'samples'), where('ownerId', '==', user.uid));
   }, [firestore, user]);
   const { data: samples, isLoading: samplesLoading } = useCollection<Sample>(samplesQuery);
 
@@ -43,6 +45,13 @@ export default function AirMonitoringPage() {
   }, [firestore, user]);
   const { data: personnel, isLoading: personnelLoading } = useCollection<Personnel>(personnelQuery);
 
+  const projectsQuery = useMemoFirebase(() => user ? query(collection(firestore, 'orgs', ORG_ID, 'projects')) : null, [firestore, user]);
+  const { data: projectsData } = useCollection<Project>(projectsQuery);
+
+  const tasksQuery = useMemoFirebase(() => user ? query(collection(firestore, 'orgs', ORG_ID, 'tasks')) : null, [firestore, user]);
+  const { data: tasksData } = useCollection<TaskType>(tasksQuery);
+
+
   const [activeTab, setActiveTab] = useState<string>("samples");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -50,7 +59,7 @@ export default function AirMonitoringPage() {
   const [sampleTypeFilter, setSampleTypeFilter] = useState<string>("all");
   
 
-  const processNewSample = (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, resultData?: { analyte: string; concentration: number; }}) => {
+  const processNewSample = async (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, resultData?: { analyte: string; concentration: number; }}) => {
     const getMinutes = (start: string, stop: string) => {
         if (start && stop) {
             try {
@@ -77,7 +86,31 @@ export default function AirMonitoringPage() {
         if(concentration !== undefined && concentration !== null) {
             const limit = exposureLimits.find(l => l.analyte.toLowerCase() === resultData!.analyte!.toLowerCase());
             if(limit) {
-              if (concentration > limit.pel) status = '>PEL';
+              if (concentration > limit.pel) {
+                status = '>PEL';
+                
+                // Create a secure exceedance record
+                const project = projectsData?.find(p => p.id === newSampleData.projectId);
+                const person = personnel?.find(p => p.id === newSampleData.personnelId);
+
+                if (project && person && newSampleData.id) {
+                    await createExceedance({
+                        resultId: existingResult?.id || `res-${Date.now()}`,
+                        analyte: limit.analyte,
+                        concentration: `${concentration} ${limit.units}`,
+                        limit: `${limit.pel} ${limit.units} (PEL)`,
+                        personnel: person.name,
+                        location: project.location,
+                        correctiveAction: 'Immediate action required. Review exposure controls and implement corrective measures.',
+                    });
+                     toast({
+                        title: 'Exceedance Detected!',
+                        description: `A new exceedance for ${limit.analyte} has been logged.`,
+                        variant: 'destructive',
+                    });
+                }
+
+              }
               else if (concentration >= limit.al) status = '≥AL';
               else status = 'OK';
             } else {
@@ -115,7 +148,7 @@ export default function AirMonitoringPage() {
   const handleSaveSample = async (newSampleData: Omit<Sample, 'id' | 'duration' | 'volume'> & { id?: string, result?: Partial<Result> }) => {
       if (!user) return;
       
-      const finalSample = processNewSample(newSampleData);
+      const finalSample = await processNewSample(newSampleData);
 
       try {
         if (isEditMode(newSampleData)) {
@@ -123,7 +156,7 @@ export default function AirMonitoringPage() {
             await updateDoc(sampleRef, finalSample);
             toast({ title: 'Sample Updated', description: 'The sample has been updated.' });
         } else {
-            await addDoc(collection(firestore, 'orgs', ORG_ID, 'samples'), { ...finalSample });
+            await addDoc(collection(firestore, 'orgs', ORG_ID, 'samples'), { ...finalSample, ownerId: user.uid });
             toast({ title: 'Sample Added', description: 'A new sample has been created.' });
         }
       } catch (error) {
@@ -137,19 +170,13 @@ export default function AirMonitoringPage() {
 
   const handleImportSamples = async (importedSamples: (Omit<Sample, 'id'> & { resultData: any })[]) => {
       if (!user) return;
-      const newSamples: (Omit<Sample, 'id'>)[] = importedSamples.map((sampleData, index) => {
-        const finalSample = processNewSample(sampleData);
-        return {
-            ...finalSample,
-            id: `samp-${Date.now()}-${index}`, // temporary, Firestore will assign one
-        } as (Omit<Sample, 'id'>);
-      });
-
+      
       try {
-        for (const newSample of newSamples) {
-          await addDoc(collection(firestore, 'orgs', ORG_ID, 'samples'), newSample);
+        for (const sampleData of importedSamples) {
+          const finalSample = await processNewSample(sampleData);
+          await addDoc(collection(firestore, 'orgs', ORG_ID, 'samples'), { ...finalSample, ownerId: user.uid });
         }
-        toast({ title: 'Import Successful', description: `${newSamples.length} samples imported.` });
+        toast({ title: 'Import Successful', description: `${importedSamples.length} samples imported.` });
       } catch (error) {
         toast({ title: 'Import Failed', variant: 'destructive' });
       }
@@ -169,10 +196,10 @@ export default function AirMonitoringPage() {
   };
 
   const samplesWithDetails = useMemo(() => {
-    if (!samples || !personnel) return [];
+    if (!samples || !personnel || !projectsData || !tasksData) return [];
     return samples.map(sample => {
-      const project = projects.find(p => p.id === sample.projectId);
-      const task = tasks.find(t => t.id === sample.taskId);
+      const project = projectsData.find(p => p.id === sample.projectId);
+      const task = tasksData.find(t => t.id === sample.taskId);
       const person = personnel.find(p => p.id === sample.personnelId);
       return {
         ...sample,
@@ -185,7 +212,7 @@ export default function AirMonitoringPage() {
         units: sample.result?.units,
       };
     });
-  }, [samples, personnel]);
+  }, [samples, personnel, projectsData, tasksData]);
 
   const filteredSamples = useMemo(() => {
     return samplesWithDetails.filter(sample => {

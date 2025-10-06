@@ -10,6 +10,7 @@ import {
   Folder,
   LayoutDashboard,
   FlaskConical,
+  Wrench,
 } from 'lucide-react';
 import {
   SidebarProvider,
@@ -50,6 +51,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/surveys', label: 'Surveys', icon: FileText },
     { href: '/nea', label: 'NEA Tool', icon: FileText },
     { href: '/documents', label: 'Documents', icon: Folder },
+    { href: '/tools', label: 'Tools', icon: Wrench },
   ];
 
   return (

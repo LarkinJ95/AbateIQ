@@ -70,6 +70,14 @@ export const columns = (options: { onEdit: (sample: Sample) => void; onDelete: (
   {
     accessorKey: "personnelName",
     header: "Personnel",
+    cell: ({ row }) => {
+      const sample = row.original;
+      return (
+        <Link href={`/personnel/${sample.personnelId}`} className="hover:underline">
+          {sample.personnelName}
+        </Link>
+      )
+    }
   },
     {
     accessorKey: "analyte",

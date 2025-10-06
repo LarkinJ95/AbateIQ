@@ -28,7 +28,7 @@ import { collection, query, where } from 'firebase/firestore';
 
 interface AddEditSurveyDialogProps {
   survey?: Survey | null;
-  onSave: (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint' | 'ownerId'> & { id?: string }) => void;
+  onSave: (surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint'> & { id?: string }) => void;
   children: React.ReactNode;
 }
 
@@ -88,7 +88,7 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             return;
         }
 
-        const surveyData = {
+        const surveyData: Omit<Survey, 'id' | 'sitePhotoUrl' | 'sitePhotoHint' | 'ownerId'> & { id?: string } = {
             siteName,
             address,
             inspector,
@@ -97,12 +97,12 @@ export function AddEditSurveyDialog({ survey, onSave, children }: AddEditSurveyD
             surveyType,
             jobNumber,
         };
-
+        
         if (isEditMode && survey) {
-            onSave({ id: survey.id, ...surveyData });
-        } else {
-            onSave(surveyData as any);
+            (surveyData as any).id = survey.id;
         }
+
+        onSave(surveyData);
 
         setIsOpen(false);
     }

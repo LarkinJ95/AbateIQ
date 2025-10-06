@@ -46,18 +46,20 @@ export default function SurveysPage() {
         return;
     }
     try {
+        const dataToSave = {
+            ...surveyData,
+            ownerId: user.uid,
+        };
+
         if (surveyData.id) {
-            // Edit existing survey
             const surveyRef = doc(firestore, 'surveys', surveyData.id);
-            const { id, ...dataToUpdate } = surveyData;
-            await updateDoc(surveyRef, dataToUpdate);
+            const { id, ...updateData } = dataToSave;
+            await updateDoc(surveyRef, updateData);
         } else {
-            // Add new survey
             const newSurvey: Partial<Survey> & { ownerId: string } = {
-                ...surveyData,
+                ...dataToSave,
                 sitePhotoUrl: 'https://picsum.photos/seed/1/600/400',
                 sitePhotoHint: 'construction site',
-                ownerId: user.uid,
             };
             await addDoc(collection(firestore, 'surveys'), newSurvey);
         }
@@ -126,10 +128,10 @@ export default function SurveysPage() {
     if (!surveys) return [];
     let filtered = surveys.filter((survey) =>
       survey.siteName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      survey.address?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (survey.address && survey.address.toLowerCase().includes(searchQuery.toLowerCase())) ||
       survey.inspector.toLowerCase().includes(searchQuery.toLowerCase()) ||
       survey.surveyType.join(' ').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      survey.jobNumber?.toLowerCase().includes(searchQuery.toLowerCase())
+      (survey.jobNumber && survey.jobNumber.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     if (statusFilter !== "all") {

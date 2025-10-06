@@ -3,7 +3,6 @@
 
 import { Header } from '@/components/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { projects, tasks } from '@/lib/data';
 import { notFound, useParams } from 'next/navigation';
 import { format, isPast, differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -13,28 +12,35 @@ import { Pencil } from 'lucide-react';
 import { AddPersonnelDialog } from '../add-personnel-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
-import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useDoc, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
-import type { Personnel, Sample } from '@/lib/types';
+import type { Personnel, Sample, Project, Task } from '@/lib/types';
 import { useMemo } from 'react';
 
 export default function PersonnelDetailsPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
+  const { user } = useUser();
 
   const personRef = useMemoFirebase(() => doc(firestore, 'personnel', id), [firestore, id]);
   const { data: person, isLoading: personLoading } = useDoc<Personnel>(personRef);
 
   const personSamplesQuery = useMemoFirebase(() => {
-    if (!id) return null;
-    return query(collection(firestore, 'samples'), where('personnelId', '==', id));
-  }, [firestore, id]);
+    if (!id || !user) return null;
+    return query(collection(firestore, 'samples'), where('personnelId', '==', id), where('ownerId', '==', user.uid));
+  }, [firestore, id, user]);
   const { data: personSamples, isLoading: samplesLoading } = useCollection<Sample>(personSamplesQuery);
+
+  const projectsQuery = useMemoFirebase(() => user ? query(collection(firestore, 'projects'), where('ownerId', '==', user.uid)) : null, [firestore, user]);
+  const { data: projects } = useCollection<Project>(projectsQuery);
+
+  const tasksQuery = useMemoFirebase(() => user ? query(collection(firestore, 'tasks'), where('ownerId', '==', user.uid)) : null, [firestore, user]);
+  const { data: tasks } = useCollection<Task>(tasksQuery);
 
 
   const personSamplesWithDetails = useMemo(() => {
-    if (!personSamples) return [];
+    if (!personSamples || !projects || !tasks) return [];
     return personSamples
       .map(sample => {
         const project = projects.find(p => p.id === sample.projectId);
@@ -45,7 +51,7 @@ export default function PersonnelDetailsPage() {
           taskName: task?.name || 'N/A',
         };
       });
-  }, [personSamples]);
+  }, [personSamples, projects, tasks]);
 
   if (personLoading) {
     return <div>Loading...</div>
@@ -171,5 +177,3 @@ export default function PersonnelDetailsPage() {
     </div>
   );
 }
-
-    

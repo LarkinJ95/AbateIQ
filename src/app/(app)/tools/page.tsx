@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, PlusCircle, Calculator, Copy, RefreshCw, Wind, Sun, Building, Droplets, ChevronsRight, ArrowUp, ArrowDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Separator } from '@/components/ui/separator';
 
 type TwaSample = {
   id: number;
@@ -403,32 +405,56 @@ function VentilationCalculator() {
     const [length, setLength] = useState('');
     const [width, setWidth] = useState('');
     const [height, setHeight] = useState('');
-    const [ach, setAch] = useState('');
+    const [targetAch, setTargetAch] = useState('');
+    const [cfmSelection, setCfmSelection] = useState('low');
+    const [customCfm, setCustomCfm] = useState('');
 
-    const result = useMemo(() => {
+    const machineCfmOptions: { [key: string]: number } = {
+        low: 1300,
+        high: 2000,
+    };
+
+    const roomVolume = useMemo(() => {
         const l = parseFloat(length);
         const w = parseFloat(width);
         const h = parseFloat(height);
-        const airChanges = parseFloat(ach);
-
-        if (isNaN(l) || isNaN(w) || isNaN(h) || isNaN(airChanges) || l <= 0 || w <= 0 || h <= 0 || airChanges <= 0) {
+        if (isNaN(l) || isNaN(w) || isNaN(h) || l <= 0 || w <= 0 || h <= 0) {
             return null;
         }
+        return l * w * h;
+    }, [length, width, height]);
 
-        const volume = l * w * h;
-        const cfm = (volume * airChanges) / 60;
-        return { volume: volume.toFixed(2), cfm: cfm.toFixed(2) };
+    const requiredCfmResult = useMemo(() => {
+        const airChanges = parseFloat(targetAch);
+        if (roomVolume === null || isNaN(airChanges) || airChanges <= 0) {
+            return null;
+        }
+        return (roomVolume * airChanges) / 60;
+    }, [roomVolume, targetAch]);
 
-    }, [length, width, height, ach]);
+    const achievedAchResult = useMemo(() => {
+        if (roomVolume === null) return null;
+        let cfm = 0;
+        if (cfmSelection === 'custom') {
+            cfm = parseFloat(customCfm);
+        } else {
+            cfm = machineCfmOptions[cfmSelection];
+        }
+
+        if (isNaN(cfm) || cfm <= 0) return null;
+        
+        return (cfm * 60) / roomVolume;
+
+    }, [roomVolume, cfmSelection, customCfm, machineCfmOptions]);
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Ventilation Calculator (ACH)</CardTitle>
-                <CardDescription>Calculate required airflow (CFM) for a desired number of air changes per hour (ACH).</CardDescription>
+                <CardTitle className="font-headline">Ventilation Calculator</CardTitle>
+                <CardDescription>Calculate required airflow (CFM) for a target ACH, or the achieved ACH for your equipment.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="length">Length (ft)</Label>
                         <Input id="length" type="number" value={length} onChange={e => setLength(e.target.value)} />
@@ -441,31 +467,79 @@ function VentilationCalculator() {
                         <Label htmlFor="height">Height (ft)</Label>
                         <Input id="height" type="number" value={height} onChange={e => setHeight(e.target.value)} />
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="ach">Target ACH</Label>
-                        <Input id="ach" type="number" value={ach} onChange={e => setAch(e.target.value)} />
-                    </div>
                 </div>
-                <div className="border-t pt-6 space-y-4">
-                    <h3 className="text-lg font-semibold flex items-center">
-                        <Wind className="mr-2 h-5 w-5" />
-                        Required Airflow
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
-                        {result ? (
-                            <>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Room Volume</p>
-                                    <p className="text-2xl font-bold">{result.volume} ft³</p>
+
+                <Separator />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Part 1: Calculate Required CFM */}
+                    <div className="space-y-4">
+                         <div className="space-y-2">
+                            <Label htmlFor="ach">Target Air Changes per Hour (ACH)</Label>
+                            <Input id="ach" type="number" value={targetAch} onChange={e => setTargetAch(e.target.value)} placeholder="e.g., 4 or 6" />
+                        </div>
+                        <div className="border-t pt-4">
+                            <h3 className="text-lg font-semibold flex items-center mb-2">
+                                <Wind className="mr-2 h-5 w-5" />
+                                Required Airflow
+                            </h3>
+                            <div className="p-4 bg-muted/50 rounded-lg min-h-[96px]">
+                                {requiredCfmResult !== null ? (
+                                    <>
+                                        <p className="text-sm text-muted-foreground">Required CFM to achieve {targetAch} ACH</p>
+                                        <p className="text-2xl font-bold text-primary">{requiredCfmResult.toFixed(2)} CFM</p>
+                                    </>
+                                ) : (
+                                    <p className="text-muted-foreground text-sm">Enter room dimensions and a target ACH.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Part 2: Calculate Achieved ACH */}
+                    <div className="space-y-4">
+                        <div>
+                            <Label>Select Machine CFM</Label>
+                             <RadioGroup value={cfmSelection} onValueChange={setCfmSelection} className="mt-2 space-y-2">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="low" id="low" />
+                                    <Label htmlFor="low">Abatement Technologies HEPA-AIRE® H2KM - Low (1,300 CFM)</Label>
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Required CFM</p>
-                                    <p className="text-2xl font-bold text-primary">{result.cfm}</p>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="high" id="high" />
+                                    <Label htmlFor="high">Abatement Technologies HEPA-AIRE® H2KM - High (2,000 CFM)</Label>
                                 </div>
-                            </>
-                        ) : (
-                            <p className="text-muted-foreground col-span-2">Enter all room dimensions and a target ACH to calculate.</p>
-                        )}
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="custom" id="custom" />
+                                    <Label htmlFor="custom" className="flex-1">Custom</Label>
+                                    <Input
+                                        id="custom-cfm"
+                                        type="number"
+                                        placeholder="CFM"
+                                        value={customCfm}
+                                        onChange={e => setCustomCfm(e.target.value)}
+                                        disabled={cfmSelection !== 'custom'}
+                                        className="w-24 h-8"
+                                    />
+                                </div>
+                            </RadioGroup>
+                        </div>
+                         <div className="border-t pt-4">
+                            <h3 className="text-lg font-semibold flex items-center mb-2">
+                                <RefreshCw className="mr-2 h-5 w-5" />
+                                Achieved ACH
+                            </h3>
+                            <div className="p-4 bg-muted/50 rounded-lg min-h-[96px]">
+                                 {achievedAchResult !== null ? (
+                                    <>
+                                        <p className="text-sm text-muted-foreground">Achieved ACH with selected CFM</p>
+                                        <p className="text-2xl font-bold text-primary">{achievedAchResult.toFixed(2)} ACH</p>
+                                    </>
+                                ) : (
+                                    <p className="text-muted-foreground text-sm">Enter room dimensions and select a CFM option.</p>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </CardContent>
